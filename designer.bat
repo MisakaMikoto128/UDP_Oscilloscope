@@ -1,0 +1,1 @@
+python tools\PyQt-Fluent-Widgets\tools\designer.py

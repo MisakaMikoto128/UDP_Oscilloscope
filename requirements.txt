@@ -1,0 +1,15 @@
+colorthief==0.2.1
+darkdetect==0.8.0
+h5py==3.14.0
+numpy==2.3.2
+pillow==11.3.0
+"PyQt-Fluent-Widgets[full]"
+PyQt5==5.15.11
+PyQt5-Frameless-Window==0.7.3
+PyQt5-Qt5==5.15.2
+PyQt5_sip==12.17.0
+pyqtgraph==0.13.7
+scipy==1.16.1
+winloop==0.2.2
+aioudp==2.0.0
+qasync

@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "C:\Users\liuyu\Desktop\WorkPlace\MotorDrive_250kW\UDP_Oscilloscope\tools\PyQt-Fluent-Widgets\plugins\basic_input_plugin.py", line 6, in <module>
+    from qfluentwidgets import (PrimaryPushButton, SplitPushButton, DropDownPushButton,
+  File "C:\Users\liuyu\Desktop\WorkPlace\MotorDrive_250kW\UDP_Oscilloscope\tools\PyQt-Fluent-Widgets\qfluentwidgets\__init__.py", line 18, in <module>
+    from .components import *
+  File "C:\Users\liuyu\Desktop\WorkPlace\MotorDrive_250kW\UDP_Oscilloscope\tools\PyQt-Fluent-Widgets\qfluentwidgets\components\__init__.py", line 1, in <module>
+    from .dialog_box import *
+  File "C:\Users\liuyu\Desktop\WorkPlace\MotorDrive_250kW\UDP_Oscilloscope\tools\PyQt-Fluent-Widgets\qfluentwidgets\components\dialog_box\__init__.py", line 1, in <module>
+    from .color_dialog import ColorDialog
+  File "C:\Users\liuyu\Desktop\WorkPlace\MotorDrive_250kW\UDP_Oscilloscope\tools\PyQt-Fluent-Widgets\qfluentwidgets\components\dialog_box\color_dialog.py", line 7, in <module>
+    from ...common.style_sheet import FluentStyleSheet, isDarkTheme
+  File "C:\Users\liuyu\Desktop\WorkPlace\MotorDrive_250kW\UDP_Oscilloscope\tools\PyQt-Fluent-Widgets\qfluentwidgets\common\__init__.py", line 1, in <module>
+    from .config import *
+  File "C:\Users\liuyu\Desktop\WorkPlace\MotorDrive_250kW\UDP_Oscilloscope\tools\PyQt-Fluent-Widgets\qfluentwidgets\common\config.py", line 8, in <module>
+    import darkdetect
+ModuleNotFoundError: No module named 'darkdetect'
