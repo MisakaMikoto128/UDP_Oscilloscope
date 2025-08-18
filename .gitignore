@@ -2,3 +2,4 @@ tools/PyQt-Fluent-Widgets/*
 .vscode/*
 *.h5
 venv/*
+*.pyc

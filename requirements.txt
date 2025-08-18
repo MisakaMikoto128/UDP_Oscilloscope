@@ -13,3 +13,4 @@ scipy==1.16.1
 winloop==0.2.2
 aioudp==2.0.0
 qasync
+crcmod
