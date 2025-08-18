@@ -202,28 +202,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def _setup_channel_tab_layout(self):
         """设置通道标签页布局"""
-        # 完全重建布局
-        # 删除现有布局
-        old_layout = self.tab_ch.layout()
-        if old_layout:
-            QtWidgets.QWidget().setLayout(old_layout)
+        # 获取现有布局
+        layout = self.tab_ch.layout()
+        if layout is None:
+            layout = QtWidgets.QVBoxLayout(self.tab_ch)
 
-        # 创建新的主布局
-        main_layout = QtWidgets.QVBoxLayout(self.tab_ch)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-
-        # 创建滚动区域
-        scroll_area = QtWidgets.QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
-        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
-        scroll_area.setMinimumWidth(280)
-
-        # 创建滚动内容widget
-        scroll_content = QtWidgets.QWidget()
-        scroll_layout = QtWidgets.QVBoxLayout(scroll_content)
-        scroll_layout.setSpacing(8)
-        scroll_layout.setContentsMargins(5, 5, 5, 5)
+        # 清除所有子widget但不删除布局
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget():
+                child.widget().setParent(None)
 
         # 隐藏所有通道配置组件
         for config in self.channel_configs:
@@ -234,26 +222,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if 0 <= current_channel < len(self.channel_configs):
             config_widget = self.channel_configs[current_channel]
             config_widget.setVisible(True)
-            config_widget.setParent(scroll_content)
-            scroll_layout.addWidget(config_widget)
+            layout.addWidget(config_widget)
 
         # 添加光标控制
-        self.cursor_control.setParent(scroll_content)
-        scroll_layout.addWidget(self.cursor_control)
+        layout.addWidget(self.cursor_control)
 
         # 添加重新加载配置按钮
         if hasattr(self, "reload_conf_btn"):
-            self.reload_conf_btn.setParent(scroll_content)
-            scroll_layout.addWidget(self.reload_conf_btn)
-
-        # 添加弹性空间
-        scroll_layout.addStretch()
-
-        # 设置滚动区域
-        scroll_area.setWidget(scroll_content)
-
-        # 添加到主布局
-        main_layout.addWidget(scroll_area)
+            layout.addWidget(self.reload_conf_btn)
 
     def _init_global_controls(self):
         """初始化全局控制"""

@@ -76,6 +76,16 @@ class ScopeView(QtWidgets.QWidget):
 
         logger.info(f"示波器视图已初始化: {n_channels}通道, 采样率: {sample_rate}Hz")
 
+    def set_sample_rate(self, sample_rate: float):
+        """设置采样频率"""
+        self.sample_rate = sample_rate
+        self._update_time_axis()
+        print(f"Sample rate changed: {sample_rate} Hz")
+
+    def get_sample_rate(self) -> float:
+        """获取采样频率"""
+        return self.sample_rate
+
     def _setup_interactions(self):
         """设置鼠标和键盘交互"""
         # 设置焦点策略，确保能接收键盘事件
@@ -147,7 +157,7 @@ class ScopeView(QtWidgets.QWidget):
 
     def wheelEvent(self, event):
         """重写滚轮事件处理"""
-        print(f"Wheel event in wheelEvent: delta={event.angleDelta().y()}, ctrl={self._ctrl_pressed}")
+        print(f"Wheel event: delta={event.angleDelta().y()}, ctrl={self._ctrl_pressed}")
 
         if self._ctrl_pressed:
             # Ctrl + 滚轮：垂直缩放当前通道
@@ -164,9 +174,9 @@ class ScopeView(QtWidgets.QWidget):
                 self.vertical_divs[self.current_channel] = new_div
                 self.verticalDivChanged.emit(self.current_channel, new_div)
                 self._update_display()
-                print(f"Vertical scale changed: CH{self.current_channel+1} = {new_div}")
+                print(f"Vertical scale changed: CH{self.current_channel+1} = {new_div:.3f} V/div")
         else:
-            # 普通滚轮：水平缩放（时基）
+            # 普通滚轮：水平缩放（时基）- 全局所有通道
             delta = event.angleDelta().y()
             scale_factor = 1.1 if delta > 0 else 1.0 / 1.1
 
@@ -179,7 +189,7 @@ class ScopeView(QtWidgets.QWidget):
                 self.time_base = new_time_base
                 self.timeBaseChanged.emit(new_time_base)
                 self._update_time_axis()
-                print(f"Time base changed: {new_time_base} ms/div")
+                print(f"Time base changed: {new_time_base:.3f} ms/div")
 
         event.accept()
 
@@ -187,14 +197,14 @@ class ScopeView(QtWidgets.QWidget):
         """重写键盘按下事件"""
         if event.key() == QtCore.Qt.Key_Control:
             self._ctrl_pressed = True
-            print("Ctrl pressed in keyPressEvent")
+            print("Ctrl pressed - vertical mode enabled")
         super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
         """重写键盘释放事件"""
         if event.key() == QtCore.Qt.Key_Control:
             self._ctrl_pressed = False
-            print("Ctrl released in keyReleaseEvent")
+            print("Ctrl released - horizontal mode enabled")
         super().keyReleaseEvent(event)
 
     def mousePressEvent(self, event):
@@ -213,27 +223,40 @@ class ScopeView(QtWidgets.QWidget):
             delta_y = current_pos.y() - self._last_mouse_pos.y()
 
             if self._ctrl_pressed:
-                # Ctrl + 拖拽：垂直偏移当前通道
-                sensitivity = 0.01
-                y_delta = delta_y * sensitivity
+                # Ctrl + 拖拽：垂直偏移当前通道（只允许垂直方向）
+                # 将像素移动转换为数据单位
+                view_box = self.plot_item.vb
+                y_range = view_box.viewRange()[1]
+                y_span = y_range[1] - y_range[0]
+                view_height = view_box.height()
 
-                current_offset = self.vertical_offsets[self.current_channel]
-                new_offset = current_offset - y_delta
+                if view_height > 0:
+                    y_delta = (delta_y / view_height) * y_span
 
-                self.vertical_offsets[self.current_channel] = new_offset
-                self.verticalOffsetChanged.emit(self.current_channel, new_offset)
-                self._update_display()
-                print(f"Vertical offset changed: CH{self.current_channel+1} = {new_offset}")
+                    current_offset = self.vertical_offsets[self.current_channel]
+                    new_offset = current_offset - y_delta  # 反向，符合直觉
+
+                    self.vertical_offsets[self.current_channel] = new_offset
+                    self.verticalOffsetChanged.emit(self.current_channel, new_offset)
+                    self._update_display()
+                    print(f"Vertical offset changed: CH{self.current_channel+1} = {new_offset:.3f} V")
             else:
-                # 普通拖拽：水平偏移
-                sensitivity = 0.001
-                x_delta = delta_x * sensitivity
+                # 普通拖拽：水平偏移（只允许水平方向）- 全局所有通道
+                # 只有在非自动滚动模式下才允许水平偏移
+                if not self.auto_roll:
+                    view_box = self.plot_item.vb
+                    x_range = view_box.viewRange()[0]
+                    x_span = x_range[1] - x_range[0]
+                    view_width = view_box.width()
 
-                new_offset = self.time_offset - x_delta
-                self.time_offset = new_offset
-                self.timeOffsetChanged.emit(new_offset)
-                self._update_time_axis()
-                print(f"Time offset changed: {new_offset}")
+                    if view_width > 0:
+                        x_delta = (delta_x / view_width) * x_span
+
+                        new_offset = self.time_offset - x_delta  # 反向，符合直觉
+                        self.time_offset = new_offset
+                        self.timeOffsetChanged.emit(new_offset)
+                        self._update_time_axis()
+                        print(f"Time offset changed: {new_offset:.3f} s")
 
             self._last_mouse_pos = current_pos
         super().mouseMoveEvent(event)
@@ -336,20 +359,20 @@ class ScopeView(QtWidgets.QWidget):
     def _update_time_axis(self):
         """更新时间轴显示"""
         # 计算X轴范围
+        x_span = 10 * (self.time_base / 1000.0)  # 10个时基格，转换为秒
+
         if self.auto_roll:
-            # 滚动模式：X轴原点在最右侧，显示最近的数据
-            x_span = 10 * (self.time_base / 1000.0)  # 10个时基格，转换为秒
-            x_max = 0  # 最新数据在X=0位置
-            x_min = -x_span
+            # 滚动模式：X轴原点固定在最右侧，新点从右侧出现，旧点从左侧消失
+            x_max = 0  # 最新数据在X=0位置（最右侧）
+            x_min = -x_span  # 最旧数据在左侧
         else:
-            # 非滚动模式：X轴原点保持在0，可以偏移观察
-            x_span = 10 * (self.time_base / 1000.0)  # 10个时基格，转换为秒
-            x_center = self.time_offset  # 使用偏移值
+            # 非滚动模式：可以自由调节水平偏移，查看历史数据
+            x_center = self.time_offset  # 使用偏移值作为中心
             x_min = x_center - x_span / 2
             x_max = x_center + x_span / 2
 
         self.plot_item.setXRange(x_min, x_max, padding=0)
-        print(f"Time axis updated: [{x_min:.3f}, {x_max:.3f}], auto_roll={self.auto_roll}")
+        print(f"Time axis: [{x_min:.3f}, {x_max:.3f}], auto_roll={self.auto_roll}, offset={self.time_offset:.3f}")
 
     def set_sample_rate(self, rate: float):
         """设置采样频率"""

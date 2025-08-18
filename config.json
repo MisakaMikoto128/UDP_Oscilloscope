@@ -16,7 +16,7 @@
     "persistent_path": "data/oscilloscope_data.h5"
   },
   "display": {
-    "time_base_div": 69.3433494944133,
+    "time_base_div": 217.6291357901487,
     "time_base_unit": "ms",
     "time_offset": 50.67956666254928,
     "grid_enabled": true,
