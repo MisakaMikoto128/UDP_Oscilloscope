@@ -82,13 +82,26 @@ class ScopeView(QtWidgets.QWidget):
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.graphics_widget.setFocusPolicy(QtCore.Qt.StrongFocus)
 
-        # 安装事件过滤器到正确的widget
-        self.graphics_widget.installEventFilter(self)
-        self.installEventFilter(self)
+        # 创建自定义的graphics widget来处理事件
+        original_wheelEvent = self.graphics_widget.wheelEvent
+        original_keyPressEvent = self.graphics_widget.keyPressEvent
+        original_keyReleaseEvent = self.graphics_widget.keyReleaseEvent
 
-        # 启用鼠标跟踪
-        self.graphics_widget.setMouseTracking(True)
-        self.setMouseTracking(True)
+        # 重写graphics_widget的事件处理
+        def custom_wheelEvent(event):
+            self.wheelEvent(event)
+
+        def custom_keyPressEvent(event):
+            self.keyPressEvent(event)
+            original_keyPressEvent(event)
+
+        def custom_keyReleaseEvent(event):
+            self.keyReleaseEvent(event)
+            original_keyReleaseEvent(event)
+
+        self.graphics_widget.wheelEvent = custom_wheelEvent
+        self.graphics_widget.keyPressEvent = custom_keyPressEvent
+        self.graphics_widget.keyReleaseEvent = custom_keyReleaseEvent
 
         # 记录鼠标状态
         self._mouse_pressed = False

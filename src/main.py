@@ -202,33 +202,48 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def _setup_channel_tab_layout(self):
         """设置通道标签页布局"""
-        # 清除现有布局
-        if hasattr(self.tab_ch, 'layout') and self.tab_ch.layout():
-            QtWidgets.QWidget().setLayout(self.tab_ch.layout())
+        # 完全重建布局
+        # 删除现有布局
+        old_layout = self.tab_ch.layout()
+        if old_layout:
+            QtWidgets.QWidget().setLayout(old_layout)
+
+        # 创建新的主布局
+        main_layout = QtWidgets.QVBoxLayout(self.tab_ch)
+        main_layout.setContentsMargins(0, 0, 0, 0)
 
         # 创建滚动区域
-        scroll_area = QtWidgets.QScrollArea(self.tab_ch)
+        scroll_area = QtWidgets.QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
-        scroll_area.setMinimumWidth(300)  # 设置最小宽度
+        scroll_area.setMinimumWidth(280)
 
         # 创建滚动内容widget
         scroll_content = QtWidgets.QWidget()
         scroll_layout = QtWidgets.QVBoxLayout(scroll_content)
-        scroll_layout.setSpacing(10)
-        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        scroll_layout.setSpacing(8)
+        scroll_layout.setContentsMargins(5, 5, 5, 5)
 
-        # 添加当前选中通道的配置组件
+        # 隐藏所有通道配置组件
+        for config in self.channel_configs:
+            config.setVisible(False)
+
+        # 显示当前选中通道的配置组件
         current_channel = self.ch_setting_comboBox.currentIndex()
         if 0 <= current_channel < len(self.channel_configs):
-            scroll_layout.addWidget(self.channel_configs[current_channel])
+            config_widget = self.channel_configs[current_channel]
+            config_widget.setVisible(True)
+            config_widget.setParent(scroll_content)
+            scroll_layout.addWidget(config_widget)
 
         # 添加光标控制
+        self.cursor_control.setParent(scroll_content)
         scroll_layout.addWidget(self.cursor_control)
 
         # 添加重新加载配置按钮
         if hasattr(self, "reload_conf_btn"):
+            self.reload_conf_btn.setParent(scroll_content)
             scroll_layout.addWidget(self.reload_conf_btn)
 
         # 添加弹性空间
@@ -237,9 +252,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # 设置滚动区域
         scroll_area.setWidget(scroll_content)
 
-        # 创建主布局
-        main_layout = QtWidgets.QVBoxLayout(self.tab_ch)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        # 添加到主布局
         main_layout.addWidget(scroll_area)
 
     def _init_global_controls(self):
