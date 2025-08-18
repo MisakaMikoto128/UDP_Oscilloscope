@@ -71,7 +71,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def _init_scope_view(self):
         """初始化示波器视图"""
         ch_defs = self.cfg.channel_defs
-        self.scope = ScopeView(n_channels=len(ch_defs), parent=self.scope_widget)
+        self.scope = ScopeView(
+            n_channels=len(ch_defs),
+            sample_rate=self.cfg.sample_rate,
+            parent=self.scope_widget
+        )
 
         # 设置布局
         layout = QtWidgets.QVBoxLayout(self.scope_widget)
@@ -80,12 +84,20 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # 应用配置
         self.scope.max_points_window = self.cfg.max_points_window
+        self.scope.set_auto_roll(self.cfg.auto_roll)
 
-        # 设置通道颜色
+        # 设置通道颜色和参数
         for i, ch_config in enumerate(ch_defs):
             color = ch_config.get("color", pg.intColor(i))
             self.scope.set_channel_pen(i, color)
             self.scope.set_channel_enabled(i, ch_config.get("enabled", True))
+
+            # 设置垂直挡位和偏移
+            self.scope.set_vertical_scale(
+                i,
+                ch_config.get('vertical_div', 1.0),
+                ch_config.get('vertical_offset', 0.0)
+            )
 
     def _init_channel_controls(self):
         """初始化通道控制界面"""
@@ -102,8 +114,91 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # 创建光标控制组件
         self.cursor_control = CursorControlWidget(self.tab_ch)
 
+        # 创建通道显示开关按钮组
+        self._create_channel_toggle_buttons()
+
         # 重新布局tab_ch
         self._setup_channel_tab_layout()
+
+    def _create_channel_toggle_buttons(self):
+        """创建通道显示开关按钮组"""
+        # 在global_ctrl_widget中添加通道开关区域
+        if not hasattr(self, 'channel_toggle_frame'):
+            self.channel_toggle_frame = QtWidgets.QFrame(self.global_ctrl_widget)
+            self.channel_toggle_frame.setFrameStyle(QtWidgets.QFrame.StyledPanel)
+
+            # 创建布局
+            toggle_layout = QtWidgets.QVBoxLayout(self.channel_toggle_frame)
+            toggle_layout.setContentsMargins(5, 5, 5, 5)
+
+            # 标题
+            title_label = QtWidgets.QLabel("通道显示")
+            title_label.setStyleSheet("font-weight: bold;")
+            toggle_layout.addWidget(title_label)
+
+            # 按钮网格布局
+            button_grid = QtWidgets.QGridLayout()
+            toggle_layout.addLayout(button_grid)
+
+            # 创建通道开关按钮
+            self.channel_toggle_buttons = []
+            ch_defs = self.cfg.channel_defs
+
+            for i, ch_config in enumerate(ch_defs):
+                button = QtWidgets.QPushButton(ch_config['name'])
+                button.setCheckable(True)
+                button.setChecked(ch_config.get('enabled', True))
+                button.setFixedSize(60, 30)
+
+                # 设置按钮颜色
+                color = ch_config.get('color', '#FFFFFF')
+                button.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {color};
+                        border: 2px solid #666666;
+                        border-radius: 3px;
+                        color: black;
+                        font-weight: bold;
+                    }}
+                    QPushButton:checked {{
+                        border: 2px solid #FFFFFF;
+                    }}
+                    QPushButton:!checked {{
+                        background-color: #333333;
+                        color: #666666;
+                    }}
+                """)
+
+                # 连接信号
+                button.toggled.connect(lambda checked, ch=i: self.on_channel_toggle(ch, checked))
+
+                # 添加到网格布局（2列）
+                row = i // 2
+                col = i % 2
+                button_grid.addWidget(button, row, col)
+
+                self.channel_toggle_buttons.append(button)
+
+            # 添加到主布局
+            if hasattr(self, "gridLayout_3"):
+                self.gridLayout_3.addWidget(self.channel_toggle_frame, 3, 0, 1, 2)
+
+    def on_channel_toggle(self, channel: int, enabled: bool):
+        """通道显示开关处理"""
+        # 更新示波器显示
+        self.scope.set_channel_enabled(channel, enabled)
+
+        # 更新配置
+        ch_config = self.cfg.get_channel_config(channel)
+        ch_config['enabled'] = enabled
+        self.cfg.set_channel_config(channel, ch_config)
+
+        # 更新通道配置组件
+        if 0 <= channel < len(self.channel_configs):
+            config_widget = self.channel_configs[channel]
+            config_widget.enabled_checkbox.blockSignals(True)
+            config_widget.enabled_checkbox.setChecked(enabled)
+            config_widget.enabled_checkbox.blockSignals(False)
 
     def _setup_channel_tab_layout(self):
         """设置通道标签页布局"""
@@ -206,6 +301,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.cursor_control.cursorEnabledChanged.connect(self.scope.enable_cursors)
         self.cursor_control.cursorChanged.connect(self.scope.set_cursor_position)
 
+        # 示波器信号连接
+        self.scope.timeBaseChanged.connect(self.on_scope_time_base_changed)
+        self.scope.timeOffsetChanged.connect(self.on_scope_time_offset_changed)
+        self.scope.verticalDivChanged.connect(self.on_scope_vertical_div_changed)
+        self.scope.verticalOffsetChanged.connect(self.on_scope_vertical_offset_changed)
+
         # 重新加载配置
         if hasattr(self, "reload_conf_btn"):
             self.reload_conf_btn.clicked.connect(self.reload_configuration)
@@ -241,6 +342,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     # 事件处理方法
     def on_auto_roll_toggled(self, enabled: bool):
         """自动滚动切换处理"""
+        # 设置示波器滚动模式
+        self.scope.set_auto_roll(enabled)
+
         if enabled:
             if not self._plot_timer.isActive():
                 self._plot_timer.start()
@@ -250,9 +354,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self._plot_timer.stop()
                 logger.info("自动滚动已暂停")
 
+        # 保存到配置
+        self.cfg.set('display.auto_roll', enabled)
+
     def on_channel_selection_changed(self, index: int):
         """通道选择改变处理"""
         if 0 <= index < len(self.channel_configs):
+            # 设置示波器当前通道
+            self.scope.set_current_channel(index)
+
             # 重新布局以显示选中通道的配置
             self._setup_channel_tab_layout()
 
@@ -269,14 +379,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if config.get("color"):
             self.scope.set_channel_pen(channel_index, config["color"])
 
-        self.scope.set_channel_enabled(channel_index, config.get("enabled", True))
+        enabled = config.get("enabled", True)
+        self.scope.set_channel_enabled(channel_index, enabled)
 
-        if "vertical_div" in config or "vertical_offset" in config:
-            self.scope.set_vertical_scale(
-                channel_index,
-                config.get("vertical_div", 1.0),
-                config.get("vertical_offset", 0.0),
-            )
+        # 同步通道开关按钮
+        if hasattr(self, 'channel_toggle_buttons') and 0 <= channel_index < len(self.channel_toggle_buttons):
+            button = self.channel_toggle_buttons[channel_index]
+            button.blockSignals(True)
+            button.setChecked(enabled)
+            button.blockSignals(False)
+
+        if "vertical_div" in config:
+            self.scope.set_vertical_scale(channel_index, config["vertical_div"])
+
+        if "vertical_offset" in config:
+            self.scope.set_vertical_offset(channel_index, config["vertical_offset"])
 
         logger.debug(f"通道{channel_index + 1}配置已更新")
 
@@ -291,9 +408,60 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.scope.set_time_offset(value)
         self.cfg.set("display.time_offset", value)
 
+    def on_scope_time_base_changed(self, value: float):
+        """示波器时基改变处理（来自鼠标滚轮）"""
+        # 更新UI控件，避免循环调用
+        if hasattr(self, "doubleSpinBox"):
+            self.doubleSpinBox.blockSignals(True)
+            self.doubleSpinBox.setValue(value)
+            self.doubleSpinBox.blockSignals(False)
+
+        # 保存到配置
+        self.cfg.set('display.time_base_div', value)
+
+    def on_scope_time_offset_changed(self, value: float):
+        """示波器时间偏移改变处理（来自鼠标拖拽）"""
+        # 更新UI控件，避免循环调用
+        if hasattr(self, "doubleSpinBox_2"):
+            self.doubleSpinBox_2.blockSignals(True)
+            self.doubleSpinBox_2.setValue(value)
+            self.doubleSpinBox_2.blockSignals(False)
+
+        # 保存到配置
+        self.cfg.set('display.time_offset', value)
+
+    def on_scope_vertical_div_changed(self, channel: int, value: float):
+        """示波器垂直挡位改变处理（来自Ctrl+滚轮）"""
+        # 更新通道配置
+        if 0 <= channel < len(self.channel_configs):
+            config_widget = self.channel_configs[channel]
+            config_widget.vertical_div_spinbox.blockSignals(True)
+            config_widget.vertical_div_spinbox.setValue(value)
+            config_widget.vertical_div_spinbox.blockSignals(False)
+
+        # 保存到配置
+        ch_config = self.cfg.get_channel_config(channel)
+        ch_config['vertical_div'] = value
+        self.cfg.set_channel_config(channel, ch_config)
+
+    def on_scope_vertical_offset_changed(self, channel: int, value: float):
+        """示波器垂直偏移改变处理（来自Ctrl+拖拽）"""
+        # 更新通道配置
+        if 0 <= channel < len(self.channel_configs):
+            config_widget = self.channel_configs[channel]
+            config_widget.vertical_offset_spinbox.blockSignals(True)
+            config_widget.vertical_offset_spinbox.setValue(value)
+            config_widget.vertical_offset_spinbox.blockSignals(False)
+
+        # 保存到配置
+        ch_config = self.cfg.get_channel_config(channel)
+        ch_config['vertical_offset'] = value
+        self.cfg.set_channel_config(channel, ch_config)
+
     def on_sample_received(self, fmt: int, values: list):
         """接收到采样数据处理"""
         try:
+            # fmt: 0 for uint16, 1 for float32 (当前都作为float处理)
             # 添加到缓冲区
             for ch in range(min(self.buffer.n_channels, len(values))):
                 sample_value = float(values[ch])

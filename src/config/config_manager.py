@@ -233,6 +233,11 @@ class ConfigManager:
     def grid_enabled(self) -> bool:
         """是否显示网格"""
         return self.get('display.grid_enabled', True)
+
+    @property
+    def sample_rate(self) -> float:
+        """采样频率 (Hz)"""
+        return self.get('display.sample_rate', 1000.0)
     
     def get_channel_config(self, channel_index: int) -> Dict[str, Any]:
         """
