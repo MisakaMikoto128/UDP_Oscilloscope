@@ -78,9 +78,17 @@ class ScopeView(QtWidgets.QWidget):
 
     def _setup_interactions(self):
         """设置鼠标和键盘交互"""
-        # 安装事件过滤器
-        self.plot_item.scene().installEventFilter(self)
-        self.plot_item.vb.installEventFilter(self)
+        # 设置焦点策略，确保能接收键盘事件
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.graphics_widget.setFocusPolicy(QtCore.Qt.StrongFocus)
+
+        # 安装事件过滤器到正确的widget
+        self.graphics_widget.installEventFilter(self)
+        self.installEventFilter(self)
+
+        # 启用鼠标跟踪
+        self.graphics_widget.setMouseTracking(True)
+        self.setMouseTracking(True)
 
         # 记录鼠标状态
         self._mouse_pressed = False
@@ -89,22 +97,141 @@ class ScopeView(QtWidgets.QWidget):
 
     def eventFilter(self, obj, event):
         """事件过滤器，处理自定义鼠标和键盘交互"""
+        # 调试：打印事件类型
+        if hasattr(event, 'type'):
+            event_type = event.type()
+            # 只处理我们关心的事件类型
+            if event_type in [QtCore.QEvent.KeyPress, QtCore.QEvent.KeyRelease,
+                             QtCore.QEvent.Wheel, QtCore.QEvent.MouseButtonPress,
+                             QtCore.QEvent.MouseMove, QtCore.QEvent.MouseButtonRelease]:
+                print(f"Event type: {event_type}, obj: {type(obj).__name__}")
+
         if event.type() == QtCore.QEvent.KeyPress:
             if event.key() == QtCore.Qt.Key_Control:
                 self._ctrl_pressed = True
+                print("Ctrl pressed")
+                return True
         elif event.type() == QtCore.QEvent.KeyRelease:
             if event.key() == QtCore.Qt.Key_Control:
                 self._ctrl_pressed = False
+                print("Ctrl released")
+                return True
         elif event.type() == QtCore.QEvent.Wheel:
+            print("Wheel event detected")
             return self._handle_wheel_event(event)
-        elif event.type() == QtCore.QEvent.GraphicsSceneMousePress:
+        elif event.type() == QtCore.QEvent.MouseButtonPress:
+            print("Mouse press detected")
             return self._handle_mouse_press(event)
-        elif event.type() == QtCore.QEvent.GraphicsSceneMouseMove:
-            return self._handle_mouse_move(event)
-        elif event.type() == QtCore.QEvent.GraphicsSceneMouseRelease:
+        elif event.type() == QtCore.QEvent.MouseMove:
+            if self._mouse_pressed:
+                print("Mouse move detected")
+                return self._handle_mouse_move(event)
+        elif event.type() == QtCore.QEvent.MouseButtonRelease:
+            print("Mouse release detected")
             return self._handle_mouse_release(event)
 
         return super().eventFilter(obj, event)
+
+    def wheelEvent(self, event):
+        """重写滚轮事件处理"""
+        print(f"Wheel event in wheelEvent: delta={event.angleDelta().y()}, ctrl={self._ctrl_pressed}")
+
+        if self._ctrl_pressed:
+            # Ctrl + 滚轮：垂直缩放当前通道
+            delta = event.angleDelta().y()
+            scale_factor = 1.1 if delta > 0 else 1.0 / 1.1
+
+            current_div = self.vertical_divs[self.current_channel]
+            new_div = current_div * scale_factor
+
+            # 限制缩放范围
+            new_div = max(0.001, min(1000.0, new_div))
+
+            if new_div != current_div:
+                self.vertical_divs[self.current_channel] = new_div
+                self.verticalDivChanged.emit(self.current_channel, new_div)
+                self._update_display()
+                print(f"Vertical scale changed: CH{self.current_channel+1} = {new_div}")
+        else:
+            # 普通滚轮：水平缩放（时基）
+            delta = event.angleDelta().y()
+            scale_factor = 1.1 if delta > 0 else 1.0 / 1.1
+
+            new_time_base = self.time_base * scale_factor
+
+            # 限制时基范围
+            new_time_base = max(0.001, min(1000.0, new_time_base))
+
+            if new_time_base != self.time_base:
+                self.time_base = new_time_base
+                self.timeBaseChanged.emit(new_time_base)
+                self._update_time_axis()
+                print(f"Time base changed: {new_time_base} ms/div")
+
+        event.accept()
+
+    def keyPressEvent(self, event):
+        """重写键盘按下事件"""
+        if event.key() == QtCore.Qt.Key_Control:
+            self._ctrl_pressed = True
+            print("Ctrl pressed in keyPressEvent")
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        """重写键盘释放事件"""
+        if event.key() == QtCore.Qt.Key_Control:
+            self._ctrl_pressed = False
+            print("Ctrl released in keyReleaseEvent")
+        super().keyReleaseEvent(event)
+
+    def mousePressEvent(self, event):
+        """重写鼠标按下事件"""
+        if event.button() == QtCore.Qt.LeftButton:
+            self._mouse_pressed = True
+            self._last_mouse_pos = event.pos()
+            print(f"Mouse pressed at {event.pos()}")
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        """重写鼠标移动事件"""
+        if self._mouse_pressed and self._last_mouse_pos is not None:
+            current_pos = event.pos()
+            delta_x = current_pos.x() - self._last_mouse_pos.x()
+            delta_y = current_pos.y() - self._last_mouse_pos.y()
+
+            if self._ctrl_pressed:
+                # Ctrl + 拖拽：垂直偏移当前通道
+                sensitivity = 0.01
+                y_delta = delta_y * sensitivity
+
+                current_offset = self.vertical_offsets[self.current_channel]
+                new_offset = current_offset - y_delta
+
+                self.vertical_offsets[self.current_channel] = new_offset
+                self.verticalOffsetChanged.emit(self.current_channel, new_offset)
+                self._update_display()
+                print(f"Vertical offset changed: CH{self.current_channel+1} = {new_offset}")
+            else:
+                # 普通拖拽：水平偏移
+                sensitivity = 0.001
+                x_delta = delta_x * sensitivity
+
+                new_offset = self.time_offset - x_delta
+                self.time_offset = new_offset
+                self.timeOffsetChanged.emit(new_offset)
+                self._update_time_axis()
+                print(f"Time offset changed: {new_offset}")
+
+            self._last_mouse_pos = current_pos
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """重写鼠标释放事件"""
+        if event.button() == QtCore.Qt.LeftButton:
+            self._mouse_pressed = False
+            self._last_mouse_pos = None
+            print("Mouse released")
+        super().mouseReleaseEvent(event)
 
     def _handle_wheel_event(self, event):
         """处理鼠标滚轮事件"""
@@ -144,57 +271,49 @@ class ScopeView(QtWidgets.QWidget):
         """处理鼠标按下事件"""
         if event.button() == QtCore.Qt.LeftButton:
             self._mouse_pressed = True
-            self._last_mouse_pos = event.scenePos()
-        return False
+            self._last_mouse_pos = event.pos()
+        return True
 
     def _handle_mouse_move(self, event):
         """处理鼠标移动事件"""
         if self._mouse_pressed and self._last_mouse_pos is not None:
-            current_pos = event.scenePos()
-            delta = current_pos - self._last_mouse_pos
+            current_pos = event.pos()
+            delta_x = current_pos.x() - self._last_mouse_pos.x()
+            delta_y = current_pos.y() - self._last_mouse_pos.y()
 
             if self._ctrl_pressed:
                 # Ctrl + 拖拽：垂直偏移当前通道
-                # 将像素移动转换为数据单位
-                view_box = self.plot_item.vb
-                y_range = view_box.viewRange()[1]
-                y_span = y_range[1] - y_range[0]
-                view_height = view_box.height()
+                # 简化的像素到数据单位转换
+                sensitivity = 0.01  # 调整灵敏度
+                y_delta = delta_y * sensitivity
 
-                if view_height > 0:
-                    y_delta = (delta.y() / view_height) * y_span
+                current_offset = self.vertical_offsets[self.current_channel]
+                new_offset = current_offset - y_delta  # 反向，符合直觉
 
-                    current_offset = self.vertical_offsets[self.current_channel]
-                    new_offset = current_offset - y_delta  # 反向，符合直觉
-
-                    self.vertical_offsets[self.current_channel] = new_offset
-                    self.verticalOffsetChanged.emit(self.current_channel, new_offset)
-                    self._update_display()
+                self.vertical_offsets[self.current_channel] = new_offset
+                self.verticalOffsetChanged.emit(self.current_channel, new_offset)
+                self._update_display()
             else:
                 # 普通拖拽：水平偏移（只允许水平方向）
-                view_box = self.plot_item.vb
-                x_range = view_box.viewRange()[0]
-                x_span = x_range[1] - x_range[0]
-                view_width = view_box.width()
+                # 简化的像素到时间单位转换
+                sensitivity = 0.001  # 调整灵敏度
+                x_delta = delta_x * sensitivity
 
-                if view_width > 0:
-                    x_delta = (delta.x() / view_width) * x_span
-
-                    new_offset = self.time_offset - x_delta  # 反向，符合直觉
-                    self.time_offset = new_offset
-                    self.timeOffsetChanged.emit(new_offset)
-                    self._update_time_axis()
+                new_offset = self.time_offset - x_delta  # 反向，符合直觉
+                self.time_offset = new_offset
+                self.timeOffsetChanged.emit(new_offset)
+                self._update_time_axis()
 
             self._last_mouse_pos = current_pos
 
-        return False
+        return True
 
     def _handle_mouse_release(self, event):
         """处理鼠标释放事件"""
         if event.button() == QtCore.Qt.LeftButton:
             self._mouse_pressed = False
             self._last_mouse_pos = None
-        return False
+        return True
 
     def _update_display(self):
         """更新显示（重新绘制所有曲线）"""
@@ -205,18 +324,19 @@ class ScopeView(QtWidgets.QWidget):
         """更新时间轴显示"""
         # 计算X轴范围
         if self.auto_roll:
-            # 滚动模式：X轴原点在最右侧
-            x_span = self.max_points_window / self.sample_rate  # 显示时间跨度（秒）
+            # 滚动模式：X轴原点在最右侧，显示最近的数据
+            x_span = 10 * (self.time_base / 1000.0)  # 10个时基格，转换为秒
             x_max = 0  # 最新数据在X=0位置
             x_min = -x_span
         else:
-            # 非滚动模式：根据时基和偏移计算
+            # 非滚动模式：X轴原点保持在0，可以偏移观察
             x_span = 10 * (self.time_base / 1000.0)  # 10个时基格，转换为秒
-            x_center = self.time_offset
+            x_center = self.time_offset  # 使用偏移值
             x_min = x_center - x_span / 2
             x_max = x_center + x_span / 2
 
         self.plot_item.setXRange(x_min, x_max, padding=0)
+        print(f"Time axis updated: [{x_min:.3f}, {x_max:.3f}], auto_roll={self.auto_roll}")
 
     def set_sample_rate(self, rate: float):
         """设置采样频率"""
@@ -231,7 +351,17 @@ class ScopeView(QtWidgets.QWidget):
     def set_auto_roll(self, enabled: bool):
         """设置自动滚动模式"""
         self.auto_roll = enabled
+
+        # 切换模式时重置偏移
+        if enabled:
+            # 进入滚动模式，重置偏移
+            self.time_offset = 0.0
+        else:
+            # 退出滚动模式，保持当前位置为中心
+            self.time_offset = 0.0
+
         self._update_time_axis()
+        print(f"Auto roll set to {enabled}, time_offset reset to {self.time_offset}")
     
     def _setup_ui(self):
         """设置UI布局"""

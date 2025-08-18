@@ -202,21 +202,45 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def _setup_channel_tab_layout(self):
         """设置通道标签页布局"""
-        # 获取现有布局
-        layout = self.tab_ch.layout()
+        # 清除现有布局
+        if hasattr(self.tab_ch, 'layout') and self.tab_ch.layout():
+            QtWidgets.QWidget().setLayout(self.tab_ch.layout())
 
-        # 隐藏所有通道配置组件
-        for config in self.channel_configs:
-            config.setVisible(False)
+        # 创建滚动区域
+        scroll_area = QtWidgets.QScrollArea(self.tab_ch)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        scroll_area.setMinimumWidth(300)  # 设置最小宽度
+
+        # 创建滚动内容widget
+        scroll_content = QtWidgets.QWidget()
+        scroll_layout = QtWidgets.QVBoxLayout(scroll_content)
+        scroll_layout.setSpacing(10)
+        scroll_layout.setContentsMargins(10, 10, 10, 10)
 
         # 添加当前选中通道的配置组件
         current_channel = self.ch_setting_comboBox.currentIndex()
         if 0 <= current_channel < len(self.channel_configs):
-            self.channel_configs[current_channel].setVisible(True)
-            layout.addWidget(self.channel_configs[current_channel])
+            scroll_layout.addWidget(self.channel_configs[current_channel])
 
         # 添加光标控制
-        layout.addWidget(self.cursor_control)
+        scroll_layout.addWidget(self.cursor_control)
+
+        # 添加重新加载配置按钮
+        if hasattr(self, "reload_conf_btn"):
+            scroll_layout.addWidget(self.reload_conf_btn)
+
+        # 添加弹性空间
+        scroll_layout.addStretch()
+
+        # 设置滚动区域
+        scroll_area.setWidget(scroll_content)
+
+        # 创建主布局
+        main_layout = QtWidgets.QVBoxLayout(self.tab_ch)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.addWidget(scroll_area)
 
     def _init_global_controls(self):
         """初始化全局控制"""

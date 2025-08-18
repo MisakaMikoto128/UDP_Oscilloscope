@@ -18,26 +18,27 @@
   "display": {
     "time_base_div": 1.0,
     "time_base_unit": "ms",
-    "time_offset": 0.0,
+    "time_offset": 50.67956666254928,
     "grid_enabled": true,
     "opengl_enabled": true,
     "auto_roll": true,
-    "max_points_window": 10000
+    "max_points_window": 10000,
+    "sample_rate": 1000.0
   },
   "channels": [
     {
       "name": "CH1",
       "enabled": true,
       "color": "#FF6B6B",
-      "vertical_div": 1.1,
-      "vertical_offset": 0.0,
+      "vertical_div": 2.000000000000001,
+      "vertical_offset": -0.1,
       "unit": "V",
       "scale_factor": 1.1,
       "visible": true
     },
     {
       "name": "CH2",
-      "enabled": true,
+      "enabled": false,
       "color": "#4ECDC4",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -47,7 +48,7 @@
     },
     {
       "name": "CH3",
-      "enabled": true,
+      "enabled": false,
       "color": "#45B7D1",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -57,7 +58,7 @@
     },
     {
       "name": "CH4",
-      "enabled": true,
+      "enabled": false,
       "color": "#FFA07A",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -67,7 +68,7 @@
     },
     {
       "name": "CH5",
-      "enabled": true,
+      "enabled": false,
       "color": "#98D8C8",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -77,7 +78,7 @@
     },
     {
       "name": "CH6",
-      "enabled": true,
+      "enabled": false,
       "color": "#F7DC6F",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -87,7 +88,7 @@
     },
     {
       "name": "CH7",
-      "enabled": true,
+      "enabled": false,
       "color": "#BB8FCE",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -97,7 +98,7 @@
     },
     {
       "name": "CH8",
-      "enabled": true,
+      "enabled": false,
       "color": "#85C1E9",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -107,7 +108,7 @@
     },
     {
       "name": "CH9",
-      "enabled": true,
+      "enabled": false,
       "color": "#F8C471",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -117,7 +118,7 @@
     },
     {
       "name": "CH10",
-      "enabled": true,
+      "enabled": false,
       "color": "#82E0AA",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,

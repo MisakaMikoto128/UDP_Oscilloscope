@@ -3,3 +3,4 @@ tools/PyQt-Fluent-Widgets/*
 *.h5
 venv/*
 *.pyc
+oscilloscope.log
