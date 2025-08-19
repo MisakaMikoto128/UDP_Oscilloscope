@@ -22,13 +22,13 @@ logger = logging.getLogger(__name__)
 def test_scope_view():
     """测试示波器视图组件"""
     from PyQt5 import QtWidgets
-    from ui.scope_view import ScopeView
+    from ui.scope_view import ScopeWidget
     import numpy as np
     
     app = QtWidgets.QApplication(sys.argv)
     
     # 创建示波器视图
-    scope = ScopeView(n_channels=4, sample_rate=1000.0)
+    scope = ScopeWidget(n_channels=4, sample_rate=1000.0)
     scope.show()
     
     # 生成测试数据

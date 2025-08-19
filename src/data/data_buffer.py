@@ -77,18 +77,6 @@ class RingBuffer:
             self.write_positions[channel] = write_pos
             self.sample_counts[channel] = sample_count
     
-    def append_multi(self, values_list: list):
-        """
-        同时向多个通道添加数据
-        
-        Args:
-            values_list: 每个通道的数据值列表
-        """
-        with self._lock:
-            for channel, values in enumerate(values_list):
-                if channel < self.n_channels and values:
-                    self.append(channel, values)
-    
     def view_tail(self, channel: int, max_points: int) -> np.ndarray:
         """
         获取指定通道的最新数据视图

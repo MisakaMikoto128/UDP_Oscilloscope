@@ -102,8 +102,7 @@ class UDPReceiver:
         if self.on_sample:
             try:
                 # 将packet_type转换为格式标识: 0xA1->0, 0xA2->1
-                fmt = 0 if motor_data.packet_type == 0xA1 else 1
-                self.on_sample(fmt, motor_data.channels)
+                self.on_sample(motor_data.packet_type, motor_data.channels)
             except Exception as e:
                 logger.error(f"处理电机采样数据回调时出错: {e}")
     

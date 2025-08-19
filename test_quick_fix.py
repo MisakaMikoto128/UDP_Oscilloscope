@@ -13,13 +13,13 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 def test_scope_only():
     """只测试示波器组件"""
     from PyQt5 import QtWidgets, QtCore
-    from ui.scope_view import ScopeView
+    from ui.scope_view import ScopeWidget
     import numpy as np
     
     app = QtWidgets.QApplication(sys.argv)
     
     # 创建示波器视图
-    scope = ScopeView(n_channels=2, sample_rate=1000.0)
+    scope = ScopeWidget(n_channels=2, sample_rate=1000.0)
     scope.setWindowTitle("示波器交互测试")
     scope.resize(800, 600)
     scope.show()

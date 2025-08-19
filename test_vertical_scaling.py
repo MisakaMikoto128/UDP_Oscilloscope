@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 def test_vertical_scaling():
     """测试垂直缩放功能"""
     from PyQt5 import QtWidgets, QtCore
-    from ui.scope_view import ScopeView
+    from ui.scope_view import ScopeWidget
     import numpy as np
     
     app = QtWidgets.QApplication(sys.argv)
@@ -29,7 +29,7 @@ def test_vertical_scaling():
     layout = QtWidgets.QHBoxLayout(central_widget)
     
     # 创建示波器视图
-    scope = ScopeView(n_channels=4, sample_rate=1000.0)
+    scope = ScopeWidget(n_channels=4, sample_rate=1000.0)
     layout.addWidget(scope, 3)
     
     # 创建控制面板

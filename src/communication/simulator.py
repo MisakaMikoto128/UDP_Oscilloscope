@@ -66,7 +66,7 @@ class MotorSimulator:
         }
         
         # 时间基准
-        self.start_time = time.time()
+        self.curr_tick = 0
     
     async def start(self):
         """启动模拟器"""
@@ -115,7 +115,7 @@ class MotorSimulator:
                 self.socket.sendto(packet, (self.target_host, self.target_port))
                 
                 # 等待下次发送
-                await asyncio.sleep(self.send_interval)
+                await asyncio.sleep(0.0001)
                 
             except Exception as e:
                 logger.error(f"发送电机数据失败: {e}")
@@ -149,8 +149,6 @@ class MotorSimulator:
         Returns:
             10个通道的数据值列表
         """
-        current_time = time.time() - self.start_time
-        
         # 生成带有噪声的正弦波数据
         data = []
         
@@ -161,12 +159,12 @@ class MotorSimulator:
             offset = i * 10
             
             # 正弦波 + 噪声
-            value = (amplitude * math.sin(2 * math.pi * freq * current_time) + 
-                    offset + 
-                    random.gauss(0, amplitude * 0.05))  # 5%噪声
+            value = (amplitude * math.sin(2 * math.pi * freq * self.curr_tick) + 
+                    offset)  # 5%噪声
             
             data.append(value)
-        
+
+        self.curr_tick += 0.0001
         return data
     
     def _create_motor_packet(self, data: list, use_float: bool = True) -> bytes:
@@ -291,7 +289,7 @@ class MotorSimulator:
             'sequence': self.sequence,
             'sample_rate': self.sample_rate,
             'target': f"{self.target_host}:{self.target_port}",
-            'uptime': time.time() - self.start_time if self.running else 0
+            'uptime': time.time() - self.curr_tick if self.running else 0
         }
 
 
@@ -302,7 +300,7 @@ async def main():
     parser = argparse.ArgumentParser(description='电机控制板模拟器')
     parser.add_argument('--host', default='127.0.0.1', help='目标主机地址')
     parser.add_argument('--port', type=int, default=8888, help='目标端口')
-    parser.add_argument('--rate', type=float, default=100, help='发送频率 (Hz)')
+    parser.add_argument('--rate', type=float, default=10000, help='发送频率 (Hz)')
     
     args = parser.parse_args()
     

@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 def test_all_fixes():
     """测试所有修复"""
     from PyQt5 import QtWidgets, QtCore
-    from ui.scope_view import ScopeView
+    from ui.scope_view import ScopeWidget
     import numpy as np
 
     app = QtWidgets.QApplication(sys.argv)
@@ -38,7 +38,7 @@ def test_all_fixes():
     layout = QtWidgets.QHBoxLayout(central_widget)
 
     # 创建示波器视图
-    scope = ScopeView(n_channels=4, sample_rate=1000.0)
+    scope = ScopeWidget(n_channels=4, sample_rate=1000.0)
     layout.addWidget(scope, 3)  # 占3/4宽度
 
     # 创建控制面板
@@ -90,7 +90,7 @@ def test_all_fixes():
 
     def toggle_roll_mode():
         enabled = roll_button.isChecked()
-        scope.set_auto_roll(enabled)
+        scope.reset_time_offset(enabled)
         roll_button.setText(f"滚动模式: {'开启' if enabled else '关闭'}")
         print(f"滚动模式切换为: {'开启' if enabled else '关闭'}")
 

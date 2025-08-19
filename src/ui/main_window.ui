@@ -27,13 +27,13 @@
         </property>
         <property name="minimumSize">
          <size>
-          <width>340</width>
+          <width>550</width>
           <height>0</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>340</width>
+          <width>550</width>
           <height>16777215</height>
          </size>
         </property>
@@ -151,7 +151,7 @@
            </property>
            <property name="font">
             <font>
-             <family>Times New Roman</family>
+             <family>Segoe UI</family>
              <pointsize>12</pointsize>
             </font>
            </property>
@@ -173,13 +173,13 @@
         </property>
         <property name="minimumSize">
          <size>
-          <width>340</width>
+          <width>550</width>
           <height>0</height>
          </size>
         </property>
         <property name="maximumSize">
          <size>
-          <width>340</width>
+          <width>550</width>
           <height>16777215</height>
          </size>
         </property>
@@ -196,7 +196,26 @@
          <attribute name="title">
           <string>CH1</string>
          </attribute>
-         <layout class="QGridLayout" name="gridLayout_5"/>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="0" column="0">
+           <widget class="QScrollArea" name="ch_scroll_area">
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <widget class="QWidget" name="ch_scroll_area_contents">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>524</width>
+               <height>449</height>
+              </rect>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_2"/>
+            </widget>
+           </widget>
+          </item>
+         </layout>
         </widget>
         <widget class="QWidget" name="tab_ctrl">
          <attribute name="title">

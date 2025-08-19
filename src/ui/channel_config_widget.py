@@ -246,11 +246,6 @@ class CursorControlWidget(QtWidgets.QWidget):
         main_layout = QtWidgets.QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
         
-        # 创建滚动区域
-        scroll_area = QtWidgets.QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         
         # 创建内容widget
         content_widget = QtWidgets.QWidget()
@@ -329,12 +324,9 @@ class CursorControlWidget(QtWidgets.QWidget):
         
         # 添加弹性空间，使内容顶部对齐
         content_layout.addStretch()
-        
-        # 设置内容widget到滚动区域
-        scroll_area.setWidget(content_widget)
-        
+ 
         # 添加滚动区域到主布局
-        main_layout.addWidget(scroll_area)
+        main_layout.addWidget(content_widget)
         
         # 设置整个widget的最小尺寸
         self.setMinimumWidth(250)  # 确保有足够宽度显示所有控件
