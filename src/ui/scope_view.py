@@ -230,7 +230,7 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
         self.plot_item.setMouseEnabled(x=True, y=False)
         self.plot_item.enableAutoRange(False)
         # 6. 性能优化设置
-        self.plot_item.setDownsampling(mode="peak")  # 启用峰值下采样
+        self.plot_item.setDownsampling(auto=True, mode='peak')  # 启用峰值下采样
         self.plot_item.setClipToView(True)  # 只渲染可见区域
 
         # 设置固定的Y轴范围（专业示波器风格）
@@ -307,47 +307,33 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
             return
 
         try:
-            dt = self._dt_cache  # 使用缓存的采样间隔
+            n_points = len(data_arrays[0])
+            n = min(n_points, self.max_points_window)
+            if n == 0:
+                return
 
-            for channel, data in enumerate(data_arrays):
-                # 1. 截断
-                if len(data) > self.max_points_window:
-                    data = data[-self.max_points_window:]
-
-                data_len = len(data)
-                if data_len == 0:
-                    continue
-
-                # 生成时间轴 - 使用预分配的数组
-                if data_len != self._last_time_axis_len:
-                    # 直接生成倒序时间轴
-                    self._time_axis_cache = np.linspace(
-                        -(data_len - 1) * dt, 0, data_len, dtype=np.float32
-                    )
-                    self._last_time_axis_len = data_len
-
-                time_axis = self._time_axis_cache[:data_len]
-                # 垂直变换
-                if not hasattr(self, '_ch_bufs'):
-                    self._ch_bufs = [
-                        np.empty(self.max_points_window, dtype=np.float32)
-                        for _ in range(self.n_channels)
-                    ]
-                # 计算长度
-                n = len(data)
-                scaled_data = self._ch_bufs[channel][:n]
-
-                # 两步 in-place
-                np.multiply(data, self.vertical_scale_factors[channel], out=scaled_data)
-                np.add(scaled_data, self.vertical_offsets[channel], out=scaled_data)
-
-                # 更新曲线 - 直接传递numpy数组引用
-                self.curves[channel].setData(
-                    time_axis,
-                    scaled_data,
-                    _callSync="off",  # 异步更新
-                    skipFiniteCheck=True,  # 跳过检查
+            # 1) 时间轴（只算一次）
+            if n != self._last_time_axis_len:
+                self._time_axis_cache = np.linspace(
+                    -(n - 1) * self._dt_cache, 0, n, dtype=np.float32
                 )
+                self._last_time_axis_len = n
+            t = self._time_axis_cache
+
+            # 2) 叠成 (n_channels, n) 连续数组
+            stacked = np.vstack([d[-n:] for d in data_arrays]).astype(np.float32)
+
+            # 3) 垂直变换（广播）
+            scale  = np.array(self.vertical_scale_factors,  dtype=np.float32)[:, None]
+            offset = np.array(self.vertical_offsets,       dtype=np.float32)[:, None]
+            stacked *= scale
+            stacked += offset
+
+            # 4) 逐通道更新（仍保留 self.curves 列表，对外 API 不变）
+            for ch, curve in enumerate(self.curves):
+                curve.setData(t, stacked[ch],
+                            _callSync="off",
+                            skipFiniteCheck=True)
 
         except Exception as e:
             logger.error(f"更新波形显示时出错: {e}")
