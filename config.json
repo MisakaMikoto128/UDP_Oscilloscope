@@ -16,7 +16,7 @@
     "persistent_path": "data/oscilloscope_data.h5"
   },
   "display": {
-    "time_base_div": 0.29000000000000015,
+    "time_base_div": 0.4700000000000002,
     "time_base_unit": "ms",
     "time_offset": 0,
     "grid_enabled": true,
@@ -30,18 +30,18 @@
       "name": "CH1",
       "enabled": true,
       "color": "#FF6B6B",
-      "vertical_div": 41.66666666666666,
-      "vertical_offset": 0.40000000000000024,
+      "vertical_div": 76.92307692307692,
+      "vertical_offset": -2.9000000000000012,
       "unit": "V",
       "scale_factor": 1.1,
       "visible": true
     },
     {
       "name": "CH2",
-      "enabled": false,
+      "enabled": true,
       "color": "#4ECDC4",
-      "vertical_div": 1.0,
-      "vertical_offset": 2.1000000000000005,
+      "vertical_div": 43.29004329004327,
+      "vertical_offset": 1.4,
       "unit": "V",
       "scale_factor": 1.0,
       "visible": true

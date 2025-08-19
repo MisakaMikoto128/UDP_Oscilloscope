@@ -105,7 +105,7 @@ class MotorSimulator:
         """发送电机数据任务"""
         while self.running:
             try:
-                for i in range(101):
+                for i in range(101000000000):
                     # 生成模拟数据
                     motor_data = self._generate_motor_data()
                     

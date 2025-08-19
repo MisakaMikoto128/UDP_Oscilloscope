@@ -14,9 +14,6 @@ from config.config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 
-# 启用OpenGL加速
-pg.setConfigOptions(useOpenGL=True)
-
 
 class ScopeWidget(pg.GraphicsLayoutWidget):
     """
@@ -232,6 +229,9 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
         # 禁用默认的鼠标交互
         self.plot_item.setMouseEnabled(x=True, y=False)
         self.plot_item.enableAutoRange(False)
+        # 6. 性能优化设置
+        self.plot_item.setDownsampling(mode="peak")  # 启用峰值下采样
+        self.plot_item.setClipToView(True)  # 只渲染可见区域
 
         # 设置固定的Y轴范围（专业示波器风格）
         self.plot_item.setYRange(-5, 5)  # 10个垂直格，每格1单位
@@ -257,7 +257,12 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
             color = colors[i % len(colors)]
             pen = pg.mkPen(color=color, width=2)
 
-            curve = self.plot_item.plot(pen=pen, name=f"CH{i + 1}", antialias=True)
+            curve = self.plot_item.plot(
+                pen=pen,
+                skipFiniteCheck=True,  # 跳过有限值检查 - 重要优化！
+                antialias=False,
+                name=f"CH{i + 1}",
+            )
             self.curves.append(curve)
 
     def set_channel_pen(self, channel: int, color_or_pen):
@@ -328,8 +333,11 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
 
                 # 更新曲线 - 直接传递numpy数组引用
                 self.curves[channel].setData(
-                    time_axis, scaled_data, _callSync="off"
-                )  # 异步更新提升性能
+                    time_axis,
+                    scaled_data,
+                    _callSync="off",  # 异步更新
+                    skipFiniteCheck=True,  # 跳过检查
+                )
 
         except Exception as e:
             logger.error(f"更新波形显示时出错: {e}")
