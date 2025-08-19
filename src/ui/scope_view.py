@@ -310,27 +310,36 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
             dt = self._dt_cache  # 使用缓存的采样间隔
 
             for channel, data in enumerate(data_arrays):
-                # 限制显示点数 - 使用切片避免复制
+                # 1. 截断
                 if len(data) > self.max_points_window:
-                    data = data[-self.max_points_window :]
-                    data_len = self.max_points_window
-                else:
-                    data_len = len(data)
+                    data = data[-self.max_points_window:]
+
+                data_len = len(data)
+                if data_len == 0:
+                    continue
 
                 # 生成时间轴 - 使用预分配的数组
                 if data_len != self._last_time_axis_len:
-                    # 只有长度变化时才重新计算时间轴
-                    time_indices = np.arange(data_len, dtype=np.float32)
-                    self._time_axis_cache = time_indices * (-dt)
-                    self._time_axis_cache = self._time_axis_cache[::-1]
+                    # 直接生成倒序时间轴
+                    self._time_axis_cache = np.linspace(
+                        -(data_len - 1) * dt, 0, data_len, dtype=np.float32
+                    )
                     self._last_time_axis_len = data_len
 
                 time_axis = self._time_axis_cache[:data_len]
                 # 垂直变换
-                scaled_data = (
-                    data * self.vertical_scale_factors[channel]
-                    + self.vertical_offsets[channel]
-                )
+                if not hasattr(self, '_ch_bufs'):
+                    self._ch_bufs = [
+                        np.empty(self.max_points_window, dtype=np.float32)
+                        for _ in range(self.n_channels)
+                    ]
+                # 计算长度
+                n = len(data)
+                scaled_data = self._ch_bufs[channel][:n]
+
+                # 两步 in-place
+                np.multiply(data, self.vertical_scale_factors[channel], out=scaled_data)
+                np.add(scaled_data, self.vertical_offsets[channel], out=scaled_data)
 
                 # 更新曲线 - 直接传递numpy数组引用
                 self.curves[channel].setData(
