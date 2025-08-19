@@ -318,14 +318,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.scope_widget.verticalOffsetChanged.connect(self.on_scope_vertical_offset_changed)
 
         # 重新加载配置
-        if hasattr(self, "reload_conf_btn"):
-            self.reload_conf_btn.clicked.connect(self.reload_configuration)
+        self.reload_conf_btn.clicked.connect(self.reload_configuration)
 
         # 时基控制
-        if hasattr(self, "doubleSpinBox"):
-            self.hori_div_spinbox.valueChanged.connect(self.on_time_base_changed)
-        if hasattr(self, "doubleSpinBox_2"):
-            self.hori_div_offset_spinbox.valueChanged.connect(self.on_time_offset_changed)
+        self.hori_div_spinbox.valueChanged.connect(self.on_time_base_changed)
+        self.hori_div_offset_spinbox.valueChanged.connect(self.on_time_offset_changed)
 
     def _load_configuration(self):
         """加载配置到UI"""
