@@ -85,12 +85,13 @@ class ChannelConfigWidget(QtWidgets.QWidget):
         self.enabled_checkbox = QtWidgets.QCheckBox("启用通道")
         layout.addRow(self.enabled_checkbox)
 
+        unit = self.config.get("unit", "V")
         # 垂直挡位
         self.vertical_div_spinbox = QtWidgets.QDoubleSpinBox()
         self.vertical_div_spinbox.setRange(0.001, 1000.0)
         self.vertical_div_spinbox.setDecimals(3)
         self.vertical_div_spinbox.setSingleStep(0.1)
-        self.vertical_div_spinbox.setSuffix(" /div")
+        self.vertical_div_spinbox.setSuffix(f" {unit}/div")
         layout.addRow("垂直挡位:", self.vertical_div_spinbox)
 
         # 垂直偏移
@@ -98,6 +99,7 @@ class ChannelConfigWidget(QtWidgets.QWidget):
         self.vertical_offset_spinbox.setRange(-1000.0, 1000.0)
         self.vertical_offset_spinbox.setDecimals(3)
         self.vertical_offset_spinbox.setSingleStep(0.1)
+        self.vertical_offset_spinbox.setSuffix(f" {unit}")
         layout.addRow("垂直偏移:", self.vertical_offset_spinbox)
 
         # 单位选择
@@ -189,7 +191,9 @@ class ChannelConfigWidget(QtWidgets.QWidget):
                 "visible": self.visible_checkbox.isChecked(),
             }
         )
-
+        unit = self.unit_combobox.currentText()
+        self.vertical_div_spinbox.setSuffix(f" {unit}/div")
+        self.vertical_offset_spinbox.setSuffix(f" {unit}")
         self.configChanged.emit(self.channel_index, self.config.copy())
 
     def update_statistics(self, stats: Dict[str, float]):
