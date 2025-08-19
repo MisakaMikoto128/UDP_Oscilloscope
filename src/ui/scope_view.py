@@ -10,6 +10,7 @@ import numpy as np
 from PyQt5 import QtWidgets, QtCore, QtGui
 from typing import List, Optional, Tuple, Callable
 import logging
+from config.config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,13 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
     shiftWheelEvent = QtCore.pyqtSignal(int)  # SHIFT+滚轮事件 (delta)
     normalWheelEvent = QtCore.pyqtSignal(int)  # SHIFT+滚轮事件 (delta)
 
-    def __init__(self, n_channels: int = 10, sample_rate: float = 1000.0, parent=None):
+    def __init__(
+        self,
+        n_channels: int = 10,
+        sample_rate: float = 1000.0,
+        cfg: ConfigManager = None,
+        parent=None,
+    ):
         """
         初始化示波器视图
 
@@ -50,8 +57,10 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
         """
         super().__init__(parent)
 
+        self.cfg: ConfigManager = cfg
         self.n_channels = n_channels
         self.sample_rate = sample_rate  # 采样频率
+        logger.info(f"ScopeWidget 设置采样频率为：{sample_rate:.2f}Hz")
         self.max_points_window = 60000  # 窗口最大显示点数
 
         # 通道数据和曲线
@@ -65,7 +74,7 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
         self.cursor_values = {"x1": 0.0, "x2": -0.1, "y1": 0.0, "y2": -0.1}
 
         # 显示参数
-        self.x_spin = 0.1 #0.1s
+        self.x_spin = 0.1  # 0.1s
         self.x_offset = 0.0  # 0s
         self.vertical_divs = [100.0] * n_channels  # 1unit/div for each channel
         self.vertical_offsets = [0.0] * n_channels
@@ -200,9 +209,7 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
         """设置自动滚动模式"""
         # 进入滚动模式，重置偏移
         self.x_offset = 0.0
-        logger.info(
-            f"Auto roll set to {enabled}, time_offset reset to {self.x_offset}"
-        )
+        logger.info(f"Auto roll set to {enabled}, time_offset reset to {self.x_offset}")
 
     def _setup_ui(self):
         """设置UI布局"""
@@ -458,13 +465,16 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
                     0 if "x" in cursor_name else 1
                 ]
 
+        curr_vertical_divs = self.vertical_divs[self.current_channel]
+
         return {
             "x1": self.cursor_values["x1"],
             "x2": self.cursor_values["x2"],
-            "y1": self.cursor_values["y1"],
-            "y2": self.cursor_values["y2"],
+            "y1": self.cursor_values["y1"] * curr_vertical_divs,
+            "y2": self.cursor_values["y2"] * curr_vertical_divs,
             "dx": (self.cursor_values["x2"] - self.cursor_values["x1"]),
-            "dy": (self.cursor_values["y2"] - self.cursor_values["y1"]),
+            "dy": (self.cursor_values["y2"] - self.cursor_values["y1"])
+            * curr_vertical_divs,
             "frequency": 1.0 / abs(self.cursor_values["x2"] - self.cursor_values["x1"])
             if abs(self.cursor_values["x2"] - self.cursor_values["x1"]) > 0
             else 0.0,

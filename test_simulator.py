@@ -37,7 +37,7 @@ async def main():
     )
     
     # 设置发送频率
-    simulator.set_sample_rate(10000)  # 100Hz
+    simulator.set_sample_rate(1000)  # 100Hz
     
     try:
         print("启动模拟器...")

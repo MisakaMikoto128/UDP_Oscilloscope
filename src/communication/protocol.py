@@ -48,8 +48,8 @@ class ConfigData:
 class ParsedPacket:
     """解析后的数据包"""
     sequence: int
-    motor_data: Optional[MotorSampleData] = None
-    config_data: Optional[ConfigData] = None
+    motor_data: Optional[List[MotorSampleData]] = None
+    config_datas: Optional[List[ConfigData]] = None
 
 
 class ProtocolParser:
@@ -76,10 +76,7 @@ class ProtocolParser:
         packets = []
         
         while len(self.buffer) >= 6:  # 最小包头大小
-            packet = self._try_parse_packet()
-            if packet is None:
-                break
-            packets.append(packet)
+            packets = self._try_parse_packet()
             
         return packets
     
@@ -131,10 +128,9 @@ class ProtocolParser:
         self._update_statistics(sequence)
         
         # 解析子数据包
-        parsed_packet = ParsedPacket(sequence=sequence)
-        self._parse_sub_packets(payload, parsed_packet)
+        parsed_packets = self._parse_sub_packets(payload)
         
-        return parsed_packet
+        return parsed_packets
     
     def _find_header(self) -> int:
         """查找包头位置"""
@@ -166,10 +162,11 @@ class ProtocolParser:
         
         self.last_sequence = sequence
     
-    def _parse_sub_packets(self, payload: bytes, parsed_packet: ParsedPacket):
+    def _parse_sub_packets(self, payload: bytes):
         """解析子数据包"""
         offset = 0
-        
+        parsed_packets = []
+
         while offset < len(payload):
             if offset >= len(payload):
                 break
@@ -179,7 +176,7 @@ class ProtocolParser:
             if packet_type == PACKET_TYPE_MOTOR_U16:
                 motor_data = self._parse_motor_u16(payload[offset:])
                 if motor_data:
-                    parsed_packet.motor_data = motor_data
+                    parsed_packets.append(motor_data)
                     offset += MOTOR_U16_PACKET_SIZE
                 else:
                     break
@@ -187,7 +184,7 @@ class ProtocolParser:
             elif packet_type == PACKET_TYPE_MOTOR_F32:
                 motor_data = self._parse_motor_f32(payload[offset:])
                 if motor_data:
-                    parsed_packet.motor_data = motor_data
+                    parsed_packets.append(motor_data)
                     offset += MOTOR_F32_PACKET_SIZE
                 else:
                     break
@@ -195,13 +192,15 @@ class ProtocolParser:
             elif packet_type in (PACKET_TYPE_CONFIG_DOWN, PACKET_TYPE_CONFIG_UP):
                 config_data = self._parse_config(payload[offset:])
                 if config_data:
-                    parsed_packet.config_data = config_data
+                    parsed_packets.append(config_data)
                     offset += CONFIG_PACKET_SIZE
                 else:
                     break
             else:
                 logger.warning(f"未知数据包类型: 0x{packet_type:02X}")
                 break
+        
+        return parsed_packets
     
     def _parse_motor_u16(self, data: bytes) -> Optional[MotorSampleData]:
         """解析uint16电机采样数据"""

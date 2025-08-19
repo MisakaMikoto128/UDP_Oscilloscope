@@ -6,8 +6,14 @@ UDP接收器模块
 
 import asyncio
 import logging
+from typing import Optional, List, Tuple, Dict, Any
 from typing import Callable, Optional, Any
 from communication.protocol import ProtocolParser, MotorSampleData, ConfigData
+PACKET_TYPE_MOTOR_U16 = 0xA1
+PACKET_TYPE_MOTOR_F32 = 0xA2
+PACKET_TYPE_CONFIG_DOWN = 0xF3
+PACKET_TYPE_CONFIG_UP = 0xF4
+
 import socket
 logger = logging.getLogger(__name__)
 
@@ -87,12 +93,14 @@ class UDPReceiver:
             
             for packet in packets:
                 # 处理电机采样数据
-                if packet.motor_data:
-                    self._handle_motor_data(packet.motor_data)
+                if packet.packet_type == PACKET_TYPE_MOTOR_U16 or \
+                    packet.packet_type == PACKET_TYPE_MOTOR_F32:
+                    self._handle_motor_data(packet)
                 
                 # 处理配置数据
-                if packet.config_data:
-                    self._handle_config_data(packet.config_data)
+                if packet.packet_type == PACKET_TYPE_CONFIG_DOWN or \
+                    packet.packet_type == PACKET_TYPE_CONFIG_UP:
+                    self._handle_config_data(packet)
                     
         except Exception as e:
             logger.error(f"处理UDP数据时出错: {e}")

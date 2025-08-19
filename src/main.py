@@ -74,6 +74,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.scope_widget = ScopeWidget(
             n_channels=len(ch_defs),
             sample_rate=self.cfg.sample_rate,
+            cfg=self.cfg,
             parent=self.centralwidget
         )
 
@@ -103,6 +104,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.scope_widget.set_vertical_scale(
                 i,
                 ch_config.get('vertical_div', 1.0),
+            )
+            self.scope_widget.set_vertical_offset(
+                i,
                 ch_config.get('vertical_offset', 0.0)
             )
 
@@ -119,7 +123,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.channel_configs.append(config_widget)
 
         # 创建光标控制组件
-        self.cursor_control = CursorControlWidget()
+        self.cursor_control = CursorControlWidget(ch_defs, self.scope_widget)
 
         # 获取现有布局
         layout = self.ch_scroll_area_contents.layout()

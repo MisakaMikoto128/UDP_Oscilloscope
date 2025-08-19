@@ -105,18 +105,21 @@ class MotorSimulator:
         """发送电机数据任务"""
         while self.running:
             try:
-                # 生成模拟数据
-                motor_data = self._generate_motor_data()
+                for i in range(101):
+                    # 生成模拟数据
+                    motor_data = self._generate_motor_data()
+                    
+                    # 创建数据包
+                    packet = self._create_motor_packet(motor_data)
+                    
+                    # 发送数据包
+                    self.socket.sendto(packet, (self.target_host, self.target_port))
+                    
+                    # 等待下次发送
+                    await asyncio.sleep(self.send_interval)
                 
-                # 创建数据包
-                packet = self._create_motor_packet(motor_data)
-                
-                # 发送数据包
-                self.socket.sendto(packet, (self.target_host, self.target_port))
-                
-                # 等待下次发送
-                await asyncio.sleep(0.0001)
-                
+                exit(0)
+
             except Exception as e:
                 logger.error(f"发送电机数据失败: {e}")
                 await asyncio.sleep(1.0)
@@ -192,7 +195,7 @@ class MotorSimulator:
         
         # 打包子数据包
         sub_packet = struct.pack(format_str, *values)
-        
+
         # 创建主数据包
         return self._create_main_packet(sub_packet)
     
