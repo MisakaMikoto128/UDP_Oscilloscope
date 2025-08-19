@@ -16,7 +16,7 @@
     "persistent_path": "data/oscilloscope_data.h5"
   },
   "display": {
-    "time_base_div": 0.4700000000000002,
+    "time_base_div": 0.3300000000000002,
     "time_base_unit": "ms",
     "time_offset": 0,
     "grid_enabled": true,
@@ -31,7 +31,7 @@
       "enabled": true,
       "color": "#FF6B6B",
       "vertical_div": 76.92307692307692,
-      "vertical_offset": -2.9000000000000012,
+      "vertical_offset": -0.8999999999999997,
       "unit": "V",
       "scale_factor": 1.1,
       "visible": true

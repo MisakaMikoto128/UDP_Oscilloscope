@@ -253,11 +253,12 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
             "#82E0AA",
         ]
 
+        plot_item: pg.ViewBox = self.plot_item
         for i in range(self.n_channels):
             color = colors[i % len(colors)]
             pen = pg.mkPen(color=color, width=2)
 
-            curve = self.plot_item.plot(
+            curve = plot_item.plot(
                 pen=pen,
                 skipFiniteCheck=True,  # 跳过有限值检查 - 重要优化！
                 antialias=False,
@@ -473,16 +474,17 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
                     0 if "x" in cursor_name else 1
                 ]
 
-        curr_vertical_divs = self.vertical_divs[self.current_channel]
+        curr_vertical_div = self.vertical_divs[self.current_channel]
+        curr_vertical_offset = self.vertical_offsets[self.current_channel]
 
         return {
             "x1": self.cursor_values["x1"],
             "x2": self.cursor_values["x2"],
-            "y1": self.cursor_values["y1"] * curr_vertical_divs,
-            "y2": self.cursor_values["y2"] * curr_vertical_divs,
+            "y1": (self.cursor_values["y1"] - curr_vertical_offset) * curr_vertical_div,
+            "y2": (self.cursor_values["y2"] - curr_vertical_offset) * curr_vertical_div,
             "dx": (self.cursor_values["x2"] - self.cursor_values["x1"]),
             "dy": (self.cursor_values["y2"] - self.cursor_values["y1"])
-            * curr_vertical_divs,
+            * curr_vertical_div,
             "frequency": 1.0 / abs(self.cursor_values["x2"] - self.cursor_values["x1"])
             if abs(self.cursor_values["x2"] - self.cursor_values["x1"]) > 0
             else 0.0,
