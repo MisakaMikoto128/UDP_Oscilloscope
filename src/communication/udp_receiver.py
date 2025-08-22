@@ -58,6 +58,14 @@ class UDPReceiver:
                 family=socket.AF_INET  # 强制IPv4
             )
 
+            # 获取socket并设置更大的接收缓冲区
+            sock = self.transport.get_extra_info('socket')
+            # 设置接收缓冲区为50MB
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024*1024*50)
+            
+            # 可选：设置发送缓冲区
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1024*1024)
+
             # 获取实际绑定的地址
             sockname = self.transport.get_extra_info('sockname')
             logger.info(f"UDP接收器已启动，实际绑定地址: {sockname}")
