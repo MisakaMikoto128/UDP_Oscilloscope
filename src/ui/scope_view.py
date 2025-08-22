@@ -10,6 +10,7 @@ import numpy as np
 from PyQt5 import QtWidgets, QtCore, QtGui
 from typing import List, Optional, Tuple, Callable
 import logging
+import time
 from config.config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
@@ -128,7 +129,7 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
         else:
             # 普通滚轮：默认行为或自定义处理
             self.normalWheelEvent.emit(delta)
-            self._handle_normal_wheel(delta)
+            # self._handle_normal_wheel(delta)
             event.accept()
             return
 
@@ -227,7 +228,7 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
         self.plot_item.getAxis("bottom").setPen(axis_pen)
 
         # 禁用默认的鼠标交互
-        self.plot_item.setMouseEnabled(x=True, y=False)
+        self.plot_item.setMouseEnabled(x=True, y=True)
         self.plot_item.enableAutoRange(False)
         # 6. 性能优化设置
         self.plot_item.setDownsampling(auto=True, mode='peak')  # 启用峰值下采样
@@ -256,7 +257,7 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
         plot_item: pg.ViewBox = self.plot_item
         for i in range(self.n_channels):
             color = colors[i % len(colors)]
-            pen = pg.mkPen(color=color, width=2)
+            pen = pg.mkPen(color=color, width=1)
 
             curve = plot_item.plot(
                 pen=pen,
@@ -329,11 +330,19 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
             stacked *= scale
             stacked += offset
 
+            start = time.perf_counter_ns()
             # 4) 逐通道更新（仍保留 self.curves 列表，对外 API 不变）
             for ch, curve in enumerate(self.curves):
-                curve.setData(t, stacked[ch],
+                curve.setData_A(t, stacked[ch],
                             _callSync="off",
                             skipFiniteCheck=True)
+
+            # curve = self.curves[0]
+            # curve.informViewBoundsChanged()
+            # curve.sigPlotChanged.emit(curve)
+
+            elapsed_ns = time.perf_counter_ns() - start
+            print(f"[update_tail] 耗时: {elapsed_ns / 1e6:.3f} ms")
 
         except Exception as e:
             logger.error(f"更新波形显示时出错: {e}")
