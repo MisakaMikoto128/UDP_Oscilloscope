@@ -75,7 +75,7 @@ class ProtocolParser:
         self.buffer.extend(data)
         packets = []
         
-        while len(self.buffer) >= 6:  # 最小包头大小
+        while len(self.buffer) >= 8:  # 最小包头大小
             packets = self._try_parse_packet()
             
         return packets
@@ -94,12 +94,12 @@ class ProtocolParser:
             self.buffer = self.buffer[header_pos:]
         
         # 检查是否有足够的数据解析包头
-        if len(self.buffer) < 6:
+        if len(self.buffer) < 8:
             return None
         
         # 解析包头
         try:
-            header, remaining_length, sequence = struct.unpack('<HHH', self.buffer[:6])
+            header, data_filed_len, channel, sequence = struct.unpack('<HHHH', self.buffer[:8])
             if header != PACKET_HEADER:
                 # 包头不匹配，移除第一个字节继续查找
                 self.buffer = self.buffer[1:]
@@ -108,8 +108,9 @@ class ProtocolParser:
             return None
         
         # 检查是否有足够的数据
-        total_length = 6 + remaining_length
+        total_length = 8 + data_filed_len
         if len(self.buffer) < total_length:
+            logger.info("err")
             return None
         
         # 提取完整数据包
@@ -117,7 +118,7 @@ class ProtocolParser:
         self.buffer = self.buffer[total_length:]
         
         # CRC校验
-        payload_with_crc = packet_data[6:]  # 去掉包头
+        payload_with_crc = packet_data[8:]  # 去掉包头
         payload, crc_valid = extract_and_verify_crc(payload_with_crc)
         
         # if not crc_valid:
@@ -128,7 +129,10 @@ class ProtocolParser:
         self._update_statistics(sequence)
         
         # 解析子数据包
-        parsed_packets = self._parse_sub_packets(payload)
+        if channel == 0:
+            parsed_packets = self._parse_sub_packets(payload)
+        else:
+            logger.info("cmd")
         
         return parsed_packets
     

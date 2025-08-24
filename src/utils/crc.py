@@ -5,6 +5,7 @@ CRC校验工具模块
 """
 
 import crcmod
+from functools import reduce
 
 # CRC-Modbus算法配置
 # 多项式: 0x8005, 初始值: 0xFFFF, 反向输入: True, 反向输出: True
@@ -53,6 +54,17 @@ def append_crc(data: bytes) -> bytes:
     # 小端序添加CRC
     return data + crc_value.to_bytes(2, byteorder='little')
 
+def insert_zeros(data: bytes) -> bytes:
+    """
+    在每个字节之间插入一个 0x00。
+    :param data: 原始数据
+    :return: 插入 0x00 后的数据
+    """
+    # 将每个字节和 0x00 组合成一个元组
+    pairs = zip(data, [0] * len(data))
+    # 将元组中的字节和 0x00 拼接成一个新的字节序列
+    result = reduce(lambda x, y: x + bytes([y[0]]) + bytes([y[1]]), pairs, b'')
+    return result
 
 def extract_and_verify_crc(data: bytes) -> tuple[bytes, bool]:
     """
@@ -67,12 +79,14 @@ def extract_and_verify_crc(data: bytes) -> tuple[bytes, bool]:
     if len(data) < 2:
         return data, False
     
+    is_valid = False
+
     # 提取原始数据和CRC
     original_data = data[:-2]
     crc_bytes = data[-2:]
-    expected_crc = int.from_bytes(crc_bytes, byteorder='little')
+    # crc_bytes = insert_zeros(crc_bytes)
+    # expected_crc = int.from_bytes(crc_bytes, byteorder='little')
     
     # 验证CRC
-    is_valid = verify_crc(original_data, expected_crc)
-    
+    # is_valid = verify_crc(original_data, expected_crc)
     return original_data, is_valid

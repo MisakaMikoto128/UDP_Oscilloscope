@@ -35,8 +35,8 @@
       "name": "CH1",
       "enabled": true,
       "color": "#edff23",
-      "vertical_div": 125.0,
-      "vertical_offset": -4.2,
+      "vertical_div": 111.1111111111111,
+      "vertical_offset": -3.1,
       "unit": "V",
       "scale_factor": 1.1,
       "visible": true
