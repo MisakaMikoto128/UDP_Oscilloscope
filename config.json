@@ -2,13 +2,13 @@
   "app": {
     "name": "UDP示波器",
     "version": "1.0.0",
-    "refresh_rate": 120
+    "refresh_rate": 1000
   },
   "udp": {
-    "host": "localhost",
-    "port": 8888,
-    "target_host": "localhost",
-    "target_port": 8889
+    "host": "192.168.137.2",
+    "port": 16011,
+    "target_host": "192.168.137.99",
+    "target_port": 16011
   },
   "storage": {
     "max_memory_mb": 1024,
@@ -16,22 +16,27 @@
     "persistent_path": "data/oscilloscope_data.h5"
   },
   "display": {
-    "time_base_div": 0.2899999999999998,
+    "time_base_div": 0.6300000000000004,
     "time_base_unit": "ms",
-    "time_offset": 0,
+    "time_offset": 0.005506048083208006,
     "grid_enabled": true,
     "opengl_enabled": true,
     "auto_roll": false,
-    "max_points_window": 10000,
-    "sample_rate": 1000.0
+    "max_points_window": 900000,
+    "sample_rate": 15000.0,
+    "max_render_points": 10000,
+    "downsample_threshold": 50000,
+    "enable_lod": true,
+    "enable_viewport_clipping": true,
+    "interaction_timeout_ms": 500
   },
   "channels": [
     {
       "name": "CH1",
       "enabled": true,
-      "color": "#FF6B6B",
-      "vertical_div": 36.9,
-      "vertical_offset": -1.2,
+      "color": "#edff23",
+      "vertical_div": 125.0,
+      "vertical_offset": -4.2,
       "unit": "V",
       "scale_factor": 1.1,
       "visible": true
@@ -40,15 +45,15 @@
       "name": "CH2",
       "enabled": true,
       "color": "#4ECDC4",
-      "vertical_div": 43.29004329004327,
-      "vertical_offset": 1.4,
+      "vertical_div": 200.0,
+      "vertical_offset": 3.4000000000000017,
       "unit": "V",
       "scale_factor": 1.0,
       "visible": true
     },
     {
       "name": "CH3",
-      "enabled": false,
+      "enabled": true,
       "color": "#45B7D1",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -58,7 +63,7 @@
     },
     {
       "name": "CH4",
-      "enabled": false,
+      "enabled": true,
       "color": "#FFA07A",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -68,7 +73,7 @@
     },
     {
       "name": "CH5",
-      "enabled": false,
+      "enabled": true,
       "color": "#98D8C8",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -78,7 +83,7 @@
     },
     {
       "name": "CH6",
-      "enabled": false,
+      "enabled": true,
       "color": "#F7DC6F",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -88,7 +93,7 @@
     },
     {
       "name": "CH7",
-      "enabled": false,
+      "enabled": true,
       "color": "#BB8FCE",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -98,7 +103,7 @@
     },
     {
       "name": "CH8",
-      "enabled": false,
+      "enabled": true,
       "color": "#85C1E9",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -108,7 +113,7 @@
     },
     {
       "name": "CH9",
-      "enabled": false,
+      "enabled": true,
       "color": "#F8C471",
       "vertical_div": 1.0,
       "vertical_offset": 0.0,
@@ -118,10 +123,10 @@
     },
     {
       "name": "CH10",
-      "enabled": false,
+      "enabled": true,
       "color": "#82E0AA",
-      "vertical_div": 1.0,
-      "vertical_offset": 0.0,
+      "vertical_div": 299.96999999999997,
+      "vertical_offset": 0.5,
       "unit": "V",
       "scale_factor": 1.0,
       "visible": true
