@@ -22,7 +22,7 @@ PACKET_TYPE_CONFIG_UP = 0xF4
 # 数据包大小定义
 MOTOR_U16_PACKET_SIZE = 21  # 1 + 10*2
 MOTOR_F32_PACKET_SIZE = 41  # 1 + 10*4
-CONFIG_PACKET_SIZE = 25     # 1 + 6*4
+SYS_REG_PACKET_SIZE = 265     # 1 + (32 + 32 + 2)*4
 
 
 @dataclass
@@ -190,10 +190,10 @@ class ProtocolParser:
                     break
                     
             elif packet_type in (PACKET_TYPE_CONFIG_DOWN, PACKET_TYPE_CONFIG_UP):
-                config_data = self._parse_config(payload[offset:])
+                config_data = True #self._parse_config(payload[offset:])
                 if config_data:
-                    parsed_packets.append(config_data)
-                    offset += CONFIG_PACKET_SIZE
+                    # parsed_packets.append(config_data)
+                    offset += SYS_REG_PACKET_SIZE
                 else:
                     break
             else:
@@ -234,12 +234,12 @@ class ProtocolParser:
     
     def _parse_config(self, data: bytes) -> Optional[ConfigData]:
         """解析配置数据"""
-        if len(data) < CONFIG_PACKET_SIZE:
+        if len(data) < SYS_REG_PACKET_SIZE:
             return None
         
         try:
             # 解析数据包类型和6个PID参数
-            values = struct.unpack('<B6f', data[:CONFIG_PACKET_SIZE])
+            values = struct.unpack('<B6f', data[:SYS_REG_PACKET_SIZE])
             packet_type = values[0]
             
             return ConfigData(
