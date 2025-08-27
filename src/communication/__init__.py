@@ -4,12 +4,12 @@ UDP通信模块
 """
 
 from .udp_receiver import UDPReceiver
-from .protocol import ProtocolParser, MotorSampleData, ConfigData, ParsedPacket
+from .protocol import ProtocolParser, MotorSampleData, SysREGsUpData, ParsedPacket
 
 __all__ = [
     'UDPReceiver',
     'ProtocolParser', 
     'MotorSampleData',
-    'ConfigData',
+    'SysREGsUpData',
     'ParsedPacket'
 ]
