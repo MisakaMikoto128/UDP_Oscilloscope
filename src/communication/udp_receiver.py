@@ -426,7 +426,7 @@ class UDPReceiver:
             await self._send_packet(packet_data, target_addr)
 
             # 等待响应
-            resp = await self._wait_for_response(10)
+            resp = await self._wait_for_response(timeout)
 
             if (
                 resp.packet_type == PACKET_TYPE_SYS_REGS_SET
