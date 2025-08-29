@@ -51,6 +51,25 @@
         </property>
         <layout class="QGridLayout" name="gridLayout_3">
          <item row="2" column="0">
+          <widget class="QCommandLinkButton" name="reload_conf_btn">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <family>Segoe UI</family>
+             <pointsize>12</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>重新载入配置文件</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
           <widget class="QComboBox" name="ch_setting_comboBox"/>
          </item>
          <item row="0" column="0">
@@ -142,21 +161,9 @@
           </layout>
          </item>
          <item row="1" column="0">
-          <widget class="QCommandLinkButton" name="reload_conf_btn">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="font">
-            <font>
-             <family>Segoe UI</family>
-             <pointsize>12</pointsize>
-            </font>
-           </property>
+          <widget class="QCommandLinkButton" name="test_btn">
            <property name="text">
-            <string>重新载入配置文件</string>
+            <string>测试</string>
            </property>
           </widget>
          </item>
@@ -208,7 +215,7 @@
                <x>0</x>
                <y>0</y>
                <width>524</width>
-               <height>449</height>
+               <height>402</height>
               </rect>
              </property>
              <layout class="QGridLayout" name="gridLayout_2"/>

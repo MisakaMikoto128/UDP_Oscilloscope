@@ -8,9 +8,11 @@ import asyncio
 import sys
 import logging
 from pathlib import Path
-import qasync
 import winloop
-from qasync import asyncClose
+from qasync import asyncClose, asyncSlot
+import traceback
+import threading
+import time
 
 # 设置日志
 logging.basicConfig(
@@ -75,10 +77,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             n_channels=len(ch_defs),
             sample_rate=self.cfg.sample_rate,
             cfg=self.cfg,
-            parent=self.centralwidget
+            parent=self.centralwidget,
         )
 
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding
+        )
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.scope_widget.sizePolicy().hasHeightForWidth())
@@ -89,7 +93,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.scope_widget.setFont(font)
         self.scope_widget.setObjectName("scope_widget")
         self.gridLayout_4.addWidget(self.scope_widget, 0, 0, 1, 1)
-        
+
         # 应用配置
         self.scope_widget.max_points_window = self.cfg.max_points_window
         self.scope_widget.reset_time_offset(self.cfg.auto_roll)
@@ -103,11 +107,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # 设置垂直挡位和偏移
             self.scope_widget.set_vertical_scale(
                 i,
-                ch_config.get('vertical_div', 1.0),
+                ch_config.get("vertical_div", 1.0),
             )
             self.scope_widget.set_vertical_offset(
-                i,
-                ch_config.get('vertical_offset', 0.0)
+                i, ch_config.get("vertical_offset", 0.0)
             )
 
     def _init_channel_controls_ui(self):
@@ -162,13 +165,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         ch_defs = self.cfg.channel_defs
 
         for i, ch_config in enumerate(ch_defs):
-            button = QtWidgets.QPushButton(ch_config['name'])
+            button = QtWidgets.QPushButton(ch_config["name"])
             button.setCheckable(True)
-            button.setChecked(ch_config.get('enabled', True))
+            button.setChecked(ch_config.get("enabled", True))
             button.setFixedSize(60, 30)
 
             # 设置按钮颜色
-            color = ch_config.get('color', '#FFFFFF')
+            color = ch_config.get("color", "#FFFFFF")
             button.setStyleSheet(f"""
                 QPushButton {{
                     background-color: {color};
@@ -187,7 +190,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             """)
 
             # 连接信号
-            button.toggled.connect(lambda checked, ch=i: self.on_channel_toggle(ch, checked))
+            button.toggled.connect(
+                lambda checked, ch=i: self.on_channel_toggle(ch, checked)
+            )
 
             # 添加到网格布局（4列）
             row = i // 5
@@ -205,7 +210,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # 更新配置
         ch_config = self.cfg.get_channel_config(channel)
-        ch_config['enabled'] = enabled
+        ch_config["enabled"] = enabled
         self.cfg.set_channel_config(channel, ch_config)
 
         # 更新通道配置组件
@@ -273,7 +278,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             host=self.cfg.udp_host,
             port=self.cfg.udp_port,
             on_sample=self.on_sample_received,
-            on_config=self.on_config_received,
+            on_sys_regs_upload=self.on_sys_regs_upload,
         )
 
     def _init_timers(self):
@@ -308,17 +313,24 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             config_widget.configChanged.connect(self.on_channel_config_changed)
 
         # 光标控制
-        self.cursor_control.cursorEnabledChanged.connect(self.scope_widget.enable_cursors)
+        self.cursor_control.cursorEnabledChanged.connect(
+            self.scope_widget.enable_cursors
+        )
         self.cursor_control.cursorChanged.connect(self.scope_widget.set_cursor_position)
 
         # 示波器信号连接
         self.scope_widget.timeBaseChanged.connect(self.on_scope_time_base_changed)
         self.scope_widget.timeOffsetChanged.connect(self.on_scope_time_offset_changed)
         self.scope_widget.verticalDivChanged.connect(self.on_scope_vertical_div_changed)
-        self.scope_widget.verticalOffsetChanged.connect(self.on_scope_vertical_offset_changed)
+        self.scope_widget.verticalOffsetChanged.connect(
+            self.on_scope_vertical_offset_changed
+        )
 
         # 重新加载配置
         self.reload_conf_btn.clicked.connect(self.reload_configuration)
+
+        # 测试按钮
+        self.test_btn.clicked.connect(self.on_test_clicked_cb)
 
         # 时基控制
         self.hori_div_spinbox.valueChanged.connect(self.on_time_base_changed)
@@ -352,7 +364,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # 设置示波器滚动模式
         self.scope_widget.reset_time_offset(enabled)
         # 保存到配置
-        self.cfg.set('display.auto_roll', enabled)
+        self.cfg.set("display.auto_roll", enabled)
 
     def on_channel_selection_changed(self, index: int):
         """通道选择改变处理"""
@@ -380,7 +392,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.scope_widget.set_channel_enabled(channel_index, enabled)
 
         # 同步通道开关按钮
-        if hasattr(self, 'channel_toggle_buttons') and 0 <= channel_index < len(self.channel_toggle_buttons):
+        if hasattr(self, "channel_toggle_buttons") and 0 <= channel_index < len(
+            self.channel_toggle_buttons
+        ):
             button = self.channel_toggle_buttons[channel_index]
             button.blockSignals(True)
             button.setChecked(enabled)
@@ -390,7 +404,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.scope_widget.set_vertical_scale(channel_index, config["vertical_div"])
 
         if "vertical_offset" in config:
-            self.scope_widget.set_vertical_offset(channel_index, config["vertical_offset"])
+            self.scope_widget.set_vertical_offset(
+                channel_index, config["vertical_offset"]
+            )
 
         logger.debug(f"通道{channel_index + 1}配置已更新")
 
@@ -414,7 +430,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.hori_div_spinbox.blockSignals(False)
 
         # 保存到配置
-        self.cfg.set('display.time_base_div', value)
+        self.cfg.set("display.time_base_div", value)
 
     def on_scope_time_offset_changed(self, value: float):
         """示波器时间偏移改变处理（来自鼠标拖拽）"""
@@ -425,7 +441,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.hori_div_offset_spinbox.blockSignals(False)
 
         # 保存到配置
-        self.cfg.set('display.time_offset', value)
+        self.cfg.set("display.time_offset", value)
 
     def on_scope_vertical_div_changed(self, channel: int, value: float):
         """示波器垂直挡位改变处理（来自Ctrl+滚轮）"""
@@ -438,7 +454,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # 保存到配置
         ch_config = self.cfg.get_channel_config(channel)
-        ch_config['vertical_div'] = value
+        ch_config["vertical_div"] = value
         self.cfg.set_channel_config(channel, ch_config)
 
     def on_scope_vertical_offset_changed(self, channel: int, value: float):
@@ -452,7 +468,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # 保存到配置
         ch_config = self.cfg.get_channel_config(channel)
-        ch_config['vertical_offset'] = value
+        ch_config["vertical_offset"] = value
         self.cfg.set_channel_config(channel, ch_config)
 
     def on_sample_received(self, fmt: int, values: list):
@@ -471,9 +487,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         except Exception as e:
             logger.error(f"处理采样数据时出错: {e}")
 
-    def on_config_received(self, config_dict: dict):
+    def on_sys_regs_upload(self, config_dict: dict):
         """接收到配置数据处理"""
-        logger.info(f"收到配置数据: {config_dict}")
+        pass
+        # logger.info(f"收到配置数据: {config_dict}")
         # TODO: 根据需要更新UI显示配置信息
 
     def refresh_plot(self):
@@ -529,26 +546,33 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         except Exception as e:
             logger.error(f"重新加载配置失败: {e}")
 
-    async def send_config_to_device(self):
-        """发送配置到下位机"""
+    @asyncSlot()
+    async def on_test_clicked_cb(self):
+        """测试按钮点击处理"""
+        await self.device_reg_set(regAddrStart=8, datas=[3400])
+
+    async def device_reg_set(self, regAddrStart: int, datas: list[int]) -> bool:
+        """发送配置到下位机
+
+        Returns:
+            bool: 配置是否成功
+        """
         try:
-            pid_config = self.cfg.get_pid_config()
             target_addr = (self.cfg.target_host, self.cfg.target_port)
-
-            await self.receiver.send_config(
-                kp=pid_config["kp"],
-                ki=pid_config["ki"],
-                kd=pid_config["kd"],
-                kp1=pid_config["kp1"],
-                ki1=pid_config["ki1"],
-                kd1=pid_config["kd1"],
-                target_addr=target_addr,
+            success = await self.receiver.reg_set(
+                regAddrStart=regAddrStart, datas=datas, target_addr=target_addr
             )
-
-            logger.info("配置已发送到下位机")
-
+            if success:
+                logger.info("配置已成功发送到下位机")
+            else:
+                logger.warning("配置发送失败")
+            return success
+        except TimeoutError:
+            logger.error("发送配置到下位机超时")
+            return False
         except Exception as e:
             logger.error(f"发送配置到下位机失败: {e}")
+            return False
 
     @asyncClose
     async def closeEvent(self, event: QtGui.QCloseEvent):
@@ -574,6 +598,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             logger.error(f"关闭应用程序时出错: {e}")
             event.accept()
 
+
 async def main_async(app, window):
     """异步主函数"""
     await window.receiver.start()
@@ -583,6 +608,7 @@ async def main_async(app, window):
     app.aboutToQuit.connect(app_close_event.set)
     await app_close_event.wait()
     await window.receiver.stop()
+
 
 def main():
     """主入口函数"""
@@ -596,7 +622,7 @@ def main():
         )
 
         try:
-            winloop.install()          # 必须在任何 asyncio/qasync 调用之前
+            winloop.install()  # 必须在任何 asyncio/qasync 调用之前
             logger.info("winloop 已启用")
         except Exception as e:
             logger.warning("winloop 不可用，回退到默认事件循环: %s", e)
@@ -622,6 +648,7 @@ def main():
         # 设置异步事件循环
         # 3. 让qasync基于当前事件循环（winloop）创建QEventLoop
         from qasync import QEventLoop
+
         event_loop = QEventLoop(app)
         asyncio.set_event_loop(event_loop)
 

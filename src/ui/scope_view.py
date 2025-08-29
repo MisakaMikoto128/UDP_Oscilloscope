@@ -341,8 +341,8 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
             # curve.informViewBoundsChanged()
             # curve.sigPlotChanged.emit(curve)
 
-            elapsed_ns = time.perf_counter_ns() - start
-            print(f"[update_tail] 耗时: {elapsed_ns / 1e6:.3f} ms")
+            # elapsed_ns = time.perf_counter_ns() - start
+            # print(f"[update_tail] 耗时: {elapsed_ns / 1e6:.3f} ms")
 
         except Exception as e:
             logger.error(f"更新波形显示时出错: {e}")

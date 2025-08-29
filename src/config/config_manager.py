@@ -283,13 +283,3 @@ class ConfigManager:
         channels[channel_index].update(config)
         self.set('channels', channels)
     
-    def get_pid_config(self) -> Dict[str, float]:
-        """获取PID配置"""
-        return self.get('pid_config', {
-            'kp': 1.0, 'ki': 0.1, 'kd': 0.01,
-            'kp1': 1.0, 'ki1': 0.1, 'kd1': 0.01
-        })
-    
-    def set_pid_config(self, config: Dict[str, float]):
-        """设置PID配置"""
-        self.set('pid_config', config)

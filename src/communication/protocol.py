@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 PACKET_HEADER = 0x55AA
 PACKET_TYPE_MOTOR_U16 = 0xA1
 PACKET_TYPE_MOTOR_F32 = 0xA2
+PACKET_TYPE_MOTOR_U32 = 0xA3
 PACKET_TYPE_SYS_REGS_UP = 0xF3
 PACKET_TYPE_SYS_REGS_SET = 0x10
 
@@ -37,18 +38,19 @@ class MotorSampleData:
 @dataclass
 class SysREGsUpData:
     """配置数据"""
+
     packet_type: int
     reg_num: int
     reg: List[int]
 
 
 @dataclass
-class ParsedPacket:
-    """解析后的数据包"""
+class SysREGsSetResp:
+    """配置数据写入响应"""
 
-    sequence: int
-    motor_data: Optional[List[MotorSampleData]] = None
-    sys_regs_up_datas: Optional[List[SysREGsUpData]] = None
+    packet_type: int
+    reg_addr_start: int
+    regg_wroten_num: int
 
 
 class ProtocolParser:
@@ -61,7 +63,7 @@ class ProtocolParser:
         self.lost_packets = 0
         self.duplicate_packets = 0
 
-    def feed_data(self, data: bytes) -> List[ParsedPacket]:
+    def feed_data(self, data: bytes) -> List:
         """
         输入数据并解析数据包
 
@@ -80,7 +82,7 @@ class ProtocolParser:
 
         return packets
 
-    def _try_parse_packet(self) -> Optional[ParsedPacket]:
+    def _try_parse_packet(self):
         """尝试解析一个完整的数据包"""
         # 查找包头
         header_pos = self._find_header()
@@ -120,9 +122,9 @@ class ProtocolParser:
         payload_with_crc = packet_data[6:]  # 去掉包头
         payload, crc_valid = extract_and_verify_crc(payload_with_crc)
 
-        # if not crc_valid:
-        #     logger.warning(f"CRC校验失败，序号: {sequence}")
-        #     return None
+        if not crc_valid:
+            logger.warning(f"CRC校验失败，序号: {sequence}")
+            return None
 
         # 统计丢包和重复包
         self._update_statistics(sequence)
@@ -265,7 +267,9 @@ class ProtocolParser:
             )
 
             # 可选：将结果封装为字典
-            result = SysREGsUpData(packet_type=packet_type, reg_num=reg_num, reg=list(regs))
+            result = SysREGsUpData(
+                packet_type=packet_type, reg_num=reg_num, reg=list(regs)
+            )
             return SYS_REG_PACKET_SIZE, result
         except struct.error:
             return None
@@ -278,16 +282,12 @@ class ProtocolParser:
         try:
             # 解析type和reg_num
             values = struct.unpack("<BHH", data[:SYS_REG_SET_PACKET_SIZE])
-            packet_type = values[0]
-            reg_addr_start = values[1]
-            trg_wroten_num = values[2]
-
             # 可选：将结果封装为字典
-            result = {
-                "type": packet_type,
-                "reg_addr_start": reg_addr_start,
-                "trg_wroten_num": trg_wroten_num,
-            }
+            result = SysREGsSetResp(
+                packet_type=values[0],
+                reg_addr_start=values[1],
+                regg_wroten_num=values[2],
+            )
             return result
         except struct.error:
             return None

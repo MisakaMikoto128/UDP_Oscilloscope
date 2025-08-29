@@ -9,10 +9,18 @@ import logging
 import time
 import socket
 import threading
+import struct
+import queue
+from utils.crc import calculate_crc
 from typing import Optional, List, Tuple, Dict, Any
 from typing import Callable, Optional, Any
 from collections import deque
-from communication.protocol import ProtocolParser, MotorSampleData, SysREGsUpData
+from communication.protocol import (
+    ProtocolParser,
+    MotorSampleData,
+    SysREGsUpData,
+    SysREGsSetResp,
+)
 from communication.protocol import *
 
 logger = logging.getLogger(__name__)
@@ -26,7 +34,7 @@ class UDPReceiver:
         host: str = "0.0.0.0",
         port: int = 8888,
         on_sample: Optional[Callable[[int, list], None]] = None,
-        on_config: Optional[Callable[[dict], None]] = None,
+        on_sys_regs_upload: Optional[Callable[[SysREGsUpData], None]] = None,
     ):
         """
         初始化UDP接收器
@@ -40,7 +48,7 @@ class UDPReceiver:
         self.host = host
         self.port = port
         self.on_sample = on_sample
-        self.on_sys_regs_upload = on_config
+        self.on_sys_regs_upload = on_sys_regs_upload
 
         self.parser = ProtocolParser()
         self.transport = None  # 保持兼容性，实际不使用
@@ -62,8 +70,10 @@ class UDPReceiver:
         self.drop_count = 0
         self.last_report_time = time.time()
 
-        # 发送socket（用于send_config）
+        # 发送socket
         self.send_socket = None
+        self.req_seq = 0
+        self.resp_queue = queue.Queue(maxsize=1)
 
     async def start(self):
         """启动UDP接收器"""
@@ -86,7 +96,7 @@ class UDPReceiver:
             # 获取实际缓冲区大小
             actual_rcvbuf = self.socket.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
 
-            # 创建发送socket（用于send_config）
+            # 创建发送socket
             self.send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.send_socket.setsockopt(
                 socket.SOL_SOCKET, socket.SO_SNDBUF, 1024 * 1024
@@ -245,10 +255,10 @@ class UDPReceiver:
             drop_rate = self.drop_count / elapsed if self.drop_count > 0 else 0
             queue_size = len(self.data_queue)
 
-            logger.info(
-                f"UDP高频统计 - 接收:{receive_rate:.0f}/s, 处理:{process_rate:.0f}/s, "
-                f"丢弃:{drop_rate:.0f}/s, 队列:{queue_size}/{self.data_queue.maxlen}"
-            )
+            # logger.info(
+            #     f"UDP高频统计 - 接收:{receive_rate:.0f}/s, 处理:{process_rate:.0f}/s, "
+            #     f"丢弃:{drop_rate:.0f}/s, 队列:{queue_size}/{self.data_queue.maxlen}"
+            # )
 
             # 重置计数器
             self.receive_count = 0
@@ -267,12 +277,13 @@ class UDPReceiver:
                     packet.packet_type == PACKET_TYPE_MOTOR_U16
                     or packet.packet_type == PACKET_TYPE_MOTOR_F32
                 ):
-                    self._handle_motor_data(packet)
-
+                    # self._handle_motor_data(packet)
+                    pass
                 # 处理寄存器上传数据
-                if packet.packet_type == PACKET_TYPE_SYS_REGS_UP:
+                elif packet.packet_type == PACKET_TYPE_SYS_REGS_UP:
                     self._handle_sys_regs_upload_data(packet)
-
+                elif packet.packet_type == PACKET_TYPE_SYS_REGS_SET:
+                    self._handle_sys_regs_set_resp(packet)
         except Exception as e:
             logger.error(f"处理UDP数据时出错: {e}")
 
@@ -285,25 +296,22 @@ class UDPReceiver:
             except Exception as e:
                 logger.error(f"处理电机采样数据回调时出错: {e}")
 
-    def _handle_sys_regs_upload_data(self, config_data: SysREGsUpData):
+    def _handle_sys_regs_upload_data(self, sys_regs_up_data: SysREGsUpData):
         """处理配置数据"""
         if self.on_sys_regs_upload:
             try:
-                logger.info(f"收到配置数据: {config_data.reg[:3]} ...")
-                pass
-                # sys_regs_up_dict = {
-                #     "packet_type": config_data.packet_type,
-                #     "kp": config_data.kp,
-                #     "ki": config_data.ki,
-                #     "kd": config_data.kd,
-                #     "kp1": config_data.kp1,
-                #     "ki1": config_data.ki1,
-                #     "kd1": config_data.kd1,
-                # }
-                # self.on_sys_regs_upload(sys_regs_up_dict)
+                self.on_sys_regs_upload(sys_regs_up_data)
             except Exception as e:
                 logger.error(f"处理配置数据回调时出错: {e}")
 
+    def _handle_sys_regs_set_resp(self, sys_regs_set_resp: SysREGsSetResp):
+        """处理寄存器设置响应数据"""
+        try:
+            # 使用线程安全的queue
+            self.resp_queue.put_nowait(sys_regs_set_resp)
+        except Exception as e:
+            logger.error(f"处理响应失败: {e}")
+   
     def get_statistics(self) -> dict:
         """获取接收统计信息"""
         parser_stats = self.parser.get_statistics()
@@ -329,74 +337,115 @@ class UDPReceiver:
         self.process_count = 0
         self.drop_count = 0
 
-    async def send_config(
-        self,
-        kp: float,
-        ki: float,
-        kd: float,
-        kp1: float,
-        ki1: float,
-        kd1: float,
-        target_addr: tuple = ("192.168.1.100", 8889),
-    ):
+    async def _send_packet(self, packet_data: bytes, target_addr: tuple) -> None:
+        """异步发送数据包"""
+        loop = asyncio.get_running_loop()
+        try:
+            # 使用线程池执行同步的socket操作
+            await loop.run_in_executor(
+                None, self.send_socket.sendto, packet_data, target_addr
+            )
+            logger.debug(
+                f"配置数据包已发送到 {target_addr}, 大小: {len(packet_data)} 字节"
+            )
+        except Exception as e:
+            raise ConnectionError(f"发送数据包失败: {e}")
+
+    def _build_reg_set_packet(
+        self, regAddrStart: int, regNum: int, datas: list[int], req_seq: int
+    ) -> bytes:
+        """构造配置数据包"""
+        sub_packet = struct.pack(
+            f"<BHH{regNum}I", PACKET_TYPE_SYS_REGS_SET, regAddrStart, regNum, *datas
+        )
+
+        # 主数据包：包头 + 剩余长度 + 序号 + 子数据包 + CRC
+        remaining_length = len(sub_packet) + 2  # 子数据包 + CRC
+        crc = calculate_crc(sub_packet)
+        header_data = struct.pack("<HHH", 0x55AA, remaining_length, req_seq)
+
+        return header_data + sub_packet + struct.pack("<H", crc)
+
+    async def _wait_for_response(self, timeout: float) -> "SysREGsSetResp":
+        """等待配置响应"""
+        loop = asyncio.get_running_loop()
+        try:
+            # 在线程池中执行阻塞的get操作
+            resp = await loop.run_in_executor(None, self.resp_queue.get, True, timeout)
+            return resp
+        except queue.Empty:
+            raise asyncio.TimeoutError("等待响应超时")
+
+    async def reg_set(
+        self, 
+        regAddrStart: int, datas: list[int], timeout: float = 1.0,
+        target_addr: tuple = ("192.168.1.100", 8889)
+    ) -> bool:
         """
         发送配置数据到下位机
 
         Args:
-            kp, ki, kd, kp1, ki1, kd1: PID参数
-            target_addr: 目标地址 (ip, port)
+            regAddrStart: 起始寄存器地址
+            datas: 配置数据列表
+            timeout: 响应超时时间(秒)
+
+        Returns:
+            bool: 配置是否成功
+
+        Raises:
+            ConfigurationError: 配置参数错误
+            TimeoutError: 等待响应超时
+            ConnectionError: 网络连接错误
         """
+        # 参数验证
         if not self.running or not self.send_socket:
-            logger.warning("UDP接收器未运行，无法发送配置")
-            return
+            return False
+
+        if not datas:
+            return False
+
+        if regAddrStart < 0:
+            return False
+
+        # 限制寄存器数量
+        if len(datas) > 20:
+            logger.warning(f"数据长度超过限制，截取前20个: {len(datas)} -> 20")
+            datas = datas[:20]
+
+        regNum = len(datas)
+        req_seq = (self.req_seq + 1) & 0xFFFF
+        self.req_seq = req_seq
 
         try:
-            # 构造配置下传数据包
-            import struct
-            from utils.crc import append_crc
+            # 构造数据包
+            packet_data = self._build_reg_set_packet(
+                regAddrStart, regNum, datas, req_seq
+            )
 
-            # 子数据包：类型 + 6个float32参数
-            sub_packet = struct.pack("<B6f", 0xF3, kp, ki, kd, kp1, ki1, kd1)
+            # 发送数据包
+            await self._send_packet(packet_data, target_addr)
 
-            # 主数据包：包头 + 剩余长度 + 序号 + 子数据包 + CRC
-            sequence = getattr(self, "_send_sequence", 0)
-            self._send_sequence = (sequence + 1) & 0xFFFF
+            # 等待响应
+            resp = await self._wait_for_response(10)
 
-            remaining_length = len(sub_packet) + 2  # 子数据包 + CRC
-            header_data = struct.pack("<HHH", 0x55AA, remaining_length, sequence)
+            if (
+                resp.packet_type == PACKET_TYPE_SYS_REGS_SET
+                and resp.reg_addr_start == regAddrStart
+            ):  # 响应类型和序号和地址都匹配时认为成功完成配置
+                logger.info(f"配置成功完成，响应: {resp}")
+                return True
+            else:
+                logger.warning(
+                    f"响应类型错误，期望 {PACKET_TYPE_SYS_REGS_SET}，实际 {resp.packet_type}"
+                )
+                return False  # 响应类型错误，丢弃响应并返回失败
 
-            # 添加CRC校验
-            packet_data = append_crc(header_data + sub_packet)
-
-            # 使用专用发送socket发送数据
-            self.send_socket.sendto(packet_data, target_addr)
-            logger.info(f"配置数据已发送到 {target_addr}")
-
+        except asyncio.TimeoutError:
+            logger.warning(f"等待配置响应超时 (序号: {req_seq})")
+            await self.resp_queue.get()  # 丢弃响应
+        except OSError as e:
+            logger.error(f"网络发送失败: {e}")
+            raise ConnectionError(f"网络连接错误: {e}")
         except Exception as e:
             logger.error(f"发送配置数据失败: {e}")
-
-
-class UDPProtocol(asyncio.DatagramProtocol):
-    """UDP协议处理器"""
-
-    def __init__(self, data_callback: Callable[[bytes, tuple], None]):
-        self.data_callback = data_callback
-
-    def connection_made(self, transport):
-        self.transport = transport
-
-    def datagram_received(self, data: bytes, addr: tuple):
-        """接收到UDP数据包"""
-        if self.data_callback:
-            self.data_callback(data, addr)
-
-    def error_received(self, exc):
-        """接收错误"""
-        logger.error(f"UDP接收错误: {exc}")
-
-    def connection_lost(self, exc):
-        """连接丢失"""
-        if exc:
-            logger.error(f"UDP连接丢失: {exc}")
-        else:
-            logger.info("UDP连接正常关闭")
+            raise

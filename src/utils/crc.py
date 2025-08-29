@@ -84,9 +84,8 @@ def extract_and_verify_crc(data: bytes) -> tuple[bytes, bool]:
     # 提取原始数据和CRC
     original_data = data[:-2]
     crc_bytes = data[-2:]
-    # crc_bytes = insert_zeros(crc_bytes)
-    # expected_crc = int.from_bytes(crc_bytes, byteorder='little')
+    expected_crc = int.from_bytes(crc_bytes, byteorder='little')
     
     # 验证CRC
-    # is_valid = verify_crc(original_data, expected_crc)
+    is_valid = verify_crc(original_data, expected_crc)
     return original_data, is_valid

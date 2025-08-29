@@ -84,7 +84,6 @@ class MotorSimulator:
             # 启动发送任务
             await asyncio.gather(
                 self._send_motor_data_task(),
-                # self._send_config_task()
             )
             
         except Exception as e:
@@ -123,27 +122,6 @@ class MotorSimulator:
             except Exception as e:
                 logger.error(f"发送电机数据失败: {e}")
                 await asyncio.sleep(1.0)
-    
-    async def _send_config_task(self):
-        """发送配置数据任务"""
-        while self.running:
-            try:
-                # 每5秒发送一次配置数据
-                await asyncio.sleep(5.0)
-                
-                if not self.running:
-                    break
-                
-                # 创建配置数据包
-                packet = self._create_config_packet()
-                
-                # 发送配置数据包
-                self.socket.sendto(packet, (self.target_host, self.target_port))
-                
-                logger.debug("已发送配置数据")
-                
-            except Exception as e:
-                logger.error(f"发送配置数据失败: {e}")
     
     def _generate_motor_data(self) -> list:
         """
