@@ -97,8 +97,9 @@ class TestMainWindow(QMainWindow):
             for i in range(107):
                 if i == 0:  # UID
                     value = 0x12345678
-                elif i == 1:  # IP地址
-                    value = struct.unpack('<I', struct.pack('!I', 0xC0A80163))[0]  # 192.168.1.99
+                elif i == 1:  # IP地址 - 使用下位机的字节序格式
+                    # 192.168.1.99 = (192<<24)|(168<<16)|(1<<8)|99
+                    value = (192 << 24) | (168 << 16) | (1 << 8) | 99
                 elif i == 6:  # 端口配置
                     value = (16011 << 16) | 16011
                 elif i in [12, 13]:  # 占空比 (定点数)

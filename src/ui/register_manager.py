@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QScrollArea,
     QLabel, QPushButton, QSpinBox, QDoubleSpinBox, QLineEdit,
-    QGroupBox, QMessageBox, QFrame, QSizePolicy, QTabWidget
+    QGroupBox, QMessageBox, QFrame, QSizePolicy
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 from PyQt5.QtGui import QFont, QKeySequence
@@ -56,8 +56,13 @@ class RegisterDataConverter:
                 float_val = (raw_value if raw_value < 2**31 else raw_value - 2**32) / config.scale_factor
                 return f"{float_val:.5f}"
             elif config.data_type == "ipv4":
-                # IPv4地址转换
-                return socket.inet_ntoa(struct.pack('<I', raw_value))
+                # IPv4地址转换 - 按照下位机的字节序
+                # 下位机使用: IPV4_TO_UINT32(ip1, ip2, ip3, ip4) = (ip1<<24)|(ip2<<16)|(ip3<<8)|ip4
+                ip1 = (raw_value >> 24) & 0xFF
+                ip2 = (raw_value >> 16) & 0xFF
+                ip3 = (raw_value >> 8) & 0xFF
+                ip4 = raw_value & 0xFF
+                return f"{ip1}.{ip2}.{ip3}.{ip4}"
             elif config.data_type == "dual_uint16":
                 # 双uint16转换
                 high = (raw_value >> 16) & 0xFFFF
@@ -85,8 +90,15 @@ class RegisterDataConverter:
                 int_val = int(float_val * config.scale_factor)
                 return int_val & 0xFFFFFFFF
             elif config.data_type == "ipv4":
-                # IPv4地址转换
-                return struct.unpack('<I', socket.inet_aton(display_value))[0]
+                # IPv4地址转换 - 按照下位机的字节序
+                # 下位机使用: IPV4_TO_UINT32(ip1, ip2, ip3, ip4) = (ip1<<24)|(ip2<<16)|(ip3<<8)|ip4
+                parts = display_value.split('.')
+                if len(parts) != 4:
+                    raise ValueError("IPv4格式应为 xxx.xxx.xxx.xxx")
+                ip1, ip2, ip3, ip4 = [int(part) for part in parts]
+                if not all(0 <= ip <= 255 for ip in [ip1, ip2, ip3, ip4]):
+                    raise ValueError("IPv4地址每段应在0-255范围内")
+                return ((ip1 & 0xFF) << 24) | ((ip2 & 0xFF) << 16) | ((ip3 & 0xFF) << 8) | (ip4 & 0xFF)
             elif config.data_type == "dual_uint16":
                 # 双uint16转换
                 parts = display_value.split(':')
@@ -174,23 +186,27 @@ class RegisterWidget(QWidget):
             self.input_widget.setDecimals(5)
             self.input_widget.setRange(self.config.range[0], self.config.range[1])
             self.input_widget.setSingleStep(self.config.step_size)
+            self.input_widget.setMinimumWidth(120)
         elif self.config.data_type == "ipv4":
             self.input_widget = QLineEdit()
             self.input_widget.setPlaceholderText("192.168.1.1")
+            self.input_widget.setMinimumWidth(100)  # 减小IPv4输入框宽度
         elif self.config.data_type == "dual_uint16":
             self.input_widget = QLineEdit()
             self.input_widget.setPlaceholderText("high:low")
+            self.input_widget.setMinimumWidth(100)
         else:
             self.input_widget = QSpinBox()
             self.input_widget.setRange(int(self.config.range[0]), int(self.config.range[1]))
             self.input_widget.setSingleStep(int(self.config.step_size))
-        
-        self.input_widget.setMinimumWidth(120)
+            self.input_widget.setMinimumWidth(120)
+
         layout.addWidget(self.input_widget)
-        
+
         # 设置按钮
         set_btn = QPushButton("设置")
-        set_btn.setMaximumWidth(60)
+        set_btn.setMinimumWidth(50)  # 确保按钮文字完全显示
+        set_btn.setMaximumWidth(70)
         set_btn.clicked.connect(self._on_set_clicked)
         layout.addWidget(set_btn)
     
@@ -198,7 +214,7 @@ class RegisterWidget(QWidget):
         """添加命令寄存器控件"""
         if self.config.command_value is not None:
             cmd_btn = QPushButton(self.config.alias or self.config.var_name)
-            cmd_btn.setMaximumWidth(100)
+            cmd_btn.setMaximumWidth(200)
             cmd_btn.clicked.connect(self._on_command_clicked)
             
             # 设置快捷键
@@ -348,18 +364,18 @@ class RegisterManagerWidget(QWidget):
         # 状态栏
         self._setup_status_bar(layout)
 
-        # 标签页
-        self.tab_widget = QTabWidget()
-        layout.addWidget(self.tab_widget)
+        # 主内容区域 - 三列并排布局
+        main_content = QHBoxLayout()
+        layout.addLayout(main_content)
 
-        # 配置寄存器页面
-        self._setup_config_registers_tab()
+        # 配置寄存器列
+        self._setup_config_registers_column(main_content)
 
-        # 状态寄存器页面
-        self._setup_status_registers_tab()
+        # 状态寄存器列
+        self._setup_status_registers_column(main_content)
 
-        # 命令寄存器页面
-        self._setup_command_registers_tab()
+        # 命令寄存器列
+        self._setup_command_registers_column(main_content)
 
         # 消息显示区域
         self.message_label = QLabel()
@@ -380,44 +396,50 @@ class RegisterManagerWidget(QWidget):
         """设置状态栏"""
         status_frame = QFrame()
         status_frame.setFrameStyle(QFrame.StyledPanel)
-        status_frame.setMaximumHeight(40)
+        status_frame.setFixedHeight(50)  # 固定高度，确保显示完整
         status_frame.setObjectName("status_frame")
 
         status_layout = QHBoxLayout(status_frame)
+        status_layout.setContentsMargins(10, 5, 10, 5)  # 增加边距
 
         # 标题
         title_label = QLabel("寄存器管理界面")
         title_label.setFont(QFont("Microsoft YaHei", 12, QFont.Bold))
+        title_label.setStyleSheet("color: #333; padding: 5px;")
         status_layout.addWidget(title_label)
 
         status_layout.addStretch()
 
         # 在线状态指示器
         self.status_indicator = QLabel("离线")
-        self.status_indicator.setMinimumWidth(60)
+        self.status_indicator.setFixedSize(80, 30)  # 固定大小确保显示完整
         self.status_indicator.setAlignment(Qt.AlignCenter)
         self._update_status_indicator()
         status_layout.addWidget(self.status_indicator)
 
         # 刷新按钮
         refresh_btn = QPushButton("刷新配置")
+        refresh_btn.setFixedSize(150, 30)  # 固定大小确保显示完整
         refresh_btn.clicked.connect(self._reload_config)
         status_layout.addWidget(refresh_btn)
 
         layout.addWidget(status_frame)
 
-    def _setup_config_registers_tab(self):
-        """设置配置寄存器标签页"""
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+    def _setup_config_registers_column(self, main_layout):
+        """设置配置寄存器列"""
+        # 配置寄存器滚动区域
+        config_scroll = QScrollArea()
+        config_scroll.setWidgetResizable(True)
+        config_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        config_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        config_scroll.setMinimumWidth(350)
 
-        content_widget = QWidget()
-        layout = QVBoxLayout(content_widget)
+        config_content = QWidget()
+        config_layout = QVBoxLayout(config_content)
 
-        # 添加配置寄存器组
+        # 配置寄存器组
         config_group = QGroupBox("配置寄存器 (可读写)")
-        config_layout = QVBoxLayout(config_group)
+        config_group_layout = QVBoxLayout(config_group)
 
         config_registers = [config for config in self.register_configs.values()
                           if config.permission == "rw"]
@@ -426,26 +448,29 @@ class RegisterManagerWidget(QWidget):
         for config in config_registers:
             widget = RegisterWidget(config)
             self.register_widgets[config.address] = widget
-            config_layout.addWidget(widget)
+            config_group_layout.addWidget(widget)
 
-        layout.addWidget(config_group)
-        layout.addStretch()
+        config_layout.addWidget(config_group)
+        config_layout.addStretch()
 
-        scroll_area.setWidget(content_widget)
-        self.tab_widget.addTab(scroll_area, "配置寄存器")
+        config_scroll.setWidget(config_content)
+        main_layout.addWidget(config_scroll)
 
-    def _setup_status_registers_tab(self):
-        """设置状态寄存器标签页"""
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+    def _setup_status_registers_column(self, main_layout):
+        """设置状态寄存器列"""
+        # 状态寄存器滚动区域
+        status_scroll = QScrollArea()
+        status_scroll.setWidgetResizable(True)
+        status_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        status_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        status_scroll.setMinimumWidth(300)
 
-        content_widget = QWidget()
-        layout = QVBoxLayout(content_widget)
+        status_content = QWidget()
+        status_layout = QVBoxLayout(status_content)
 
-        # 添加状态寄存器组
+        # 状态寄存器组
         status_group = QGroupBox("状态寄存器 (只读)")
-        status_layout = QVBoxLayout(status_group)
+        status_group_layout = QVBoxLayout(status_group)
 
         status_registers = [config for config in self.register_configs.values()
                           if config.permission == "r"]
@@ -454,25 +479,29 @@ class RegisterManagerWidget(QWidget):
         for config in status_registers:
             widget = RegisterWidget(config)
             self.register_widgets[config.address] = widget
-            status_layout.addWidget(widget)
+            status_group_layout.addWidget(widget)
 
-        layout.addWidget(status_group)
-        layout.addStretch()
+        status_layout.addWidget(status_group)
+        status_layout.addStretch()
 
-        scroll_area.setWidget(content_widget)
-        self.tab_widget.addTab(scroll_area, "状态寄存器")
+        status_scroll.setWidget(status_content)
+        main_layout.addWidget(status_scroll)
 
-    def _setup_command_registers_tab(self):
-        """设置命令寄存器标签页"""
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
+    def _setup_command_registers_column(self, main_layout):
+        """设置命令寄存器列"""
+        # 命令寄存器滚动区域
+        command_scroll = QScrollArea()
+        command_scroll.setWidgetResizable(True)
+        command_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        command_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        command_scroll.setMinimumWidth(250)
 
-        content_widget = QWidget()
-        layout = QVBoxLayout(content_widget)
+        command_content = QWidget()
+        command_layout = QVBoxLayout(command_content)
 
-        # 添加命令寄存器组
+        # 命令寄存器组
         command_group = QGroupBox("命令寄存器 (只写)")
-        command_layout = QVBoxLayout(command_group)
+        command_group_layout = QVBoxLayout(command_group)
 
         command_registers = [config for config in self.register_configs.values()
                            if config.permission == "w"]
@@ -481,13 +510,13 @@ class RegisterManagerWidget(QWidget):
         for config in command_registers:
             widget = RegisterWidget(config)
             self.register_widgets[config.address] = widget
-            command_layout.addWidget(widget)
+            command_group_layout.addWidget(widget)
 
-        layout.addWidget(command_group)
-        layout.addStretch()
+        command_layout.addWidget(command_group)
+        command_layout.addStretch()
 
-        scroll_area.setWidget(content_widget)
-        self.tab_widget.addTab(scroll_area, "命令寄存器")
+        command_scroll.setWidget(command_content)
+        main_layout.addWidget(command_scroll)
 
     def _connect_signals(self):
         """连接信号"""
@@ -503,9 +532,11 @@ class RegisterManagerWidget(QWidget):
                 QLabel {
                     background: #4caf50;
                     color: white;
-                    border-radius: 3px;
-                    padding: 2px 8px;
+                    border: 2px solid #388e3c;
+                    border-radius: 6px;
+                    padding: 4px 8px;
                     font-weight: bold;
+                    font-size: 12px;
                 }
             """)
         else:
@@ -514,9 +545,11 @@ class RegisterManagerWidget(QWidget):
                 QLabel {
                     background: #f44336;
                     color: white;
-                    border-radius: 3px;
-                    padding: 2px 8px;
+                    border: 2px solid #d32f2f;
+                    border-radius: 6px;
+                    padding: 4px 8px;
                     font-weight: bold;
+                    font-size: 12px;
                 }
             """)
 
@@ -527,14 +560,19 @@ class RegisterManagerWidget(QWidget):
             self.register_configs.clear()
             self.register_widgets.clear()
 
-            # 清除标签页
-            self.tab_widget.clear()
+            # 重新创建界面
+            # 清除当前布局
+            layout = self.layout()
+            while layout.count():
+                child = layout.takeAt(0)
+                if child.widget():
+                    child.widget().deleteLater()
+                elif child.layout():
+                    self._clear_layout(child.layout())
 
-            # 重新加载
+            # 重新加载配置和界面
             self._load_config()
-            self._setup_config_registers_tab()
-            self._setup_status_registers_tab()
-            self._setup_command_registers_tab()
+            self._setup_ui()
             self._connect_signals()
 
             self._show_message("配置重新加载成功", "success")
@@ -542,6 +580,15 @@ class RegisterManagerWidget(QWidget):
         except Exception as e:
             logger.error(f"重新加载配置失败: {e}")
             QMessageBox.critical(self, "错误", f"重新加载配置失败: {e}")
+
+    def _clear_layout(self, layout):
+        """递归清除布局"""
+        while layout.count():
+            child = layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+            elif child.layout():
+                self._clear_layout(child.layout())
 
     def _on_register_set_requested(self, address: int, raw_value: int):
         """寄存器设置请求"""
