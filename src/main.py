@@ -13,6 +13,12 @@ from qasync import asyncClose, asyncSlot
 import traceback
 import threading
 import time
+from communication.protocol import (
+    ProtocolParser,
+    MotorSampleData,
+    SysREGsUpData,
+    SysREGsSetResp,
+)
 
 # 设置日志
 logging.basicConfig(
@@ -238,12 +244,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # 确保自动滚动按钮存在
         self.radioButton = QtWidgets.QRadioButton(self.global_ctrl_widget)
         self.radioButton.setText("自动滚动")
-        global_ctrl_widget_layout.addWidget(self.radioButton, 3, 0, 1, 1)
+        global_ctrl_widget_layout.addWidget(self.radioButton, 4, 0, 1, 1)
 
         # 创建通道显示开关按钮组
         channel_toggle_frame = self._create_channel_toggle_buttons()
         # 添加到主布局
-        global_ctrl_widget_layout.addWidget(channel_toggle_frame, 4, 0, 1, 1)
+        global_ctrl_widget_layout.addWidget(channel_toggle_frame, 5, 0, 1, 1)
 
         # 设置默认状态
         self.radioButton.setChecked(self.cfg.auto_roll)
@@ -331,7 +337,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # 测试按钮
         self.test_btn.clicked.connect(self.on_test_clicked_cb)
-
         # 时基控制
         self.hori_div_spinbox.valueChanged.connect(self.on_time_base_changed)
         self.hori_div_offset_spinbox.valueChanged.connect(self.on_time_offset_changed)
@@ -487,7 +492,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         except Exception as e:
             logger.error(f"处理采样数据时出错: {e}")
 
-    def on_sys_regs_upload(self, config_dict: dict):
+    def on_sys_regs_upload(self, sys_reg_upload: SysREGsUpData):
         """接收到配置数据处理"""
         pass
         # logger.info(f"收到配置数据: {config_dict}")

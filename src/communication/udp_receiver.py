@@ -277,8 +277,7 @@ class UDPReceiver:
                     packet.packet_type == PACKET_TYPE_MOTOR_U16
                     or packet.packet_type == PACKET_TYPE_MOTOR_F32
                 ):
-                    # self._handle_motor_data(packet)
-                    pass
+                    self._handle_motor_data(packet)
                 # 处理寄存器上传数据
                 elif packet.packet_type == PACKET_TYPE_SYS_REGS_UP:
                     self._handle_sys_regs_upload_data(packet)
@@ -442,7 +441,11 @@ class UDPReceiver:
 
         except asyncio.TimeoutError:
             logger.warning(f"等待配置响应超时 (序号: {req_seq})")
-            await self.resp_queue.get()  # 丢弃响应
+            # 清空队列中可能的旧响应
+            try:
+                self.resp_queue.get_nowait()
+            except queue.Empty:
+                pass
         except OSError as e:
             logger.error(f"网络发送失败: {e}")
             raise ConnectionError(f"网络连接错误: {e}")
