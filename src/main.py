@@ -159,17 +159,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.register_tab_widget = RegisterTabWidget(
                 config_file_path=config_file_path,
                 device_reg_set_func=self.device_reg_set,
-                parent=self.tab_ctrl
             )
 
-            # 将寄存器管理界面添加到下位机控制标签页
-            if not hasattr(self.tab_ctrl, 'layout') or self.tab_ctrl.layout() is None:
-                layout = QtWidgets.QVBoxLayout(self.tab_ctrl)
-                layout.setContentsMargins(0, 0, 0, 0)
-            else:
-                layout = self.tab_ctrl.layout()
-
-            layout.addWidget(self.register_tab_widget)
+            self.register_tab_widget.show()
 
             logger.info("寄存器控制界面初始化完成")
 
@@ -373,7 +365,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.reload_conf_btn.clicked.connect(self.reload_configuration)
 
         # 测试按钮
+        self.test_btn.setText("显示寄存器管理")
         self.test_btn.clicked.connect(self.on_test_clicked_cb)
+
         # 时基控制
         self.hori_div_spinbox.valueChanged.connect(self.on_time_base_changed)
         self.hori_div_offset_spinbox.valueChanged.connect(self.on_time_offset_changed)
