@@ -19,6 +19,7 @@ from communication.protocol import (
     SysREGsUpData,
     SysREGsSetResp,
 )
+from ui.register_integration import RegisterTabWidget
 
 # 设置日志
 logging.basicConfig(
@@ -64,6 +65,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self._init_scope_view_ui()
         self._init_global_controls_ui()
         self._init_channel_controls_ui()
+        self._init_register_controls_ui()
         self._init_data_storage()
         self._init_communication()
         self._init_timers()
@@ -146,6 +148,41 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         layout.addWidget(self.cursor_control)
         # 显示当前CH的面板
         self._show_current_channel_config()
+
+    def _init_register_controls_ui(self):
+        """初始化寄存器控制界面"""
+        try:
+            # 寄存器配置文件路径
+            config_file_path = "config/registers_config.json"
+
+            # 创建寄存器管理标签页
+            self.register_tab_widget = RegisterTabWidget(
+                config_file_path=config_file_path,
+                device_reg_set_func=self.device_reg_set,
+                parent=self.tab_ctrl
+            )
+
+            # 将寄存器管理界面添加到下位机控制标签页
+            if not hasattr(self.tab_ctrl, 'layout') or self.tab_ctrl.layout() is None:
+                layout = QtWidgets.QVBoxLayout(self.tab_ctrl)
+                layout.setContentsMargins(0, 0, 0, 0)
+            else:
+                layout = self.tab_ctrl.layout()
+
+            layout.addWidget(self.register_tab_widget)
+
+            logger.info("寄存器控制界面初始化完成")
+
+        except Exception as e:
+            logger.error(f"初始化寄存器控制界面失败: {e}")
+            # 创建错误提示标签
+            error_label = QtWidgets.QLabel(f"寄存器管理界面加载失败: {e}")
+            error_label.setStyleSheet("color: red; padding: 20px;")
+            if not hasattr(self.tab_ctrl, 'layout') or self.tab_ctrl.layout() is None:
+                layout = QtWidgets.QVBoxLayout(self.tab_ctrl)
+            else:
+                layout = self.tab_ctrl.layout()
+            layout.addWidget(error_label)
 
     def _create_channel_toggle_buttons(self):
         """创建通道显示开关按钮组"""
@@ -494,9 +531,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def on_sys_regs_upload(self, sys_reg_upload: SysREGsUpData):
         """接收到配置数据处理"""
-        pass
-        # logger.info(f"收到配置数据: {config_dict}")
-        # TODO: 根据需要更新UI显示配置信息
+        try:
+            # 将寄存器数据传递给寄存器管理界面
+            if hasattr(self, 'register_tab_widget') and self.register_tab_widget:
+                self.register_tab_widget.on_sys_regs_upload(sys_reg_upload)
+
+            logger.debug(f"收到 {sys_reg_upload.reg_num} 个寄存器数据")
+
+        except Exception as e:
+            logger.error(f"处理寄存器上传数据时出错: {e}")
 
     def refresh_plot(self):
         """刷新绘图"""

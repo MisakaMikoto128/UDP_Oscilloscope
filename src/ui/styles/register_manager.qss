@@ -1,0 +1,252 @@
+/* 寄存器管理界面样式文件 */
+
+/* 主窗口样式 */
+RegisterManagerWidget {
+    background-color: #f5f5f5;
+    font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+}
+
+/* 标签页样式 */
+QTabWidget::pane {
+    border: 1px solid #c0c0c0;
+    background-color: white;
+    border-radius: 4px;
+}
+
+QTabWidget::tab-bar {
+    alignment: left;
+}
+
+QTabBar::tab {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #f0f0f0, stop: 1 #e0e0e0);
+    border: 1px solid #c0c0c0;
+    border-bottom-color: #c0c0c0;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    min-width: 120px;
+    padding: 8px 16px;
+    margin-right: 2px;
+    font-weight: bold;
+}
+
+QTabBar::tab:selected {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #ffffff, stop: 1 #f0f0f0);
+    border-color: #2196f3;
+    border-bottom-color: #ffffff;
+    color: #2196f3;
+}
+
+QTabBar::tab:hover {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #f8f8f8, stop: 1 #e8e8e8);
+}
+
+/* 分组框样式 */
+QGroupBox {
+    font-weight: bold;
+    font-size: 12pt;
+    border: 2px solid #cccccc;
+    border-radius: 8px;
+    margin-top: 1ex;
+    padding-top: 10px;
+    background-color: white;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 8px 0 8px;
+    color: #333333;
+    background-color: white;
+}
+
+/* 寄存器控件样式 */
+RegisterWidget {
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    margin: 2px;
+    padding: 4px;
+}
+
+RegisterWidget:hover {
+    border-color: #2196f3;
+    background-color: #f8f9fa;
+}
+
+/* 标签样式 */
+QLabel {
+    color: #333333;
+    font-size: 9pt;
+}
+
+/* 按钮样式 */
+QPushButton {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #ffffff, stop: 1 #f0f0f0);
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-weight: bold;
+    min-height: 20px;
+}
+
+QPushButton:hover {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #e3f2fd, stop: 1 #bbdefb);
+    border-color: #2196f3;
+    color: #1976d2;
+}
+
+QPushButton:pressed {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #bbdefb, stop: 1 #90caf9);
+    border-color: #1976d2;
+}
+
+QPushButton:disabled {
+    background: #f5f5f5;
+    border-color: #e0e0e0;
+    color: #9e9e9e;
+}
+
+/* 设置按钮特殊样式 */
+QPushButton[text="设置"] {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #4caf50, stop: 1 #388e3c);
+    color: white;
+    border: 1px solid #388e3c;
+}
+
+QPushButton[text="设置"]:hover {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #66bb6a, stop: 1 #4caf50);
+}
+
+QPushButton[text="设置"]:pressed {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #388e3c, stop: 1 #2e7d32);
+}
+
+/* 命令按钮样式 */
+QPushButton[text*="启动"] {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #ff9800, stop: 1 #f57c00);
+    color: white;
+    border: 1px solid #f57c00;
+}
+
+QPushButton[text*="停止"] {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #f44336, stop: 1 #d32f2f);
+    color: white;
+    border: 1px solid #d32f2f;
+}
+
+/* 输入框样式 */
+QSpinBox, QDoubleSpinBox, QLineEdit {
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    padding: 4px 8px;
+    background-color: white;
+    selection-background-color: #2196f3;
+}
+
+QSpinBox:focus, QDoubleSpinBox:focus, QLineEdit:focus {
+    border-color: #2196f3;
+    outline: none;
+}
+
+QSpinBox:disabled, QDoubleSpinBox:disabled, QLineEdit:disabled {
+    background-color: #f5f5f5;
+    color: #9e9e9e;
+}
+
+/* 滚动条样式 */
+QScrollBar:vertical {
+    background: #f0f0f0;
+    width: 12px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical {
+    background: #cccccc;
+    border-radius: 6px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #999999;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+/* 滚动区域样式 */
+QScrollArea {
+    border: none;
+    background-color: transparent;
+}
+
+QScrollArea > QWidget > QWidget {
+    background-color: transparent;
+}
+
+/* 状态栏样式 */
+QFrame[objectName="status_frame"] {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #ffffff, stop: 1 #f0f0f0);
+    border-bottom: 1px solid #cccccc;
+}
+
+/* 消息标签样式 */
+QLabel[objectName="message_label"] {
+    font-weight: bold;
+    font-size: 10pt;
+}
+
+/* 值显示标签样式 */
+QLabel[objectName="value_label"] {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-family: "Consolas", "Monaco", monospace;
+    font-size: 9pt;
+}
+
+QLabel[objectName="value_label"]:hover {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}
+
+/* 地址标签样式 */
+QLabel[objectName="addr_label"] {
+    color: #6c757d;
+    font-size: 8pt;
+    font-family: "Consolas", "Monaco", monospace;
+}
+
+/* 单位标签样式 */
+QLabel[objectName="unit_label"] {
+    color: #6c757d;
+    font-style: italic;
+    font-size: 8pt;
+}
+
+/* 工具提示样式 */
+QToolTip {
+    background-color: #333333;
+    color: white;
+    border: 1px solid #666666;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 9pt;
+}

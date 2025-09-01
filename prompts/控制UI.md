@@ -1,73 +1,102 @@
-使用中文同我高效交流
+请使用中文与我高效交流。
 
-如main.py所示，我又一个self.receiver用于UDP和下位机通信。
+基于main.py中的self.receiver UDP通信模块，我需要创建一个基于JSON配置文件的寄存器管理界面系统。由于寄存器众多，我认为一个个手动设置界面很费时间，所以我觉得可以使用json配置文件来描述每一个寄存器，自动生成界面。
 
-我的下位机设置了一堆32bit的寄存器，分为配置寄存器、状态寄存器和命令寄存器，配置寄存器可以通过上位机设置值，状态寄存器只能收到数据并且显示，命令寄存器的寄存器值就是一个命令。
+## 背景
 
-由于寄存器众多，我认为一个个手动设置界面很费时间，所以我觉得可以使用json配置文件来描述每一个寄存器，自动生成界面。
+下位机有107个32位小端序寄存器，分为三类：
 
-具体来说这个json文件描述了如下信息：
+- 配置寄存器（55个，地址0-54）：可读写，用于设置参数
+- 状态寄存器（50个，地址55-104）：只读，用于显示状态
+- 命令寄存器（2个，地址105-106）：只写，用于发送命令，命令寄存器的寄存器值就是一个命令
 
-寄存器变量名：变量名字
-寄存器别名：寄存器别名，别名存在的情况下就显示别名，否则显示变量名。
-寄存器读写权限：三种，r代表能够读取(状态)，rw代表既能够读取也能够写入（配置），w代表只能写入（命令）。
-寄存器数据类型：默认都是小端序，包括整数类型：uint32_t、int32_t、int16_t、uint16_t、定点数、还有两个uint16_t组合为一个寄存器的类型，IPV4以uint32_t存储的类型，这些每个类型使用一个32bit的寄存器，即使uint16_t这种也是使用一个完整的32bit的寄存器。
-缩放倍数：仅针对定点数存在，默认缩放倍数为100000，即发送时候寄存器的值为目标浮点数乘以缩放倍数，解析的时候除以缩放倍数。
-寄存器范围：限定上位机面板设置寄存器时候的有效值，如果用户设置的只不在有效范围就警告。使用list，左边是最小值，右边是最大值，闭区间。
-寄存器单位：用于指示寄存器值的单位。
-命令值：仅仅命令寄存器有效。
-然后是每个寄存器界面相关的配置：
-设置时是否弹出二次确认窗口:设置配置寄存器的时候是否需要二次确认，需要二次确认则弹出窗口上面写明需要设置的寄存器的名称，变量从什么变成什么。
-变化步长：设置寄存器值的时候spinbox的步长，整数寄存器最小为1，定点数默认为0.1吧，其他的类型不支持步长。
-快捷键：可以配置快捷键来通过按键操作，默认没有快捷键。
+## JSON配置文件规范
 
-界面实现上面：
-状态寄存器只需要显示寄存器的名称（有别名就显示别名）、值、单位。
-配置寄存器
-配置寄存器需要显示寄存器的名称（有别名就显示别名）、值、单位、设置按钮、设置值输入的spinbox、双击值可以同步当前接收到的值到spinbox,如果需要二次确认需要弹出确认对话框，确认才设置，否则不设置。
-命令寄存器比较特殊，一个命令寄存器可以设置多个按钮发出不同的命令，一次一个配置描述一个按钮功能，点击按钮就发送对应的命令值即可。目前有停机和启动两个命令，就是用下面说的SYS_CMD_REG_ADDR1这个地址发送命令即可，启动命令为0xC1,
-停止命令为0xF1。
-寄存器界面的qss文件路径：无效则使用默认样式。
+每个寄存器需要以下字段：
 
-具体API:
-目前寄存器的数据会通过下位机主动上传，上传的回到函数是def on_sys_regs_upload(self, sys_reg_upload: SysREGsUpData):
-位于main.py，下位机会一次性上传所有寄存器，从地址0开始。
-收到数据和刷新界面上的数据即可。
+1. **JSON配置基本信息字段**：
+   - `var_name`：寄存器变量名
+   - `alias`：寄存器别名（可选，有别名时显示别名，否则显示变量名）
+   - `permission`：读写权限（"r"=只读状态，"rw"=读写配置，"w"=只写命令）
+   - `address`：寄存器地址（0-106）
+   - `scale_factor`：缩放倍数（仅定点数类型，默认100000）
+   - `range`：有效值范围 [最小值, 最大值]（闭区间）
+   - `unit`：数值单位字符串
 
-对于命令和配置寄存器则通过async def device_reg_set(self, regAddrStart: int, datas: list[int]) -> bool:这个异步函数设置寄存器，这个异步函数如果超时设置失败会返回false，这时候需要气泡提示无需确认的提示，红色显示那个寄存器设置失败了，如果设置成功则绿色气泡无需确认提示一下，显示寄存器值从多少设置为多少成功了。
+- `command_value`：命令值（如启动命令0xC1，停止命令0xF1,仅仅命令寄存器有效）
 
-技术要求：
-要求这个界面单独实现，有单独的UI文件，和现有代码尽量解耦合，注意项目使用了qasync，槽函数在某些命名规则下面会自动绑定，我不喜欢自动绑定，所以注意避免槽函数的命名造成自动绑定。
+2. **数据类型**（小端序）：
+   - `data_type`：支持类型
+     - `"uint32_t"`：32位无符号整数
+     - `"int32_t"`：32位有符号整数  
+     - `"uint16_t"`：16位无符号整数（占用完整32位寄存器）
+     - `"int16_t"`：16位有符号整数（占用完整32位寄存器）
+     - `"fixed_point"`：定点数（浮点数*缩放倍数存储）
+     - `"dual_uint16"`：两个uint16_t组合（如端口号）
+     - `"ipv4"`：IPv4地址（以uint32_t存储）
 
-界面上面增加一个下位机在线状态指示，后面我会给UDPReceiver增加一个读取下位机在线状态信号、和读取下位机在线状态的函数指示上位机上下线。
+3. **JSON配置界面配置信息字段**：
+   - `confirm_dialog`：设置时是否需要二次确认（布尔值）
+   - `step_size`：SpinBox步长（整数最小1，定点数默认0.1）
+   - `hotkey`：快捷键（可选）
+   - `qss_file_path`：自定义样式文件路径（可选，没有或者加载失败就不生效）
 
-要求界面整体要美观，使用到的qss要单独作为文件存放，避免放到代码里面去。
+## 界面实现要求
 
-具体的寄存器列表：
-#define SYS_CFG_REG_NUM 55
-#define SYS_STATUS_REG_NUM 50
-#define SYS_CMD_REG_NUM 2
+### 显示逻辑
+- **状态寄存器**：显示名称（别名优先）、当前值、单位
+- **配置寄存器**：显示名称、当前值、单位、设置按钮、SpinBox输入框
+  - 双击当前值可同步到SpinBox
+  - 如需二次确认，弹出对话框显示"将寄存器[名称]从[旧值]设置为[新值]"
+- **命令寄存器**：每个命令值对应一个按钮，点击发送对应命令
 
-#define SYS_REG_NUM (SYS_CFG_REG_NUM + SYS_STATUS_REG_NUM + SYS_CMD_REG_NUM)
+### 技术实现
+1. **数据接收**：通过`on_sys_regs_upload(self, sys_reg_upload: SysREGsUpData)`接收下位机上传的所有寄存器数据（从地址0开始）
+2. **寄存器配置发送**：通过`async def device_reg_set(self, regAddrStart: int, datas: list[int]) -> bool`设置寄存器
+   - 成功：绿色气泡提示"寄存器[名称]从[旧值]设置为[新值]成功"
+   - 失败：红色气泡提示"寄存器[名称]设置失败"
+3. **在线状态**：界面需包含下位机在线状态指示器（后续会添加相关信号和函数）
 
-#define SYS_REG_ADDR_BASE 0
-#define SYS_REG_ADDR_END (SYS_REG_ADDR_BASE + SYS_REG_NUM - 1)
+### 代码架构要求
+- 创建独立的UI文件和Python模块，与现有代码解耦
+- 使用qasync异步框架
+- 避免槽函数自动绑定（避免特定命名规则）
+- QSS样式文件独立存放，不写在代码中
+- 界面美观，用户体验良好
 
-#define SYS_CFG_REG_ADDR_BASE (0 + SYS_REG_ADDR_BASE)
-#define SYS_CFG_REG_ADDR_END (SYS_CFG_REG_ADDR_BASE + SYS_CFG_REG_NUM - 1)
+### 寄存器地址定义
+```c
+#define SYS_CFG_REG_NUM 55        // 配置寄存器数量
+#define SYS_STATUS_REG_NUM 50     // 状态寄存器数量  
+#define SYS_CMD_REG_NUM 2         // 命令寄存器数量
 
-#define SYS_STATUS_REG_ADDR_BASE (0 + SYS_REG_ADDR_BASE + SYS_CFG_REG_NUM)
-#define SYS_STATUS_REG_ADDR_END (SYS_STATUS_REG_ADDR_BASE + SYS_STATUS_REG_NUM - 1)
+// 地址范围
+#define SYS_CFG_REG_ADDR_BASE 0                    // 配置寄存器起始地址
+#define SYS_STATUS_REG_ADDR_BASE 55                // 状态寄存器起始地址
+#define SYS_CMD_REG_ADDR_BASE 105                  // 命令寄存器起始地址
 
-#define SYS_CMD_REG_ADDR_BASE (0 + SYS_REG_ADDR_BASE + SYS_CFG_REG_NUM + SYS_STATUS_REG_NUM)
-#define SYS_CMD_REG_ADDR_END (SYS_CMD_REG_ADDR_BASE + SYS_CMD_REG_NUM - 1)
+// 命令寄存器地址
+#define SYS_CMD_REG_ADDR1 105     // 启动/停止命令寄存器
+#define SYS_CMD_REG_ADDR2 106     // 预留命令寄存器
+```
 
-#define SYS_CMD_REG_ADDR1 (SYS_CMD_REG_ADDR_BASE + 0)
-#define SYS_CMD_REG_ADDR2 (SYS_CMD_REG_ADDR_BASE + 1)
-
-如下是我的下位机上传寄存器数据的代码，绝大部分寄存器都是浮点数，除了IPV4寄存器，self_port/dest_port寄存器较为特殊是两个uint16_t组合类型外，其余寄存器均为一个字段一个寄存器。
+### 数据转换规则
+下位机使用以下转换：
+```c
 #define FLOAT_TO_U32_FIXED_POINT(fp32_var) ((uint32_t)((int32_t)((fp32_var) * (100000))))
 #define U32_FIXED_POINT_TO_FLOAT(u32_var) (((int32_t)(u32_var)) * 0.00001f)
+```
+
+大部分寄存器为定点数类型，特殊类型包括：
+- IPv4地址寄存器（地址1,2,3,5）
+- 端口号寄存器（地址6）：dual_uint16类型
+- UID和MAC地址寄存器：uint32_t类型
+- 其他整数配置寄存器：uint32_t类型
+
+请基于以上规范实现完整的寄存器管理界面系统。
+
+具体的寄存器列表：
+
 // Sync cpu1's default variable to registers, for first save
     WR(0, GetUID0());                         // UID
     WR(1, IPV4_TO_UINT32(192, 168, 137, 99)); // Self IP
@@ -167,9 +196,3 @@
     WR(addr++, FLOAT_TO_U32_FIXED_POINT(MCV.Va));
     WR(addr++, FLOAT_TO_U32_FIXED_POINT(MCV.Vb));
     WR(addr++, FLOAT_TO_U32_FIXED_POINT(MCV.Vc));
-
-
-
-
-
-
