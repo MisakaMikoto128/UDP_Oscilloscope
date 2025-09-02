@@ -1,1 +1,1 @@
-pyuic5 -o src\main_window\main_window.py src\ui\main_window.ui
+pyuic5 -o src\ui\main_window_ui.py src\ui\main_window.ui
