@@ -41,13 +41,14 @@ class MainWindow(FluentWindow):
         self.receiver = self.scope_frame.receiver
         self.interface1 = CtrlPanelForm(cfg,None, self.receiver.reg_set, self)
         self.receiver.on_sys_regs_upload.connect(self.interface1.on_on_sys_regs_uploaded)
+        self.receiver.client_online_status_changed.connect(self.interface1.on_net_online_status_changed)
         self.scope_frame.show()
 
         self.initNavigation()
         self.initWindow()
 
     def initNavigation(self):
-        self.addSubInterface(self.interface1, FIF.EDIT, "监控界面")
+        self.addSubInterface(self.interface1, FIF.GAME, "监控界面")
 
         self.switchTo(self.interface1)
         # Theme切换按钮

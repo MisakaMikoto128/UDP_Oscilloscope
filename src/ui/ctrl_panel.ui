@@ -465,7 +465,7 @@
            <double>3000.000000000000000</double>
           </property>
           <property name="singleStep">
-           <double>5.000000000000000</double>
+           <double>10.000000000000000</double>
           </property>
           <property name="stepType">
            <enum>QAbstractSpinBox::DefaultStepType</enum>
@@ -526,6 +526,22 @@
        </widget>
       </item>
       <item>
+       <widget class="SubtitleLabel" name="label_dev_error">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>报错：</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="SubtitleLabel" name="label_temperature">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -556,26 +572,6 @@
          <enum>Qt::MarkdownText</enum>
         </property>
        </widget>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_4">
-        <item>
-         <widget class="SubtitleLabel" name="label_dev_error">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>报错：</string>
-          </property>
-          <property name="textFormat">
-           <enum>Qt::MarkdownText</enum>
-          </property>
-         </widget>
-        </item>
-       </layout>
       </item>
       <item>
        <widget class="SubtitleLabel" name="label_sys_status">
