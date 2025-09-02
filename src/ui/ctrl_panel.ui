@@ -89,6 +89,9 @@
         <property name="text">
          <string>启动</string>
         </property>
+        <property name="shortcut">
+         <string>Return</string>
+        </property>
         <property name="checkable">
          <bool>false</bool>
         </property>
@@ -117,6 +120,9 @@
         </property>
         <property name="text">
          <string>停止</string>
+        </property>
+        <property name="shortcut">
+         <string>Space</string>
         </property>
         <property name="checkable">
          <bool>false</bool>

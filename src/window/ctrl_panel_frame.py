@@ -4,7 +4,7 @@ from typing import Callable, List, Awaitable
 
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore, QtGui
-from qasync import asyncClose,asyncSlot
+from qasync import asyncClose, asyncSlot
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from qfluentwidgets import InfoLevel
 
@@ -30,24 +30,35 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def uint32_to_int32(value: int) -> int:
+    """将无符号32位整数转换为有符号32位整数"""
+    if value >= 0x80000000:  # 2^31
+        return value - 0x100000000  # 2^32
+    return value
+
+
 class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
     """主窗口类"""
 
-    def __init__(self, cfg: ConfigManager,
-                 config_file_path: str,
-                 device_reg_set_func: Callable[[int, List[int]], Awaitable[bool]],
-                 parent=None):
+    def __init__(
+        self,
+        cfg: ConfigManager,
+        config_file_path: str,
+        device_reg_set_func: Callable[[int, List[int]], Awaitable[bool]],
+        parent=None,
+    ):
         super().__init__(parent=parent)
         self.setupUi(self)
         # 配置管理器
-        self.cfg = cfg
+        self.cfg: ConfigManager = cfg
         self.config_file_path = config_file_path
         self.device_reg_set_func = device_reg_set_func
+        self.setObjectName("CtrlPanelForm")
 
         # 屏蔽spinbox的滚轮事件
         self.spinbox_speed.installEventFilter(self)
         self.spinbox_speed.setValue(0)  # 设置默认速度为0
-        
+
         self.send_timer = QTimer(self)
         self.send_timer.setInterval(600)
         self.send_timer.timeout.connect(self.send_data)
@@ -57,31 +68,194 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.btn_launch_dev.clicked.connect(self.launch_device)
         self.badge_online_status.setLevel(InfoLevel.ERROR)
 
-        self.test_show()
+        # self.test_show()
 
     def test_show(self):
         sys_regs_up_data = SysREGsUpData(
             packet_type=1,
             reg_num=200,
-            reg=[1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450, 1023450,
-                 ]
+            reg=[
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+                1023450,
+            ],
         )
         self.on_on_sys_regs_uploaded(sys_regs_up_data)
 
@@ -93,15 +267,18 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         elif speed_set < -3000:
             speed_set = -3000
 
-        ret = await self.device_reg_set_func(49, [speed_set])
+        speed_set = int(speed_set * 100000)
+        target_addr = (self.cfg.target_host, self.cfg.target_port)
+        ret = await self.device_reg_set_func(49, [speed_set], target_addr=target_addr)
         if not ret:
-            # logger.info("设置速度失败")
+            logger.info("设置速度失败")
             pass
-    
+
     @asyncSlot()
     async def stop_device(self):
         self.spinbox_speed.setValue(0)
-        ret = await self.device_reg_set_func(49, [0])
+        target_addr = (self.cfg.target_host, self.cfg.target_port)
+        ret = await self.device_reg_set_func(49, [0], target_addr=target_addr)
         if not ret:
             logger.info("停止失败")
             pass
@@ -109,16 +286,20 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
     @asyncSlot()
     async def launch_device(self):
         self.spinbox_speed.setValue(10)
-        ret = await self.device_reg_set_func(49, [10])
+        target_addr = (self.cfg.target_host, self.cfg.target_port)
+        ret = await self.device_reg_set_func(
+            49, [10 * 100000], target_addr=target_addr
+        )
         if not ret:
-            logger.info("停止失败")
+            logger.info("启动失败")
             pass
 
-    @asyncSlot()
-    async def on_on_sys_regs_uploaded(self,sys_regs_up_data: SysREGsUpData):
+    @asyncSlot(SysREGsUpData)
+    async def on_on_sys_regs_uploaded(self, sys_regs_up_data: SysREGsUpData):
         try:
             fixed_point_scale = 100000
-            MCV_mSpeed = sys_regs_up_data.reg[83] / fixed_point_scale
+
+            MCV_mSpeed = -uint32_to_int32(sys_regs_up_data.reg[83]) / fixed_point_scale
             MCV_angle = sys_regs_up_data.reg[83] / fixed_point_scale
             MCV_duty_cycle = sys_regs_up_data.reg[83] / fixed_point_scale
             MCV_temperature = sys_regs_up_data.reg[83] / fixed_point_scale
@@ -136,8 +317,8 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             self.label_temperature.setText(f"Iq:      {Iq:<7.2f}")
             self.label_temperature.setText(f"Ud:      {Ud:<7.2f}")
 
-            self.label_speed.setText(f"速度：    {MCV_mSpeed:<7.1f}")
-            self.label_angle.setText(f"角度：    {MCV_angle:<7.1f}")
+            self.label_speed.setText(f"转速：    {MCV_mSpeed:<7.2f}")
+            self.label_angle.setText(f"角度：    {MCV_angle:<7.2f}")
             self.label_duty_cycle.setText(f"占空比：{MCV_duty_cycle:<7.2f}")
             self.label_temperature.setText(f"温度：    {MCV_temperature:<7.2f}")
 
@@ -234,14 +415,14 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             self.label_fault_status.setText("故障状态：\t无故障")
             self.badge_fault_status.setLevel(InfoLevel.SUCCESS)
 
-    @asyncSlot()
-    async def on_net_online_status_changed(self,online_status:bool):
+    @asyncSlot(bool)
+    async def on_net_online_status_changed(self, online_status: bool):
         if online_status:
-            self.label_online_status = "以太网在线"
-            self.IconInfoBadge_CAN1.setLevel(InfoLevel.SUCCESS)
+            self.label_online_status.setText("以太网在线")
+            self.badge_online_status.setLevel(InfoLevel.SUCCESS)
         else:
-            self.label_online_status = "以太网离线"
-            self.IconInfoBadge_CAN1.setLevel(InfoLevel.ERROR)
+            self.label_online_status.setText("以太网离线")
+            self.badge_online_status.setLevel(InfoLevel.ERROR)
 
     def eventFilter(self, obj, event):
         """事件过滤器，屏蔽spinbox的滚轮事件"""

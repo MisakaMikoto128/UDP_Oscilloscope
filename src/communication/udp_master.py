@@ -370,6 +370,9 @@ class UDPMaster(QObject):
         self, regAddrStart: int, regNum: int, datas: list[int], req_seq: int
     ) -> bytes:
         """构造配置数据包"""
+        # 将负数转换为无符号整数
+        datas = [data & 0xFFFFFFFF for data in datas]
+
         sub_packet = struct.pack(
             f"<BHH{regNum}I", PACKET_TYPE_SYS_REGS_SET, regAddrStart, regNum, *datas
         )
@@ -449,7 +452,7 @@ class UDPMaster(QObject):
                 resp.packet_type == PACKET_TYPE_SYS_REGS_SET
                 and resp.reg_addr_start == regAddrStart
             ):  # 响应类型和序号和地址都匹配时认为成功完成配置
-                logger.info(f"配置成功完成，响应: {resp}")
+                # logger.info(f"配置成功完成，响应: {resp}")
                 return True
             else:
                 logger.warning(
@@ -458,7 +461,7 @@ class UDPMaster(QObject):
                 return False  # 响应类型错误，丢弃响应并返回失败
 
         except asyncio.TimeoutError:
-            logger.warning(f"等待配置响应超时 (序号: {req_seq})")
+            logger.warning(f"等待配置响应超时 (序号: {req_seq} {target_addr})")
             # 清空队列中可能的旧响应
             try:
                 self.resp_queue.get_nowait()

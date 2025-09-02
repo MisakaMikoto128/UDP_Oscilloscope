@@ -5,10 +5,10 @@
     "refresh_rate": 120
   },
   "udp": {
-    "host": "localhost",
+    "host": "192.168.137.2",
     "port": 16011,
-    "target_host": "localhost",
-    "target_port": 16012
+    "target_host": "192.168.137.99",
+    "target_port": 16011
   },
   "storage": {
     "max_memory_mb": 1024,

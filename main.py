@@ -26,13 +26,13 @@ logger = logging.getLogger(__name__)
 
 async def main_async(app, window):
     """异步主函数"""
-    # await window.start_receiver()
+    await window.start_receiver()
     logger.info("应用程序启动完成")
     # 等待 Qt 退出信号
     app_close_event = asyncio.Event()
     app.aboutToQuit.connect(app_close_event.set)
     await app_close_event.wait()
-    # await window.stop_receiver()
+    await window.stop_receiver()
 
 
 def main():

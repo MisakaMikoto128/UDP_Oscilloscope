@@ -258,6 +258,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
             port=self.cfg.udp_port,
             on_sample=self.on_sample_received,
         )
+        self.receiver.start()
 
     def _init_timers(self):
         """初始化定时器"""

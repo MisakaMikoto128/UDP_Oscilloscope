@@ -18,6 +18,7 @@ from qfluentwidgets import (
 )
 
 from .ctrl_panel_frame import CtrlPanelForm
+from .device_setting import DeviceSettingFrom
 from ..window.oscilloscope_frame import OscilloscopeFrame
 
 class MainWindow(FluentWindow):
@@ -38,18 +39,23 @@ class MainWindow(FluentWindow):
         self.trayIcon.show()
 
         self.scope_frame = OscilloscopeFrame(cfg,)
+        self.scope_frame.show()
+
         self.receiver = self.scope_frame.receiver
         self.interface1 = CtrlPanelForm(cfg,None, self.receiver.reg_set, self)
         self.receiver.on_sys_regs_upload.connect(self.interface1.on_on_sys_regs_uploaded)
         self.receiver.client_online_status_changed.connect(self.interface1.on_net_online_status_changed)
-        self.scope_frame.show()
-
+        
+        self.interface2 = DeviceSettingFrom(cfg,None, self.receiver.reg_set, self)
+        self.receiver.on_sys_regs_upload.connect(self.interface2.on_on_sys_regs_uploaded)
+        
         self.initNavigation()
         self.initWindow()
 
     def initNavigation(self):
         self.addSubInterface(self.interface1, FIF.GAME, "监控界面")
-
+        self.addSubInterface(self.interface2, FIF.SAVE, "设备设置")
+        
         self.switchTo(self.interface1)
         # Theme切换按钮
         self.navigationInterface.addSeparator()
@@ -73,10 +79,10 @@ class MainWindow(FluentWindow):
         self.move(0, 0)
 
     async def start_receiver(self):
-        await self.interface1.receiver.start()
+        await self.receiver.start()
 
     async def stop_receiver(self):
-        await self.interface1.receiver.stop()
+        await self.receiver.stop()
 
     def closeEvent(self, event):
         print("主窗口关闭事件被调用")
