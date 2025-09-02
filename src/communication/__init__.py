@@ -3,11 +3,11 @@
 UDP通信模块
 """
 
-from .udp_receiver import UDPReceiver
+from .udp_master import UDPMaster
 from .protocol import ProtocolParser, MotorSampleData, SysREGsUpData, SysREGsSetResp
 
 __all__ = [
-    'UDPReceiver',
+    'UDPMaster',
     'ProtocolParser', 
     'MotorSampleData',
     'SysREGsUpData',

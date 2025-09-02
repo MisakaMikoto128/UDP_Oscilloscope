@@ -45,7 +45,7 @@ from ui.channel_config_widget import ChannelConfigWidget, CursorControlWidget
 from config.config_manager import ConfigManager
 from data.data_buffer import RingBuffer
 from data.storage import PersistentStorage
-from communication.udp_receiver import UDPReceiver
+from communication.udp_master import UDPMaster
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -314,7 +314,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def _init_communication(self):
         """初始化通信"""
-        self.receiver = UDPReceiver(
+        self.receiver = UDPMaster(
             host=self.cfg.udp_host,
             port=self.cfg.udp_port,
             on_sample=self.on_sample_received,
@@ -322,7 +322,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         )
 
         # 连接在线状态信号
-        self.receiver.online_status_changed.connect(
+        self.receiver.client_online_status_changed.connect(
             self.register_tab_widget.set_online_status
         )
 

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class ConfigManager:
     """配置管理器"""
     
-    def __init__(self, config_path: str = "config.json"):
+    def __init__(self, config_path: str = "config/config.json"):
         """
         初始化配置管理器
         
