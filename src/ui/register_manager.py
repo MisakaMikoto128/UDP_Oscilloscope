@@ -213,15 +213,19 @@ class RegisterWidget(QWidget):
     def _add_command_controls(self, layout):
         """添加命令寄存器控件"""
         if self.config.command_value is not None:
-            cmd_btn = QPushButton(self.config.alias or self.config.var_name)
+            # 显示命令值（16进制）
+            cmd_text = f"{self.config.alias or self.config.var_name}\n(0x{self.config.command_value:X})"
+            cmd_btn = QPushButton(cmd_text)
             cmd_btn.setMaximumWidth(200)
             cmd_btn.clicked.connect(self._on_command_clicked)
-            
+
             # 设置快捷键
             if self.config.hotkey:
                 cmd_btn.setShortcut(QKeySequence(self.config.hotkey))
-                cmd_btn.setToolTip(f"快捷键: {self.config.hotkey}")
-            
+                cmd_btn.setToolTip(f"快捷键: {self.config.hotkey}\n命令值: 0x{self.config.command_value:X}")
+            else:
+                cmd_btn.setToolTip(f"命令值: 0x{self.config.command_value:X}")
+
             layout.addWidget(cmd_btn)
     
     def _load_custom_style(self):
@@ -346,12 +350,14 @@ class RegisterManagerWidget(QWidget):
                 config = RegisterConfig(**reg_data)
                 self.register_configs[config.address] = config
 
-            # 加载命令寄存器
+            # 加载命令寄存器 - 支持相同地址的多个命令
+            self.command_configs = []  # 单独存储命令配置
             for cmd_data in config_data.get('commands', []):
                 config = RegisterConfig(**cmd_data)
-                self.register_configs[config.address] = config
+                self.command_configs.append(config)
+                # 不再使用地址作为key，避免覆盖
 
-            logger.info(f"成功加载 {len(self.register_configs)} 个寄存器配置")
+            logger.info(f"成功加载 {len(self.register_configs)} 个寄存器配置和 {len(self.command_configs)} 个命令配置")
 
         except Exception as e:
             logger.error(f"加载配置文件失败: {e}")
@@ -440,6 +446,8 @@ class RegisterManagerWidget(QWidget):
         # 配置寄存器组
         config_group = QGroupBox("配置寄存器 (可读写)")
         config_group_layout = QVBoxLayout(config_group)
+        # 设置组框内边距，避免贴边
+        config_group_layout.setContentsMargins(10, 20, 10, 10)
 
         config_registers = [config for config in self.register_configs.values()
                           if config.permission == "rw"]
@@ -471,6 +479,8 @@ class RegisterManagerWidget(QWidget):
         # 状态寄存器组
         status_group = QGroupBox("状态寄存器 (只读)")
         status_group_layout = QVBoxLayout(status_group)
+        # 设置组框内边距，避免贴边
+        status_group_layout.setContentsMargins(10, 20, 10, 10)
 
         status_registers = [config for config in self.register_configs.values()
                           if config.permission == "r"]
@@ -502,15 +512,19 @@ class RegisterManagerWidget(QWidget):
         # 命令寄存器组
         command_group = QGroupBox("命令寄存器 (只写)")
         command_group_layout = QVBoxLayout(command_group)
+        # 设置组框内边距，避免贴边
+        command_group_layout.setContentsMargins(10, 20, 10, 10)
 
-        command_registers = [config for config in self.register_configs.values()
-                           if config.permission == "w"]
-        command_registers.sort(key=lambda x: x.address)
+        # 使用单独的命令配置列表，支持相同地址的多个命令
+        if hasattr(self, 'command_configs'):
+            command_configs = sorted(self.command_configs, key=lambda x: (x.address, x.var_name))
 
-        for config in command_registers:
-            widget = RegisterWidget(config)
-            self.register_widgets[config.address] = widget
-            command_group_layout.addWidget(widget)
+            for i, config in enumerate(command_configs):
+                widget = RegisterWidget(config)
+                # 使用唯一标识符而不是地址作为key
+                unique_key = f"cmd_{config.address}_{i}"
+                self.register_widgets[unique_key] = widget
+                command_group_layout.addWidget(widget)
 
         command_layout.addWidget(command_group)
         command_layout.addStretch()
@@ -557,32 +571,77 @@ class RegisterManagerWidget(QWidget):
         """重新加载配置"""
         try:
             # 清除现有配置
+            old_register_configs = self.register_configs.copy()
+            old_register_widgets = self.register_widgets.copy()
+            old_command_configs = getattr(self, 'command_configs', []).copy()
+
             self.register_configs.clear()
             self.register_widgets.clear()
+            if hasattr(self, 'command_configs'):
+                self.command_configs.clear()
 
-            # 重新创建界面
-            # 清除当前布局
-            layout = self.layout()
-            while layout.count():
-                child = layout.takeAt(0)
-                if child.widget():
-                    child.widget().deleteLater()
-                elif child.layout():
-                    self._clear_layout(child.layout())
-
-            # 重新加载配置和界面
+            # 重新加载配置
             self._load_config()
-            self._setup_ui()
-            self._connect_signals()
+
+            # 重新创建界面 - 更安全的方式
+            self._recreate_interface()
 
             self._show_message("配置重新加载成功", "success")
 
         except Exception as e:
             logger.error(f"重新加载配置失败: {e}")
+            # 恢复旧配置
+            self.register_configs = old_register_configs
+            self.register_widgets = old_register_widgets
+            if hasattr(self, 'command_configs'):
+                self.command_configs = old_command_configs
             QMessageBox.critical(self, "错误", f"重新加载配置失败: {e}")
+
+    def _recreate_interface(self):
+        """重新创建界面"""
+        try:
+            # 找到主内容布局
+            main_layout = self.layout()
+            if not main_layout:
+                return
+
+            # 找到并清除主内容区域（跳过状态栏和消息标签）
+            items_to_remove = []
+            for i in range(main_layout.count()):
+                item = main_layout.itemAt(i)
+                if item and item.layout() and isinstance(item.layout(), QHBoxLayout):
+                    # 这是主内容的三列布局
+                    items_to_remove.append(i)
+
+            # 从后往前删除，避免索引变化
+            for i in reversed(items_to_remove):
+                item = main_layout.takeAt(i)
+                if item and item.layout():
+                    self._clear_layout(item.layout())
+
+            # 重新创建主内容区域
+            main_content = QHBoxLayout()
+
+            # 重新创建三列
+            self._setup_config_registers_column(main_content)
+            self._setup_status_registers_column(main_content)
+            self._setup_command_registers_column(main_content)
+
+            # 插入到正确位置（状态栏之后，消息标签之前）
+            main_layout.insertLayout(1, main_content)
+
+            # 重新连接信号
+            self._connect_signals()
+
+        except Exception as e:
+            logger.error(f"重新创建界面失败: {e}")
+            raise
 
     def _clear_layout(self, layout):
         """递归清除布局"""
+        if layout is None:
+            return
+
         while layout.count():
             child = layout.takeAt(0)
             if child.widget():

@@ -15,6 +15,7 @@ from utils.crc import calculate_crc
 from typing import Optional, List, Tuple, Dict, Any
 from typing import Callable, Optional, Any
 from collections import deque
+from PyQt5.QtCore import QObject, pyqtSignal
 from communication.protocol import (
     ProtocolParser,
     MotorSampleData,
@@ -26,8 +27,11 @@ from communication.protocol import *
 logger = logging.getLogger(__name__)
 
 
-class UDPReceiver:
+class UDPReceiver(QObject):
     """UDP数据接收器 - 15KHz高频优化版本"""
+
+    # 在线/离线状态信号
+    online_status_changed = pyqtSignal(bool)  # True=在线, False=离线
 
     def __init__(
         self,
@@ -45,6 +49,7 @@ class UDPReceiver:
             on_sample: 采样数据回调函数 (packet_type, channels)
             on_config: 配置数据回调函数 (config_dict)
         """
+        super().__init__()
         self.host = host
         self.port = port
         self.on_sample = on_sample
@@ -63,6 +68,12 @@ class UDPReceiver:
         # 高速数据队列 - 使用线程安全的deque
         self.data_queue = deque(maxlen=5000)  # 15KHz下约333ms缓冲
         self.queue_lock = threading.Lock()
+
+        # 在线状态检测
+        self.online_status = False
+        self.last_data_time = 0
+        self.online_timeout = 1.0  # 1秒超时
+        self.status_check_thread = None
 
         # 统计信息
         self.receive_count = 0
@@ -125,6 +136,12 @@ class UDPReceiver:
                 target=self._process_loop, name="UDP_Processor", daemon=True
             )
             self.process_thread.start()
+
+            # 启动在线状态检测线程
+            self.status_check_thread = threading.Thread(
+                target=self._status_check_loop, name="UDP_Status_Checker", daemon=True
+            )
+            self.status_check_thread.start()
 
             logger.info(
                 f"UDP接收器已启动，监听 {self.host}:{self.port} (高频15KHz优化)"
@@ -201,6 +218,38 @@ class UDPReceiver:
 
         logger.info("高速UDP接收线程已退出")
 
+    def _status_check_loop(self):
+        """在线状态检测循环"""
+        logger.info("在线状态检测线程已启动")
+
+        while self.running:
+            try:
+                current_time = time.time()
+
+                # 检查是否超时
+                if self.last_data_time > 0:
+                    time_since_last_data = current_time - self.last_data_time
+                    should_be_online = time_since_last_data <= self.online_timeout
+
+                    # 状态发生变化时发射信号
+                    if should_be_online != self.online_status:
+                        self.online_status = should_be_online
+                        self.online_status_changed.emit(self.online_status)
+                        if self.online_status:
+                            logger.info("设备上线")
+                        else:
+                            logger.info("设备离线")
+
+                # 每0.1秒检查一次
+                time.sleep(0.1)
+
+            except Exception as e:
+                if self.running:
+                    logger.error(f"状态检测循环出错: {e}")
+                    time.sleep(0.1)
+
+        logger.info("在线状态检测线程已退出")
+
     def _process_loop(self):
         """数据处理循环 - 批量处理优化"""
         logger.info("UDP数据处理线程已启动")
@@ -269,6 +318,9 @@ class UDPReceiver:
     def _on_data_received(self, data: bytes, addr: tuple):
         """处理接收到的UDP数据"""
         try:
+            # 更新最后数据接收时间
+            self.last_data_time = time.time()
+
             packets = self.parser.feed_data(data)
 
             for packet in packets:

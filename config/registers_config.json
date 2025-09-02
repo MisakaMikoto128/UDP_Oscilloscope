@@ -576,16 +576,17 @@
       "confirm_dialog": true,
       "step_size": 0.01
     },
-    {
-      "var_name": "Motor_RpstoRpm_COEF",
-      "alias": "转速转换系数",
+
+        {
+      "var_name": "Set_Speed_Ref",
+      "alias": "设定转速参考",
       "permission": "rw",
       "address": 49,
       "data_type": "fixed_point",
       "scale_factor": 100000,
-      "range": [0.0, 1000.0],
-      "unit": "",
-      "confirm_dialog": true,
+      "range": [-3000.0, 3000.0],
+      "unit": "rpm",
+      "confirm_dialog": false,
       "step_size": 0.1
     },
     {
@@ -825,13 +826,13 @@
       "unit": "A"
     },
     {
-      "var_name": "Set_Speed_Ref",
-      "alias": "设定转速参考",
+      "var_name": "Motor_RpstoRpm_COEF",
+      "alias": "转速转换系数",
       "permission": "r",
       "address": 80,
       "data_type": "fixed_point",
       "scale_factor": 100000,
-      "unit": "rpm"
+      "unit": ""
     },
     {
       "var_name": "Last_Set_Speed_Ref",

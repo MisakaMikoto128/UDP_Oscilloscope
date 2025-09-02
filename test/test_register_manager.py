@@ -46,12 +46,16 @@ class TestMainWindow(QMainWindow):
         layout = QVBoxLayout(central_widget)
         
         # 创建寄存器管理界面
-        config_file_path = project_root / "config" / "registers_config_example.json"
+        config_file_path = project_root / "config" / "registers_config.json"
         self.register_widget = RegisterTabWidget(
             config_file_path=str(config_file_path),
             device_reg_set_func=self.mock_device_reg_set,
-            parent=self
+            parent=None  # 独立窗口
         )
+
+        # 设置窗口属性
+        self.register_widget.setWindowTitle("寄存器管理界面测试")
+        self.register_widget.setGeometry(200, 200, 1000, 700)
         
         layout.addWidget(self.register_widget)
         
@@ -59,6 +63,12 @@ class TestMainWindow(QMainWindow):
         self.data_timer = QTimer()
         self.data_timer.timeout.connect(self.send_mock_data)
         self.data_timer.start(2000)  # 每2秒发送一次模拟数据
+
+        # 模拟在线状态变化
+        self.online_timer = QTimer()
+        self.online_timer.timeout.connect(self.toggle_online_status)
+        self.online_timer.start(5000)  # 每5秒切换一次在线状态
+        self.mock_online = True
         
         logger.info("测试窗口初始化完成")
     
@@ -145,6 +155,15 @@ class TestMainWindow(QMainWindow):
             
         except Exception as e:
             logger.error(f"发送模拟数据失败: {e}")
+
+    def toggle_online_status(self):
+        """切换在线状态"""
+        try:
+            self.mock_online = not self.mock_online
+            self.register_widget.set_online_status(self.mock_online)
+            logger.info(f"模拟在线状态切换为: {'在线' if self.mock_online else '离线'}")
+        except Exception as e:
+            logger.error(f"切换在线状态失败: {e}")
 
 
 async def main():

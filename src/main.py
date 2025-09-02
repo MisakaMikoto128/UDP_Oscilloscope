@@ -161,6 +161,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 device_reg_set_func=self.device_reg_set,
             )
 
+            # 设置窗口属性
+            # self.register_tab_widget.setWindowTitle("寄存器管理界面")
+            # self.register_tab_widget.setGeometry(100, 100, 1000, 700)  # 设置窗口大小和位置
+
+            # 默认隐藏，通过按钮控制显示
             self.register_tab_widget.show()
 
             logger.info("寄存器控制界面初始化完成")
@@ -314,6 +319,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             port=self.cfg.udp_port,
             on_sample=self.on_sample_received,
             on_sys_regs_upload=self.on_sys_regs_upload,
+        )
+
+        # 连接在线状态信号
+        self.receiver.online_status_changed.connect(
+            self.register_tab_widget.set_online_status
         )
 
     def _init_timers(self):
@@ -588,10 +598,24 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         except Exception as e:
             logger.error(f"重新加载配置失败: {e}")
 
-    @asyncSlot()
-    async def on_test_clicked_cb(self):
-        """测试按钮点击处理"""
-        await self.device_reg_set(regAddrStart=8, datas=[3400])
+    def on_test_clicked_cb(self):
+        """显示/隐藏寄存器管理窗口"""
+        try:
+            if hasattr(self, 'register_tab_widget') and self.register_tab_widget:
+                if self.register_tab_widget.isVisible():
+                    self.register_tab_widget.hide()
+                    self.test_btn.setText("显示寄存器管理")
+                    logger.info("隐藏寄存器管理窗口")
+                else:
+                    self.register_tab_widget.show()
+                    self.register_tab_widget.raise_()  # 将窗口置于前台
+                    self.register_tab_widget.activateWindow()  # 激活窗口
+                    self.test_btn.setText("隐藏寄存器管理")
+                    logger.info("显示寄存器管理窗口")
+            else:
+                logger.warning("寄存器管理窗口未初始化")
+        except Exception as e:
+            logger.error(f"切换寄存器管理窗口显示状态失败: {e}")
 
     async def device_reg_set(self, regAddrStart: int, datas: list[int]) -> bool:
         """发送配置到下位机
