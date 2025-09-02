@@ -11,7 +11,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from typing import List, Optional, Tuple, Callable
 import logging
 import time
-from config.config_manager import ConfigManager
+from src.config.config_manager import ConfigManager
 
 logger = logging.getLogger(__name__)
 

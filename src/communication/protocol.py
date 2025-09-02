@@ -8,7 +8,7 @@ import struct
 import logging
 from typing import Optional, List, Tuple, Dict, Any
 from dataclasses import dataclass
-from utils.crc import extract_and_verify_crc
+from src.utils.crc import extract_and_verify_crc
 
 logger = logging.getLogger(__name__)
 

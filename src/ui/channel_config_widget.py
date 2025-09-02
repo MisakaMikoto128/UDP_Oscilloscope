@@ -6,7 +6,7 @@
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from typing import Dict, Any, Callable, Optional
-from ui.scope_view import ScopeWidget
+from src.ui.scope_view import ScopeWidget
 import logging
 
 logger = logging.getLogger(__name__)

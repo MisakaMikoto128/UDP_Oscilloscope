@@ -10,7 +10,7 @@ import struct
 import time
 import math
 import logging
-from utils.crc import append_crc
+from src.utils.crc import append_crc
 
 logger = logging.getLogger(__name__)
 

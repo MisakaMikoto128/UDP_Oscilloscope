@@ -5,13 +5,13 @@ UI组件模块
 
 from .scope_view import ScopeWidget
 from .channel_config_widget import ChannelConfigWidget, CursorControlWidget, ColorButton
-from .register_integration import RegisterTabWidget
-from .main_window_ui import Ui_MainWindow
+from .main_window_ui import Ui_Form
+from .ctrl_panel_ui import Ui_Form as Ctrl_Panel_Form
 __all__ = [
     'ScopeWidget',
     'ChannelConfigWidget', 
     'CursorControlWidget',
     'ColorButton',
-    'RegisterTabWidget',
-    'Ui_MainWindow'
+    'Ui_Form',
+    'Ctrl_Panel_Form'
 ]

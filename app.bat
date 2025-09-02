@@ -16,6 +16,6 @@ if exist venv\Scripts\activate.bat (
 )
 
 echo 正在启动UDP示波器...
-python src\main.py
+python main.py
 
 pause

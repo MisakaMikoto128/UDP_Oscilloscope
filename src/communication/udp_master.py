@@ -5,24 +5,17 @@ UDP接收器模块
 """
 
 import asyncio
-import logging
-import time
+import queue
 import socket
 import threading
-import struct
-import queue
-from utils.crc import calculate_crc
-from typing import Optional, List, Tuple, Dict, Any
-from typing import Callable, Optional, Any
+import time
 from collections import deque
+from typing import Callable
+
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
-from communication.protocol import (
-    ProtocolParser,
-    MotorSampleData,
-    SysREGsUpData,
-    SysREGsSetResp,
-)
-from communication.protocol import *
+
+from ..communication.protocol import *
+from ..utils.crc import calculate_crc
 
 logger = logging.getLogger(__name__)
 
@@ -32,13 +25,13 @@ class UDPMaster(QObject):
 
     # 在线/离线状态信号
     client_online_status_changed = pyqtSignal(bool)  # True=在线, False=离线
+    on_sys_regs_upload = pyqtSignal(SysREGsUpData)
 
     def __init__(
         self,
         host: str = "0.0.0.0",
         port: int = 8888,
         on_sample: Optional[Callable[[int, list], None]] = None,
-        on_sys_regs_upload: Optional[Callable[[SysREGsUpData], None]] = None,
     ):
         """
         初始化UDP接收器
@@ -53,7 +46,6 @@ class UDPMaster(QObject):
         self.host = host
         self.port = port
         self.on_sample = on_sample
-        self.on_sys_regs_upload = on_sys_regs_upload
 
         self.parser = ProtocolParser()
         self.transport = None  # 保持兼容性，实际不使用
@@ -325,11 +317,7 @@ class UDPMaster(QObject):
 
     def _handle_sys_regs_upload_data(self, sys_regs_up_data: SysREGsUpData):
         """处理配置数据"""
-        if self.on_sys_regs_upload:
-            try:
-                self.on_sys_regs_upload(sys_regs_up_data)
-            except Exception as e:
-                logger.error(f"处理配置数据回调时出错: {e}")
+        self.on_sys_regs_upload.emit(sys_regs_up_data)
 
     def _handle_sys_regs_set_resp(self, sys_regs_set_resp: SysREGsSetResp):
         """处理寄存器设置响应数据"""
