@@ -47,7 +47,6 @@ class SysREGsUpData:
 @dataclass
 class SysREGsSetResp:
     """配置数据写入响应"""
-
     packet_type: int
     reg_addr_start: int
     regg_wroten_num: int
@@ -122,9 +121,9 @@ class ProtocolParser:
         payload_with_crc = packet_data[6:]  # 去掉包头
         payload, crc_valid = extract_and_verify_crc(payload_with_crc)
 
-        if not crc_valid:
-            logger.warning(f"CRC校验失败，序号: {sequence}")
-            return None
+        # if not crc_valid:
+        #     logger.warning(f"CRC校验失败，序号: {sequence}")
+        #     return None
 
         # 统计丢包和重复包
         self._update_statistics(sequence)

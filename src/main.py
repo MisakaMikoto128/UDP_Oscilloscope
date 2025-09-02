@@ -305,13 +305,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             n_channels=len(ch_defs), max_bytes=self.cfg.storage_bytes
         )
 
-        # 永久存储
-        self.persistent_storage = PersistentStorage(
-            file_path=self.cfg.persistent_path,
-            n_channels=len(ch_defs),
-            enabled=self.cfg.enable_persistent_storage,
-        )
-
     def _init_communication(self):
         """初始化通信"""
         self.receiver = UDPMaster(
@@ -521,15 +514,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         """接收到采样数据处理"""
         try:
             # fmt: 0xA1 for uint16, 0xA2 for float32 (当前都作为float处理)
-            # 添加到缓冲区
             for ch in range(min(self.buffer.n_channels, len(values))):
                 sample_value = float(values[ch])
                 self.buffer.append(ch, (sample_value,))
-
-                # 永久存储
-                if self.persistent_storage.enabled:
-                    self.persistent_storage.store_data(ch, [sample_value])
-
+          
         except Exception as e:
             logger.error(f"处理采样数据时出错: {e}")
 
@@ -652,10 +640,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             # 保存配置
             self.cfg.save()
-
-            # 停止永久存储
-            if hasattr(self, "persistent_storage"):
-                self.persistent_storage.stop()
 
             logger.info("应用程序正常退出")
             event.accept()

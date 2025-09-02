@@ -10,8 +10,6 @@ import struct
 import time
 import math
 import logging
-import random
-from typing import Optional
 from utils.crc import append_crc
 
 logger = logging.getLogger(__name__)
@@ -40,30 +38,6 @@ class MotorSimulator:
         self.sequence = 0
         self.sample_rate = 1000  # Hz
         self.send_interval = 0.01  # 10ms发送一次
-        
-        # 模拟的电机参数
-        self.motor_params = {
-            'voltage_a': 220.0,
-            'voltage_b': 220.0, 
-            'voltage_c': 220.0,
-            'current_a': 10.0,
-            'current_b': 10.0,
-            'current_c': 10.0,
-            'speed': 1500.0,
-            'torque': 50.0,
-            'temperature': 45.0,
-            'power': 15000.0
-        }
-        
-        # PID配置
-        self.pid_config = {
-            'kp': 1.0,
-            'ki': 0.1,
-            'kd': 0.01,
-            'kp1': 1.0,
-            'ki1': 0.1,
-            'kd1': 0.01
-        }
         
         # 时间基准
         self.curr_tick = 0
@@ -104,20 +78,17 @@ class MotorSimulator:
         """发送电机数据任务"""
         while self.running:
             try:
-                for i in range(101000000000):
-                    # 生成模拟数据
-                    motor_data = self._generate_motor_data()
-                    
-                    # 创建数据包
-                    packet = self._create_motor_packet(motor_data)
-                    
-                    # 发送数据包
-                    self.socket.sendto(packet, (self.target_host, self.target_port))
-                    
-                    # 等待下次发送
-                    await asyncio.sleep(self.send_interval)
+                # 生成模拟数据
+                motor_data = self._generate_motor_data()
                 
-                exit(0)
+                # 创建数据包
+                packet = self._create_motor_packet(motor_data)
+                
+                # 发送数据包
+                self.socket.sendto(packet, (self.target_host, self.target_port))
+                
+                # 等待下次发送
+                await asyncio.sleep(self.send_interval)
 
             except Exception as e:
                 logger.error(f"发送电机数据失败: {e}")
