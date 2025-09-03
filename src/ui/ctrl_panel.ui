@@ -6,14 +6,558 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>834</width>
-    <height>664</height>
+    <width>1008</width>
+    <height>731</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_3">
+   <item row="1" column="0">
+    <widget class="CardWidget" name="CardWidget">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="SubtitleLabel" name="label_vbus_in_2">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>80</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Vbus_in:</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>255</red>
+          <green>5</green>
+          <blue>30</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="SubtitleLabel" name="label_vbus_in">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>255</red>
+          <green>5</green>
+          <blue>30</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="SubtitleLabel" name="label_vdc_2">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>50</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Vdc:</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>255</red>
+          <green>5</green>
+          <blue>30</blue>
+         </color>
+        </property>
+        <property name="lightCustomQss" stdset="0">
+         <string>FluentLabelBase{color:#000000}</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="SubtitleLabel" name="label_vdc">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>255</red>
+          <green>5</green>
+          <blue>30</blue>
+         </color>
+        </property>
+        <property name="lightCustomQss" stdset="0">
+         <string>FluentLabelBase{color:#000000}</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="SubtitleLabel" name="label_ud_2">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>80</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Ud:</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>213</red>
+          <green>110</green>
+          <blue>7</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="SubtitleLabel" name="label_ud">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>213</red>
+          <green>110</green>
+          <blue>7</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="SubtitleLabel" name="label_ibus_2">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>50</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Ibus:</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>255</red>
+          <green>5</green>
+          <blue>30</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="SubtitleLabel" name="label_ibus">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>255</red>
+          <green>5</green>
+          <blue>30</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="SubtitleLabel" name="label_uq_2">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>80</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Uq:</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>213</red>
+          <green>0</green>
+          <blue>39</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="SubtitleLabel" name="label_uq">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>213</red>
+          <green>0</green>
+          <blue>39</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="SubtitleLabel" name="label_ia_2">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>50</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Ia:</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>225</red>
+          <green>229</green>
+          <blue>0</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
+       <widget class="SubtitleLabel" name="label_ia">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>225</red>
+          <green>229</green>
+          <blue>0</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="SubtitleLabel" name="label_id_2">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>80</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Id:</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>213</red>
+          <green>110</green>
+          <blue>7</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="SubtitleLabel" name="label_id">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>213</red>
+          <green>110</green>
+          <blue>7</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="SubtitleLabel" name="label_ib_2">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>50</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Ib:</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>78</red>
+          <green>200</green>
+          <blue>12</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="3">
+       <widget class="SubtitleLabel" name="label_ib">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>78</red>
+          <green>200</green>
+          <blue>12</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="SubtitleLabel" name="label_iq_2">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>80</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Iq:</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>213</red>
+          <green>110</green>
+          <blue>7</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="SubtitleLabel" name="label_iq">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>213</red>
+          <green>110</green>
+          <blue>7</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="2">
+       <widget class="SubtitleLabel" name="label_ic_2">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>50</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Ic:</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>255</red>
+          <green>5</green>
+          <blue>30</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="3">
+       <widget class="SubtitleLabel" name="label_ic">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="lightColor" stdset="0">
+         <color>
+          <red>255</red>
+          <green>5</green>
+          <blue>30</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item row="2" column="0" colspan="3">
     <widget class="CardWidget" name="CardWidget_3">
      <property name="sizePolicy">
@@ -39,7 +583,7 @@
         </property>
         <property name="font">
          <font>
-          <pointsize>20</pointsize>
+          <pointsize>22</pointsize>
           <weight>75</weight>
           <bold>true</bold>
          </font>
@@ -71,7 +615,7 @@
         </property>
         <property name="font">
          <font>
-          <pointsize>20</pointsize>
+          <pointsize>22</pointsize>
           <weight>75</weight>
           <bold>true</bold>
          </font>
@@ -103,7 +647,7 @@
         </property>
         <property name="font">
          <font>
-          <pointsize>20</pointsize>
+          <pointsize>22</pointsize>
           <weight>75</weight>
           <bold>true</bold>
          </font>
@@ -115,6 +659,9 @@
          <string>Space</string>
         </property>
         <property name="checkable">
+         <bool>false</bool>
+        </property>
+        <property name="checked">
          <bool>false</bool>
         </property>
        </widget>
@@ -135,7 +682,7 @@
         </property>
         <property name="font">
          <font>
-          <pointsize>20</pointsize>
+          <pointsize>22</pointsize>
           <weight>75</weight>
           <bold>true</bold>
          </font>
@@ -196,7 +743,7 @@
          </size>
         </property>
         <property name="level" stdset="0">
-         <string>Success</string>
+         <string>Error</string>
         </property>
        </widget>
       </item>
@@ -230,257 +777,6 @@
        <widget class="SubtitleLabel" name="label_online_status">
         <property name="text">
          <string>以太网离线</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="CardWidget" name="CardWidget">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
-       <widget class="SubtitleLabel" name="label_vbus_in">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Vbus_in:</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-        <property name="lightColor" stdset="0">
-         <color>
-          <red>255</red>
-          <green>5</green>
-          <blue>30</blue>
-         </color>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="SubtitleLabel" name="label_vdc">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Vdc:</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-        <property name="lightColor" stdset="0">
-         <color>
-          <red>255</red>
-          <green>5</green>
-          <blue>30</blue>
-         </color>
-        </property>
-        <property name="lightCustomQss" stdset="0">
-         <string>FluentLabelBase{color:#000000}</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="SubtitleLabel" name="label_ud">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Ud:</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-        <property name="lightColor" stdset="0">
-         <color>
-          <red>213</red>
-          <green>110</green>
-          <blue>7</blue>
-         </color>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="SubtitleLabel" name="label_ibus">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Ibus:</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-        <property name="lightColor" stdset="0">
-         <color>
-          <red>255</red>
-          <green>5</green>
-          <blue>30</blue>
-         </color>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="SubtitleLabel" name="label_uq">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Uq:</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-        <property name="lightColor" stdset="0">
-         <color>
-          <red>213</red>
-          <green>0</green>
-          <blue>39</blue>
-         </color>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="SubtitleLabel" name="label_ia">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Ia:</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-        <property name="lightColor" stdset="0">
-         <color>
-          <red>255</red>
-          <green>5</green>
-          <blue>30</blue>
-         </color>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="SubtitleLabel" name="label_id">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Id:</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-        <property name="lightColor" stdset="0">
-         <color>
-          <red>213</red>
-          <green>110</green>
-          <blue>7</blue>
-         </color>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="SubtitleLabel" name="label_ib">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Ib:</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-        <property name="lightColor" stdset="0">
-         <color>
-          <red>255</red>
-          <green>5</green>
-          <blue>30</blue>
-         </color>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="SubtitleLabel" name="label_iq">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Iq:</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-        <property name="lightColor" stdset="0">
-         <color>
-          <red>213</red>
-          <green>110</green>
-          <blue>7</blue>
-         </color>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
-       <widget class="SubtitleLabel" name="label_ic">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Ic:</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-        <property name="lightColor" stdset="0">
-         <color>
-          <red>255</red>
-          <green>5</green>
-          <blue>30</blue>
-         </color>
         </property>
        </widget>
       </item>
@@ -551,9 +847,11 @@
           </property>
           <property name="font">
            <font>
-            <pointsize>-1</pointsize>
+            <pointsize>16</pointsize>
             <weight>50</weight>
             <bold>false</bold>
+            <stylestrategy>PreferAntialias</stylestrategy>
+            <kerning>true</kerning>
            </font>
           </property>
           <property name="frame">
@@ -598,9 +896,10 @@
           </property>
           <property name="font">
            <font>
-            <pointsize>-1</pointsize>
-            <weight>50</weight>
-            <bold>false</bold>
+            <pointsize>16</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+            <stylestrategy>PreferAntialias</stylestrategy>
            </font>
           </property>
           <property name="text">
@@ -611,7 +910,7 @@
         <item>
          <widget class="SubtitleLabel" name="SubtitleLabel_3">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -627,7 +926,74 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="SwitchButton" name="sw_btn_host_computer">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>9</pointsize>
+            <weight>50</weight>
+            <bold>false</bold>
+           </font>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+          <property name="text">
+           <string>上位机开启</string>
+          </property>
+          <property name="onText">
+           <string>上位机开启</string>
+          </property>
+          <property name="offText">
+           <string>上位机关闭</string>
+          </property>
+         </widget>
+        </item>
        </layout>
+      </item>
+      <item row="11" column="0">
+       <widget class="ListWidget" name="list_fault_status">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>0xProto Nerd Font</family>
+          <pointsize>12</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="verticalScrollBarPolicy">
+         <enum>Qt::ScrollBarAsNeeded</enum>
+        </property>
+        <property name="horizontalScrollBarPolicy">
+         <enum>Qt::ScrollBarAlwaysOff</enum>
+        </property>
+        <property name="sizeAdjustPolicy">
+         <enum>QAbstractScrollArea::AdjustToContents</enum>
+        </property>
+        <item>
+         <property name="text">
+          <string>无故障</string>
+         </property>
+        </item>
+       </widget>
       </item>
       <item row="1" column="0">
        <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -665,6 +1031,9 @@
           <property name="text">
            <string>x10</string>
           </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
          </widget>
         </item>
         <item>
@@ -676,8 +1045,8 @@
         </item>
        </layout>
       </item>
-      <item row="2" column="0">
-       <widget class="SubtitleLabel" name="label_angle">
+      <item row="7" column="0">
+       <widget class="SubtitleLabel" name="label_sys_status">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -685,39 +1054,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>角度：</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="SubtitleLabel" name="label_duty_cycle">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>占空比：</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="SubtitleLabel" name="label_dev_error">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>报错：</string>
+         <string>系统状态：空闲</string>
         </property>
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
@@ -740,6 +1077,22 @@
         </property>
        </widget>
       </item>
+      <item row="8" column="0">
+       <widget class="SubtitleLabel" name="label_dev_error">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>报错：</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+       </widget>
+      </item>
       <item row="6" column="0">
        <widget class="SubtitleLabel" name="label_motor_temp">
         <property name="sizePolicy">
@@ -756,8 +1109,28 @@
         </property>
        </widget>
       </item>
-      <item row="7" column="0">
-       <widget class="SubtitleLabel" name="label_sys_status">
+      <item row="2" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="SubtitleLabel" name="label_angle">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string>角度：</string>
+          </property>
+          <property name="textFormat">
+           <enum>Qt::MarkdownText</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="3" column="0">
+       <widget class="SubtitleLabel" name="label_duty_cycle">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -765,14 +1138,14 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>系统状态：正常</string>
+         <string>占空比：</string>
         </property>
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
         </property>
        </widget>
       </item>
-      <item row="8" column="0">
+      <item row="10" column="0">
        <widget class="SubtitleLabel" name="label_fault_status">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -781,7 +1154,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>故障状态：无故障</string>
+         <string>故障状态：</string>
         </property>
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
@@ -789,19 +1162,18 @@
        </widget>
       </item>
       <item row="9" column="0">
-       <widget class="SubtitleLabel" name="label_fault_code">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
+       <widget class="ListWidget" name="list_dev_error">
+        <property name="font">
+         <font>
+          <family>0xProto Nerd Font</family>
+          <pointsize>12</pointsize>
+         </font>
         </property>
-        <property name="text">
-         <string>故障代码：</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
+        <item>
+         <property name="text">
+          <string>无</string>
+         </property>
+        </item>
        </widget>
       </item>
      </layout>
@@ -818,6 +1190,11 @@
   <customwidget>
    <class>PillPushButton</class>
    <extends>ToggleButton</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>SwitchButton</class>
+   <extends>QWidget</extends>
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
@@ -859,6 +1236,11 @@
   <customwidget>
    <class>DoubleSpinBox</class>
    <extends>QDoubleSpinBox</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>ListWidget</class>
+   <extends>QListWidget</extends>
    <header>qfluentwidgets</header>
   </customwidget>
  </customwidgets>

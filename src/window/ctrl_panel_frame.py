@@ -6,14 +6,17 @@ import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore, QtGui
 from qasync import asyncClose, asyncSlot
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
-from qfluentwidgets import InfoLevel
+from qfluentwidgets import InfoLevel, TeachingTip, InfoBarIcon, TeachingTipTailPosition
+from PyQt5.QtWidgets import QListWidgetItem
+from PyQt5.QtCore import QPoint, Qt
+from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout
+
+from qfluentwidgets import InfoBarIcon, InfoBar, PushButton, setTheme, Theme, FluentIcon, InfoBarPosition, InfoBarManager
 
 from src.communication.protocol import (
     SysREGsUpData,
 )
-from src.communication.udp_master import UDPMaster
 from src.config.config_manager import ConfigManager
-from src.data.data_buffer import RingBuffer
 from src.ui import Ctrl_Panel_Form
 from .motor_controller_parser import MotorControllerParser
 
@@ -36,7 +39,6 @@ def uint32_to_int32(value: int) -> int:
         return value - 0x100000000  # 2^32
     return value
 
-
 class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
     """主窗口类"""
 
@@ -54,9 +56,11 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.config_file_path = config_file_path
         self.device_reg_set_func = device_reg_set_func
         self.setObjectName("CtrlPanelForm")
+        self.speed_set = 0
+        self.speed_set_step = 10
+        self.speed_max = 3000
+        self.speed_min = -3000
 
-        # 屏蔽spinbox的滚轮事件
-        self.spinbox_speed.installEventFilter(self)
         self.spinbox_speed.setValue(0)  # 设置默认速度为0
 
         self.send_timer = QTimer(self)
@@ -68,9 +72,32 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.btn_launch_dev.clicked.connect(self.launch_device)
         self.badge_online_status.setLevel(InfoLevel.ERROR)
 
-    
         self.parser = MotorControllerParser()
+
+        self.btn_speed_set.clicked.connect(self.set_speed)
+        self.radio_btn_speed_1.clicked.connect(lambda: self.set_speed_step(1))
+        self.radio_btn_speed_10.clicked.connect(lambda: self.set_speed_step(10))
+        self.radio_btn_speed_100.clicked.connect(lambda: self.set_speed_step(100))
+
+        self.period_send_sw = True
+        self.sw_btn_host_computer.setChecked(True)
+        self.sw_btn_host_computer.checkedChanged.connect(
+            self.on_sw_btn_host_computer_checked_changed
+        )
+
+        # 初始化 ListWidget
+        self.init_list_widgets()
         # self.test_show()
+
+    def init_list_widgets(self):
+        """初始化列表控件"""
+        # 设置右键点击选中行为
+        self.list_dev_error.setSelectRightClickedRow(True)
+        self.list_fault_status.setSelectRightClickedRow(True)
+
+        # 初始状态显示无错误
+        self.update_dev_error_list([])
+        self.update_fault_status_list([])
 
     def test_show(self):
         sys_regs_up_data = SysREGsUpData(
@@ -80,38 +107,107 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         )
         self.on_on_sys_regs_uploaded(sys_regs_up_data)
 
+    def set_speed(self):
+        self.speed_set = self.spinbox_speed.value()
+
+    def set_speed_step(self, step: int):
+        """设置速度步进值并更新 spinbox 的步进值"""
+        self.speed_set_step = step
+        self.spinbox_speed.setSingleStep(step)
+
+    def on_sw_btn_host_computer_checked_changed(self, checked: bool):
+        self.sw_btn_host_computer = checked
+
+    async def send_speed_set_cmd(self):
+        self.speed_set = min(max(self.speed_set, self.speed_min), self.speed_max)
+        speed_set_int = int(self.speed_set * 100000)
+        target_addr = (self.cfg.target_host, self.cfg.target_port)
+        ret = await self.device_reg_set_func(
+            49, [speed_set_int], target_addr=target_addr
+        )
+        return ret
+
     @asyncSlot()
     async def send_data(self):
-        speed_set = self.spinbox_speed.value()  # 获取速度设置值
-        if speed_set > 3000:
-            speed_set = 3000
-        elif speed_set < -3000:
-            speed_set = -3000
-
-        speed_set = int(speed_set * 100000)
-        target_addr = (self.cfg.target_host, self.cfg.target_port)
-        ret = await self.device_reg_set_func(49, [speed_set], target_addr=target_addr)
-        if not ret:
-            logger.info("设置速度失败")
-            pass
+        launched = self.speed_set != 0
+        self.btn_launch_dev.setChecked(launched)
+        self.btn_stop_dev.setChecked(not launched)
+        if self.period_send_sw:
+            ret = await self.send_speed_set_cmd()
+            if not ret:
+                logger.info("设置速度失败")
+                pass
 
     @asyncSlot()
     async def stop_device(self):
-        self.spinbox_speed.setValue(0)
-        target_addr = (self.cfg.target_host, self.cfg.target_port)
-        ret = await self.device_reg_set_func(49, [0], target_addr=target_addr)
+        self.speed_set = 0
+        ret = await self.send_speed_set_cmd()
         if not ret:
             logger.info("停止失败")
-            pass
+            InfoBar.error(
+                title='电机停止结果',
+                content="停止命令发送超时！",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self
+            )
 
     @asyncSlot()
     async def launch_device(self):
-        self.spinbox_speed.setValue(10)
+        if self.speed_set == 0:
+            self.speed_set = 10
+
         target_addr = (self.cfg.target_host, self.cfg.target_port)
         ret = await self.device_reg_set_func(49, [10 * 100000], target_addr=target_addr)
         if not ret:
             logger.info("启动失败")
-            pass
+            InfoBar.error(
+                title='电机启动结果',
+                content="启动命令发送超时！",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self
+            )
+
+    def update_dev_error_list(self, error_list: List[str]):
+        """更新设备错误列表"""
+        self.list_dev_error.clear()
+
+        if not error_list:
+            # 没有错误时显示"无报错"
+            item = QListWidgetItem("无报错")
+            # 可以设置图标，如果有合适的图标的话
+            # item.setIcon(QIcon(':/path/to/success_icon.png'))
+            self.list_dev_error.addItem(item)
+        else:
+            # 添加错误信息
+            for error in error_list:
+                item = QListWidgetItem(error)
+                # 可以设置错误图标
+                # item.setIcon(QIcon(':/path/to/error_icon.png'))
+                self.list_dev_error.addItem(item)
+
+    def update_fault_status_list(self, fault_list: List[str]):
+        """更新故障状态列表"""
+        self.list_fault_status.clear()
+
+        if not fault_list:
+            # 没有故障时显示"无故障"
+            item = QListWidgetItem("无故障")
+            # 可以设置图标
+            # item.setIcon(QIcon(':/path/to/success_icon.png'))
+            self.list_fault_status.addItem(item)
+        else:
+            # 添加故障信息
+            for fault in fault_list:
+                item = QListWidgetItem(fault)
+                # 可以设置故障图标
+                # item.setIcon(QIcon(':/path/to/fault_icon.png'))
+                self.list_fault_status.addItem(item)
 
     @asyncSlot(SysREGsUpData)
     async def on_on_sys_regs_uploaded(self, sys_regs_up_data: SysREGsUpData):
@@ -139,27 +235,38 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             MCV_Ic = uint32_to_int32(sys_regs_up_data.reg[75]) / fixed_point_scale
             MCV_Ibus = uint32_to_int32(sys_regs_up_data.reg[79]) / fixed_point_scale
 
+            self.label_vdc.setText(f"{Vbus:<7.2f}")
+            self.label_vbus_in.setText(f"{Vbus_in:<7.2f}")
+            self.label_uq.setText(f"{Uq:<7.2f}")
+            self.label_id.setText(f"{Id:<7.2f}")
+            self.label_iq.setText(f"{Iq:<7.2f}")
+            self.label_ud.setText(f"{Ud:<7.2f}")
+            self.label_ia.setText(f"{MCV_Ia:<7.2f}")
+            self.label_ib.setText(f"{MCV_Ib:<7.2f}")
+            self.label_ic.setText(f"{MCV_Ic:<7.2f}")
+            self.label_ibus.setText(f"{MCV_Ibus:<7.2f}")
+
             info = self.parser.get_display_info(temperature_u32, error_code_u32)
-
-            self.label_vdc.setText(f"Vdc:     {Vbus:<7.2f}")
-            self.label_vbus_in.setText(f"Vbus_in: {Vbus_in:<7.2f}")
-            self.label_uq.setText(f"Uq:      {Uq:<7.2f}")
-            self.label_id.setText(f"Id:      {Id:<7.2f}")
-            self.label_iq.setText(f"Iq:      {Iq:<7.2f}")
-            self.label_ud.setText(f"Ud:      {Ud:<7.2f}")
-            self.label_ia.setText(f"Ia:      {MCV_Ia:<7.2f}")
-            self.label_ib.setText(f"Ib:      {MCV_Ib:<7.2f}")
-            self.label_ic.setText(f"Ic:      {MCV_Ic:<7.2f}")
-            self.label_ibus.setText(f"Ibus:      {MCV_Ibus:<7.2f}")
-
             self.label_speed.setText(f"转速：    {MCV_mSpeed:<7.2f}")
             self.label_angle.setText(f"角度：    {MCV_angle:<7.2f}")
             self.label_duty_cycle.setText(f"占空比：{MCV_mDuty:<7.2f}")
-            self.label_temperature.setText(f"逆变温度：A:{info['temp_d']} B:{info['temp_c']} C:{info['temp_b']}℃")
-            self.label_sys_status.setText(f"状态：{info['state_en']}:{info['state_cn']}")
-            self.label_dev_error.setText(f"报错：{info['error_text']}")
-            self.label_motor_temp.setText(f"电机温度：{MCV_mPT1:<7.2f} {MCV_mPT2:<7.2f} {MCV_mPT3:<7.2f} {MCV_mPT4:<7.2f} {MCV_mPT5:<7.2f}℃")
-
+            self.label_temperature.setText(
+                f"逆变温度：A:{info['temp_d']} B:{info['temp_c']} C:{info['temp_b']}℃"
+            )
+            self.label_motor_temp.setText(
+                f"电机温度：{MCV_mPT1:<7.2f} {MCV_mPT2:<7.2f} {MCV_mPT3:<7.2f} {MCV_mPT4:<7.2f} {MCV_mPT5:<7.2f}℃"
+            )
+            self.label_sys_status.setText(
+                f"状态：{info['state_en']}:{info['state_cn']}"
+            )
+            error_d = (error_code_u32 >> 24) & 0xFF
+            error_c = (error_code_u32 >> 16) & 0xFF
+            error_b = (error_code_u32 >> 8) & 0xFF
+            self.label_fault_status.setText(
+                f"故障状态：A:{error_d:02X} B:{error_c:02X} C:{error_b:02X}"
+            )
+            all_errors = info.get("all_errors", [])
+            self.update_dev_error_list(all_errors)
 
             flag1_int32 = sys_regs_up_data.reg[90]
             flag1_uint32 = flag1_int32 & 0xFFFFFFFF
@@ -169,90 +276,18 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         except Exception as e:
             logger.info(f"解析数据错误{e}")
 
-    @staticmethod
-    def parse_flag1(flag1_uint32):
-        # 定义状态位的掩码和中文描述
-        ocflt_bits = [
-            ("C相硬件过流", 1 << 24),
-            ("B相硬件过流", 1 << 25),
-            ("A相硬件过流", 1 << 26),
-            ("母线硬件过流", 1 << 27),
-            ("C相软件过流", 1 << 28),
-            ("B相软件过流", 1 << 29),
-            ("A相软件过流", 1 << 30),
-            ("母线软件过流", 1 << 31),
-        ]
-
-        sysstatus_bits = [
-            ("自检异常", 1 << 16),
-            ("缺相", 1 << 17),
-            ("电机过热", 1 << 18),
-            ("逆变器过温", 1 << 19),
-            ("功率器件保护", 1 << 20),
-            ("母线欠压", 1 << 21),
-            ("母线过压", 1 << 22),
-            ("逆变器过流", 1 << 23),
-        ]
-
-        invstatus_bits = [
-            ("Ib_Err", 1 << 8),
-            ("Ia_Err", 1 << 9),
-            ("Ibus_Err", 1 << 10),
-            ("Vbus_Err", 1 << 11),
-            ("NTC4_Err", 1 << 12),
-            ("NTC3_Err", 1 << 13),
-            ("NTC2_Err", 1 << 14),
-            ("NTC1_Err", 1 << 15),
-        ]
-
-        motstatus_bits = [
-            ("位置传感器异常", 1 << 0),
-            ("内部超速", 1 << 1),
-            ("CPLD_FLT", 1 << 2),
-            ("FLT4_Flag", 1 << 3),
-            ("FLT3_Flag", 1 << 4),
-            ("FLT2_Flag", 1 << 5),
-            ("FLT1_Flag", 1 << 6),
-            ("Ic_Err", 1 << 7),
-        ]
-
-        # 提取每个状态位的值并生成描述字符串
-        def extract_bits(bits, flag1):
-            result = []
-            for name, mask in bits:
-                if flag1 & mask:
-                    result.append(name)
-            return result
-
-        ocflt_status = extract_bits(ocflt_bits, flag1_uint32)
-        sysstatus_status = extract_bits(sysstatus_bits, flag1_uint32)
-        invstatus_status = extract_bits(invstatus_bits, flag1_uint32)
-        motstatus_status = extract_bits(motstatus_bits, flag1_uint32)
-
-        return {
-            "OCFLT": ocflt_status,
-            "SYSSTATUS": sysstatus_status,
-            "INVSTATUS": invstatus_status,
-            "MOTSTATUS": motstatus_status,
-        }
-
     def update_fault_status(self, flag1_uint32):
-        flag1 = self.parse_flag1(flag1_uint32)
+        """更新故障状态"""
+        fault_info = self.parser.parse_fault_flags(flag1_uint32)
 
-        # 生成显示的文本
+        # 收集所有故障信息
         fault_list = []
-        for category, status in flag1.items():
+        for category, status in fault_info.items():
             if status:
                 fault_list.extend(status)
 
-        # 设置 QLabel 的文本
-        self.label_fault_status.setWordWrap(True)  # 允许自动换行
-        if fault_list:
-            self.label_fault_status.setText("故障状态：\t" + "\t".join(fault_list))
-            # self.badge_fault_status.setLevel(InfoLevel.ERROR)
-        else:
-            self.label_fault_status.setText("故障状态：\t无故障")
-            # self.badge_fault_status.setLevel(InfoLevel.SUCCESS)
+        # 更新故障状态列表
+        self.update_fault_status_list(fault_list)
 
     @asyncSlot(bool)
     async def on_net_online_status_changed(self, online_status: bool):
@@ -263,8 +298,16 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             self.label_online_status.setText("以太网离线")
             self.badge_online_status.setLevel(InfoLevel.ERROR)
 
-    def eventFilter(self, obj, event):
-        """事件过滤器，屏蔽spinbox的滚轮事件"""
-        if obj == self.spinbox_speed and event.type() == QtCore.QEvent.Wheel:
-            return True  # 拦截滚轮事件
-        return super().eventFilter(obj, event)
+    def keyPressEvent(self, event: QtGui.QKeyEvent):
+        """重写键盘事件处理方法"""
+        if event.key() == QtCore.Qt.Key_Up:
+            # 增加速度，但不超过最大值
+            self.speed_set = min(self.speed_set + self.speed_set_step, self.speed_max)
+            self.spinbox_speed.setValue(self.speed_set)
+        elif event.key() == QtCore.Qt.Key_Down:
+            # 减少速度，但不低于最小值
+            self.speed_set = max(self.speed_set - self.speed_set_step, self.speed_min)
+            self.spinbox_speed.setValue(self.speed_set)
+        else:
+            # 调用父类的 keyPressEvent 方法处理其他按键
+            super().keyPressEvent(event)
