@@ -15,7 +15,7 @@ from src.communication.udp_master import UDPMaster
 from src.config.config_manager import ConfigManager
 from src.data.data_buffer import RingBuffer
 from src.ui import Ctrl_Panel_Form
-
+from .motor_controller_parser import MotorControllerParser
 
 # 设置日志
 logging.basicConfig(
@@ -68,194 +68,15 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.btn_launch_dev.clicked.connect(self.launch_device)
         self.badge_online_status.setLevel(InfoLevel.ERROR)
 
+    
+        self.parser = MotorControllerParser()
         # self.test_show()
 
     def test_show(self):
         sys_regs_up_data = SysREGsUpData(
             packet_type=1,
-            reg_num=200,
-            reg=[
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-                1023450,
-            ],
+            reg_num=120,
+            reg=[1023450 for _ in range(120)],
         )
         self.on_on_sys_regs_uploaded(sys_regs_up_data)
 
@@ -287,9 +108,7 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
     async def launch_device(self):
         self.spinbox_speed.setValue(10)
         target_addr = (self.cfg.target_host, self.cfg.target_port)
-        ret = await self.device_reg_set_func(
-            49, [10 * 100000], target_addr=target_addr
-        )
+        ret = await self.device_reg_set_func(49, [10 * 100000], target_addr=target_addr)
         if not ret:
             logger.info("启动失败")
             pass
@@ -300,27 +119,49 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             fixed_point_scale = 100000
 
             MCV_mSpeed = -uint32_to_int32(sys_regs_up_data.reg[83]) / fixed_point_scale
-            MCV_angle = sys_regs_up_data.reg[83] / fixed_point_scale
-            MCV_duty_cycle = sys_regs_up_data.reg[83] / fixed_point_scale
-            MCV_temperature = sys_regs_up_data.reg[83] / fixed_point_scale
-            Vbus = sys_regs_up_data.reg[83] / fixed_point_scale
-            Vbus_in = sys_regs_up_data.reg[83] / fixed_point_scale
-            Uq = sys_regs_up_data.reg[83] / fixed_point_scale
-            Id = sys_regs_up_data.reg[83] / fixed_point_scale
-            Iq = sys_regs_up_data.reg[83] / fixed_point_scale
-            Ud = sys_regs_up_data.reg[83] / fixed_point_scale
+            MCV_angle = sys_regs_up_data.reg[62] / fixed_point_scale
+            Vbus = uint32_to_int32(sys_regs_up_data.reg[76]) / fixed_point_scale
+            Vbus_in = uint32_to_int32(sys_regs_up_data.reg[77]) / fixed_point_scale
+            Id = uint32_to_int32(sys_regs_up_data.reg[56]) / fixed_point_scale
+            Iq = uint32_to_int32(sys_regs_up_data.reg[59]) / fixed_point_scale
+            Ud = uint32_to_int32(sys_regs_up_data.reg[60]) / fixed_point_scale
+            Uq = uint32_to_int32(sys_regs_up_data.reg[61]) / fixed_point_scale
+            temperature_u32 = sys_regs_up_data.reg[55]
+            error_code_u32 = sys_regs_up_data.reg[63]
+            MCV_mDuty = uint32_to_int32(sys_regs_up_data.reg[64]) / fixed_point_scale
+            MCV_mPT1 = uint32_to_int32(sys_regs_up_data.reg[65]) / fixed_point_scale
+            MCV_mPT2 = uint32_to_int32(sys_regs_up_data.reg[66]) / fixed_point_scale
+            MCV_mPT3 = uint32_to_int32(sys_regs_up_data.reg[67]) / fixed_point_scale
+            MCV_mPT4 = uint32_to_int32(sys_regs_up_data.reg[68]) / fixed_point_scale
+            MCV_mPT5 = uint32_to_int32(sys_regs_up_data.reg[69]) / fixed_point_scale
+            MCV_Ia = uint32_to_int32(sys_regs_up_data.reg[73]) / fixed_point_scale
+            MCV_Ib = uint32_to_int32(sys_regs_up_data.reg[74]) / fixed_point_scale
+            MCV_Ic = uint32_to_int32(sys_regs_up_data.reg[75]) / fixed_point_scale
+            MCV_Ibus = uint32_to_int32(sys_regs_up_data.reg[79]) / fixed_point_scale
 
-            self.label_temperature.setText(f"Vdc:     {Vbus:<7.2f}")
-            self.label_temperature.setText(f"Vbus_in: {Vbus_in:<7.2f}")
-            self.label_temperature.setText(f"Uq:      {Uq:<7.2f}")
-            self.label_temperature.setText(f"Id:      {Id:<7.2f}")
-            self.label_temperature.setText(f"Iq:      {Iq:<7.2f}")
-            self.label_temperature.setText(f"Ud:      {Ud:<7.2f}")
+            info = self.parser.get_display_info(temperature_u32, error_code_u32)
+
+            self.label_vdc.setText(f"Vdc:     {Vbus:<7.2f}")
+            self.label_vbus_in.setText(f"Vbus_in: {Vbus_in:<7.2f}")
+            self.label_uq.setText(f"Uq:      {Uq:<7.2f}")
+            self.label_id.setText(f"Id:      {Id:<7.2f}")
+            self.label_iq.setText(f"Iq:      {Iq:<7.2f}")
+            self.label_ud.setText(f"Ud:      {Ud:<7.2f}")
+            self.label_ia.setText(f"Ia:      {MCV_Ia:<7.2f}")
+            self.label_ib.setText(f"Ib:      {MCV_Ib:<7.2f}")
+            self.label_ic.setText(f"Ic:      {MCV_Ic:<7.2f}")
+            self.label_ibus.setText(f"Ibus:      {MCV_Ibus:<7.2f}")
 
             self.label_speed.setText(f"转速：    {MCV_mSpeed:<7.2f}")
             self.label_angle.setText(f"角度：    {MCV_angle:<7.2f}")
-            self.label_duty_cycle.setText(f"占空比：{MCV_duty_cycle:<7.2f}")
-            self.label_temperature.setText(f"温度：    {MCV_temperature:<7.2f}")
+            self.label_duty_cycle.setText(f"占空比：{MCV_mDuty:<7.2f}")
+            self.label_temperature.setText(f"逆变温度：A:{info['temp_d']} B:{info['temp_c']} C:{info['temp_b']}℃")
+            self.label_sys_status.setText(f"状态：{info['state_en']}:{info['state_cn']}")
+            self.label_dev_error.setText(f"报错：{info['error_text']}")
+            self.label_motor_temp.setText(f"电机温度：{MCV_mPT1:<7.2f} {MCV_mPT2:<7.2f} {MCV_mPT3:<7.2f} {MCV_mPT4:<7.2f} {MCV_mPT5:<7.2f}℃")
+
+
+
 
             flag1_int32 = sys_regs_up_data.reg[90]
             flag1_uint32 = flag1_int32 & 0xFFFFFFFF

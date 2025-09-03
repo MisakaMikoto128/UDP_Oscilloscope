@@ -67,6 +67,7 @@ class UDPMaster(QObject):
         self.online_timeout = 1000  # 1秒超时
         self.online_check_timer.setInterval(self.online_timeout)
         self.online_check_timer.timeout.connect(self.online_status_check_timeout)
+        self.online_check_timer.start()
 
         # 统计信息
         self.receive_count = 0
@@ -204,13 +205,13 @@ class UDPMaster(QObject):
                     time.sleep(0.01)
 
         logger.info("高速UDP接收线程已退出")
-
+    
     def online_status_check_timeout(self):
         if self.online_status:
-            self.online_check_timer.stop()
+            # self.online_check_timer.stop()
             self.online_status = False
             self.client_online_status_changed.emit(self.online_status)
-            logger.info("设备离线")
+        logger.info("设备离线ccc")
 
     def online_watchdog_feed(self):
         if not self.online_status:
