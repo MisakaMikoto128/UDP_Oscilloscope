@@ -65,6 +65,7 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         # 连接按钮信号
         self._connect_pid_buttons()
         self.btn_save_param.clicked.connect(self.save_param_cmd)
+        self.table_pid_param.cellDoubleClicked.connect(self._sync_pid_params_to_spinbox)
 
     def _init_pid_table(self):
         """初始化PID参数显示表格"""
@@ -248,3 +249,26 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
 
         except Exception as e:
             logger.error(f"解析数据错误: {e}")
+
+    def _sync_pid_params_to_spinbox(self, row: int, column: int):
+        try:
+            params = []
+            for col in range(1, 5):  # 第1~4列是参数
+                item = self.table_pid_param.item(row, col)
+                if item and item.text():
+                    params.append(float(item.text()))
+                else:
+                    params.append(0.0)
+
+            if row == 0:  # 速度环
+                self.spinbox_speed_pid_p.setValue(params[0])
+                self.spinbox_speed_pid_i.setValue(params[1])
+                # 如果你有Kd和Kd滤波spinbox，也同步
+            elif row == 1:  # Id环
+                self.spinbox_id_pid_p.setValue(params[0])
+                self.spinbox_id_pid_i.setValue(params[1])
+            elif row == 2:  # Iq环
+                self.spinbox_iq_pid_p.setValue(params[0])
+                self.spinbox_iq_pid_i.setValue(params[1])
+        except Exception as e:
+            logger.error(f"同步PID参数到spinbox失败: {e}")
