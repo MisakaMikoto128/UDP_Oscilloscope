@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
 import logging
 from typing import Callable, List, Awaitable
-import pyqtgraph as pg
-from PyQt5 import QtWidgets, QtCore, QtGui
+
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QTableWidgetItem
-from qasync import asyncClose, asyncSlot
-from PyQt5.QtCore import QObject, pyqtSignal, QTimer
-from qfluentwidgets import InfoLevel
-from PyQt5.QtGui import QIcon
+from qasync import asyncSlot
+from qfluentwidgets import MessageBox
 
 from src.communication.protocol import (
     SysREGsUpData,
 )
-from src.communication.udp_master import UDPMaster
 from src.config.config_manager import ConfigManager
 from src.ui import Device_Setting_From
 
@@ -64,7 +61,7 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
 
         # 连接按钮信号
         self._connect_pid_buttons()
-        self.btn_save_param.clicked.connect(self.save_param_cmd)
+        self.btn_save_param.clicked.connect(self._confirm_save_param)
         self.table_pid_param.cellDoubleClicked.connect(self._sync_pid_params_to_spinbox)
 
     def _init_pid_table(self):
@@ -108,32 +105,29 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         self.table_pid_param.resizeColumnsToContents()
 
     def _connect_pid_buttons(self):
-        """连接PID参数设置按钮信号"""
-        # 速度环P参数
+        """连接所有 PID 设置按钮，并增加确认提示"""
+        # 速度环
         self.btn_speed_pid_p.clicked.connect(
-            lambda: self._set_pid_param(15, self.spinbox_speed_pid_p.value())
+            lambda: self._confirm_and_set_pid(15, self.spinbox_speed_pid_p.value(), "速度环 Kp")
         )
-        # 速度环I参数
         self.btn_speed_pid_i.clicked.connect(
-            lambda: self._set_pid_param(16, self.spinbox_speed_pid_i.value())
+            lambda: self._confirm_and_set_pid(16, self.spinbox_speed_pid_i.value(), "速度环 Ki")
         )
 
-        # Id环P参数
+        # Id 环
         self.btn_id_pid_p.clicked.connect(
-            lambda: self._set_pid_param(19, self.spinbox_id_pid_p.value())
+            lambda: self._confirm_and_set_pid(19, self.spinbox_id_pid_p.value(), "Id 环 Kp")
         )
-        # Id环I参数
         self.btn_id_pid_i.clicked.connect(
-            lambda: self._set_pid_param(20, self.spinbox_id_pid_i.value())
+            lambda: self._confirm_and_set_pid(20, self.spinbox_id_pid_i.value(), "Id 环 Ki")
         )
 
-        # Iq环P参数
+        # Iq 环
         self.btn_iq_pid_p.clicked.connect(
-            lambda: self._set_pid_param(23, self.spinbox_iq_pid_p.value())
+            lambda: self._confirm_and_set_pid(23, self.spinbox_iq_pid_p.value(), "Iq 环 Kp")
         )
-        # Iq环I参数
         self.btn_iq_pid_i.clicked.connect(
-            lambda: self._set_pid_param(24, self.spinbox_iq_pid_i.value())
+            lambda: self._confirm_and_set_pid(24, self.spinbox_iq_pid_i.value(), "Iq 环 Ki")
         )
 
     @asyncSlot()
@@ -272,3 +266,27 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
                 self.spinbox_iq_pid_i.setValue(params[1])
         except Exception as e:
             logger.error(f"同步PID参数到spinbox失败: {e}")
+
+
+    def _confirm_and_set_pid(self, reg_addr: int, new_value: float, param_name: str):
+        """
+        弹出确认框，确认后真正发送 PID 设置指令
+        :param reg_addr: 寄存器地址
+        :param new_value: 要设置的值
+        :param param_name: 参数中文名，用于提示框显示
+        """
+        title = "确认设置 PID 参数"
+        content = f"{param_name} 参数将要从当前值设置为 {new_value:.5f}，请确认是否正确。\n确认后将立即发送设置命令！"
+
+        box = MessageBox(title, content, self)
+        if box.exec():
+            # 用户点击“确认”
+            self._set_pid_param(reg_addr, new_value)
+
+    def _confirm_save_param(self):
+        title = "确认保存参数"
+        content = "即将把所有当前参数写入设备 Flash 永久保存，请确认是否继续？"
+
+        box = MessageBox(title, content, self)
+        if box.exec():
+            self.save_param_cmd()
