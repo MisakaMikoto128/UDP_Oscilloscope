@@ -64,9 +64,10 @@ class UDPMaster(QObject):
         # 在线状态检测
         self.online_status = False
         self.online_check_timer = QTimer(self)
-        self.online_timeout = 1000  # 1秒超时
-        self.online_check_timer.setInterval(self.online_timeout)
-        self.online_check_timer.timeout.connect(self.online_status_check_timeout)
+        self.online_timeout_ms = 500  # 1秒超时
+        self.last_data_time = 0  # 最后收到数据的时间戳
+        self.online_check_timer.setInterval(100)
+        self.online_check_timer.timeout.connect(self.check_online_status)
         self.online_check_timer.start()
 
         # 统计信息
@@ -206,19 +207,16 @@ class UDPMaster(QObject):
 
         logger.info("高速UDP接收线程已退出")
     
-    def online_status_check_timeout(self):
-        if self.online_status:
-            # self.online_check_timer.stop()
-            self.online_status = False
-            self.client_online_status_changed.emit(self.online_status)
-        logger.info("设备离线ccc")
-
-    def online_watchdog_feed(self):
-        if not self.online_status:
-            self.online_check_timer.start()
-            self.online_status = True
-            self.client_online_status_changed.emit(self.online_status)
-            logger.info("设备上线")
+    def check_online_status(self):
+        current_time = time.time() * 1000
+    
+        if self.last_data_time > 0:  # 收到过数据
+            is_online = (current_time - self.last_data_time) < self.online_timeout_ms
+            
+            if is_online != self.online_status:
+                self.online_status = is_online
+                self.client_online_status_changed.emit(self.online_status)
+                logger.info(f"设备{'上线' if is_online else '离线'}")
 
     def data_process_loop(self):
         """数据处理循环 - 批量处理优化"""
@@ -288,7 +286,7 @@ class UDPMaster(QObject):
     def _on_data_received(self, data: bytes, addr: tuple):
         """处理接收到的UDP数据"""
         try:
-            self.online_watchdog_feed()
+            self.last_data_time = time.time() * 1000
 
             packets = self.parser.feed_data(data)
 

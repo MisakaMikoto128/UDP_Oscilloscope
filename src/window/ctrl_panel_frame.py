@@ -161,8 +161,6 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             self.label_motor_temp.setText(f"电机温度：{MCV_mPT1:<7.2f} {MCV_mPT2:<7.2f} {MCV_mPT3:<7.2f} {MCV_mPT4:<7.2f} {MCV_mPT5:<7.2f}℃")
 
 
-
-
             flag1_int32 = sys_regs_up_data.reg[90]
             flag1_uint32 = flag1_int32 & 0xFFFFFFFF
             # flag1_uint32 = 0xF00F001  # 示例值
@@ -251,10 +249,10 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.label_fault_status.setWordWrap(True)  # 允许自动换行
         if fault_list:
             self.label_fault_status.setText("故障状态：\t" + "\t".join(fault_list))
-            self.badge_fault_status.setLevel(InfoLevel.ERROR)
+            # self.badge_fault_status.setLevel(InfoLevel.ERROR)
         else:
             self.label_fault_status.setText("故障状态：\t无故障")
-            self.badge_fault_status.setLevel(InfoLevel.SUCCESS)
+            # self.badge_fault_status.setLevel(InfoLevel.SUCCESS)
 
     @asyncSlot(bool)
     async def on_net_online_status_changed(self, online_status: bool):
