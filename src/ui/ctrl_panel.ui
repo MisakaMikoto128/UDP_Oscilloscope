@@ -623,11 +623,8 @@
         <property name="text">
          <string>启动</string>
         </property>
-        <property name="shortcut">
-         <string>Return</string>
-        </property>
         <property name="checkable">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -655,11 +652,8 @@
         <property name="text">
          <string>停止</string>
         </property>
-        <property name="shortcut">
-         <string>Space</string>
-        </property>
         <property name="checkable">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="checked">
          <bool>false</bool>

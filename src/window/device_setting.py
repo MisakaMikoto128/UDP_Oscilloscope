@@ -7,6 +7,8 @@ from PyQt5.QtWidgets import QTableWidgetItem
 from qasync import asyncClose, asyncSlot
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from qfluentwidgets import InfoLevel
+from PyQt5.QtGui import QIcon
+
 from src.communication.protocol import (
     SysREGsUpData,
 )
@@ -53,11 +55,16 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         self.device_reg_set_func = device_reg_set_func
         self.setObjectName("DeviceSettingFrom")
 
+
+        # 设置按钮图标
+        # self.btn_id_pid_i.setIcon(QIcon("./img/save2.svg"))
+
         # 初始化PID参数表格
         self._init_pid_table()
 
         # 连接按钮信号
         self._connect_pid_buttons()
+        self.btn_save_param.clicked.connect(self.save_param_cmd)
 
     def _init_pid_table(self):
         """初始化PID参数显示表格"""
@@ -103,29 +110,29 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         """连接PID参数设置按钮信号"""
         # 速度环P参数
         self.btn_speed_pid_p.clicked.connect(
-            lambda: self._set_pid_param(49, self.spinbox_speed_pid_p.value())
+            lambda: self._set_pid_param(15, self.spinbox_speed_pid_p.value())
         )
         # 速度环I参数
         self.btn_speed_pid_i.clicked.connect(
-            lambda: self._set_pid_param(50, self.spinbox_speed_pid_i.value())
+            lambda: self._set_pid_param(16, self.spinbox_speed_pid_i.value())
         )
 
         # Id环P参数
         self.btn_id_pid_p.clicked.connect(
-            lambda: self._set_pid_param(53, self.spinbox_id_pid_p.value())
+            lambda: self._set_pid_param(19, self.spinbox_id_pid_p.value())
         )
         # Id环I参数
         self.btn_id_pid_i.clicked.connect(
-            lambda: self._set_pid_param(54, self.spinbox_id_pid_i.value())
+            lambda: self._set_pid_param(20, self.spinbox_id_pid_i.value())
         )
 
         # Iq环P参数
         self.btn_iq_pid_p.clicked.connect(
-            lambda: self._set_pid_param(57, self.spinbox_iq_pid_p.value())
+            lambda: self._set_pid_param(23, self.spinbox_iq_pid_p.value())
         )
         # Iq环I参数
         self.btn_iq_pid_i.clicked.connect(
-            lambda: self._set_pid_param(58, self.spinbox_iq_pid_i.value())
+            lambda: self._set_pid_param(24, self.spinbox_iq_pid_i.value())
         )
 
     @asyncSlot()
@@ -139,6 +146,25 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             # 发送设置指令
             success = await self.device_reg_set_func(
                 reg_addr, [param_set_int], target_addr=target_addr
+            )
+
+            if success:
+                logger.info(f"PID参数设置成功: 地址{reg_addr}, 值{value}")
+            else:
+                logger.warning(f"PID参数设置失败: 地址{reg_addr}, 值{value}")
+
+        except Exception as e:
+            logger.error(f"设置PID参数错误: {e}")
+
+    @asyncSlot()
+    async def save_param_cmd(self):
+        try:
+            target_addr = (self.cfg.target_host, self.cfg.target_port)
+            reg_addr = 105
+            value = 0xA5
+            # 发送设置指令
+            success = await self.device_reg_set_func(
+                reg_addr, [value], target_addr=target_addr
             )
 
             if success:
@@ -219,16 +245,6 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             iq_params = (PID_Iq_Kp, PID_Iq_Ki, PID_Iq_Kd, PID_Iq_Kd_Filter)
 
             self._update_pid_table(speed_params, id_params, iq_params)
-
-            # 更新spinbox显示值（可选）
-            self.spinbox_speed_pid_p.setValue(PID_Speed_Kp)
-            self.spinbox_speed_pid_i.setValue(PID_Speed_Ki)
-            self.spinbox_id_pid_p.setValue(PID_Id_Kp)
-            self.spinbox_id_pid_i.setValue(PID_Id_Ki)
-            self.spinbox_iq_pid_p.setValue(PID_Iq_Kp)
-            self.spinbox_iq_pid_i.setValue(PID_Iq_Ki)
-
-            logger.info("PID参数更新完成")
 
         except Exception as e:
             logger.error(f"解析数据错误: {e}")

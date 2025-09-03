@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1130</width>
-    <height>604</height>
+    <height>667</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,13 @@
     <widget class="CardWidget" name="CardWidget">
      <layout class="QGridLayout" name="gridLayout">
       <item row="1" column="1">
-       <widget class="TableWidget" name="table_pid_param"/>
+       <widget class="TableWidget" name="table_pid_param">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -140,7 +146,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="CompactDoubleSpinBox" name="spinbox_speed_pid_p">
+       <widget class="DoubleSpinBox" name="spinbox_speed_pid_p">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -152,6 +158,15 @@
           <width>16777215</width>
           <height>16777215</height>
          </size>
+        </property>
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="maximum">
+         <double>50.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100000000000</double>
         </property>
        </widget>
       </item>
@@ -163,10 +178,20 @@
           <height>44</height>
          </size>
         </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
        </widget>
       </item>
       <item row="1" column="3">
-       <widget class="CompactDoubleSpinBox" name="spinbox_speed_pid_i">
+       <widget class="DoubleSpinBox" name="spinbox_speed_pid_i">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -179,6 +204,15 @@
           <height>16777215</height>
          </size>
         </property>
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="maximum">
+         <double>50.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100000000000</double>
+        </property>
        </widget>
       </item>
       <item row="1" column="4">
@@ -187,6 +221,16 @@
          <size>
           <width>44</width>
           <height>44</height>
+         </size>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
          </size>
         </property>
        </widget>
@@ -214,7 +258,7 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="CompactDoubleSpinBox" name="spinbox_id_pid_p">
+       <widget class="DoubleSpinBox" name="spinbox_id_pid_p">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -226,6 +270,15 @@
           <width>16777215</width>
           <height>16777215</height>
          </size>
+        </property>
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="maximum">
+         <double>50.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100000000000</double>
         </property>
        </widget>
       </item>
@@ -237,10 +290,20 @@
           <height>44</height>
          </size>
         </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
        </widget>
       </item>
       <item row="2" column="3">
-       <widget class="CompactDoubleSpinBox" name="spinbox_id_pid_i">
+       <widget class="DoubleSpinBox" name="spinbox_id_pid_i">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -253,6 +316,15 @@
           <height>16777215</height>
          </size>
         </property>
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="maximum">
+         <double>50.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100000000000</double>
+        </property>
        </widget>
       </item>
       <item row="2" column="4">
@@ -261,6 +333,16 @@
          <size>
           <width>44</width>
           <height>44</height>
+         </size>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
          </size>
         </property>
        </widget>
@@ -288,7 +370,7 @@
        </widget>
       </item>
       <item row="3" column="1">
-       <widget class="CompactDoubleSpinBox" name="spinbox_iq_pid_p">
+       <widget class="DoubleSpinBox" name="spinbox_iq_pid_p">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -300,6 +382,15 @@
           <width>16777215</width>
           <height>16777215</height>
          </size>
+        </property>
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="maximum">
+         <double>50.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100000000000</double>
         </property>
        </widget>
       </item>
@@ -311,10 +402,20 @@
           <height>44</height>
          </size>
         </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
        </widget>
       </item>
       <item row="3" column="3">
-       <widget class="CompactDoubleSpinBox" name="spinbox_iq_pid_i">
+       <widget class="DoubleSpinBox" name="spinbox_iq_pid_i">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -327,6 +428,15 @@
           <height>16777215</height>
          </size>
         </property>
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="maximum">
+         <double>50.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100000000000</double>
+        </property>
        </widget>
       </item>
       <item row="3" column="4">
@@ -335,6 +445,16 @@
          <size>
           <width>44</width>
           <height>44</height>
+         </size>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
          </size>
         </property>
        </widget>
@@ -362,7 +482,7 @@
        </widget>
       </item>
       <item row="4" column="1">
-       <widget class="CompactDoubleSpinBox" name="spinbox_vbus_ref">
+       <widget class="DoubleSpinBox" name="spinbox_vbus_ref">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -374,6 +494,15 @@
           <width>16777215</width>
           <height>16777215</height>
          </size>
+        </property>
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="maximum">
+         <double>50.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100000000000</double>
         </property>
        </widget>
       </item>
@@ -385,10 +514,20 @@
           <height>44</height>
          </size>
         </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
        </widget>
       </item>
       <item row="4" column="3">
-       <widget class="CompactDoubleSpinBox" name="spinbox_vbus_ref1">
+       <widget class="DoubleSpinBox" name="spinbox_vbus_ref1">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -401,6 +540,15 @@
           <height>16777215</height>
          </size>
         </property>
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="maximum">
+         <double>50.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100000000000</double>
+        </property>
        </widget>
       </item>
       <item row="4" column="4">
@@ -409,6 +557,16 @@
          <size>
           <width>44</width>
           <height>44</height>
+         </size>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
          </size>
         </property>
        </widget>
@@ -435,7 +593,7 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="1">
+      <item row="5" column="1" colspan="2">
        <widget class="SubtitleLabel" name="label_speed_10">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -457,7 +615,7 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="2" colspan="2">
+      <item row="5" column="3">
        <widget class="SwitchButton" name="sw_btn_ctrl_mode_select">
         <property name="text">
          <string>速度环模式</string>
@@ -492,7 +650,7 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="1">
+      <item row="6" column="1" colspan="2">
        <widget class="SubtitleLabel" name="label_speed_11">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -514,7 +672,7 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="2" colspan="2">
+      <item row="6" column="3">
        <widget class="SwitchButton" name="sw_btn_ctrl_mode_select_2">
         <property name="text">
          <string>正常模式</string>
@@ -549,7 +707,7 @@
         </property>
        </widget>
       </item>
-      <item row="7" column="1">
+      <item row="7" column="1" colspan="2">
        <widget class="SubtitleLabel" name="label_speed_13">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -571,7 +729,7 @@
         </property>
        </widget>
       </item>
-      <item row="7" column="2" colspan="2">
+      <item row="7" column="3">
        <widget class="PillPushButton" name="btn_start_resolver_calibration">
         <property name="minimumSize">
          <size>
@@ -581,6 +739,69 @@
         </property>
         <property name="text">
          <string>启动旋变校准</string>
+        </property>
+        <property name="checkable">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="0">
+       <widget class="SubtitleLabel" name="label_speed_14">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>永久保存参数：</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="1" colspan="2">
+       <widget class="SubtitleLabel" name="label_speed_15">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="3">
+       <widget class="PillPushButton" name="btn_save_param">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>44</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>保存参数命令</string>
+        </property>
+        <property name="checkable">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -694,7 +915,7 @@
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
-   <class>CompactDoubleSpinBox</class>
+   <class>DoubleSpinBox</class>
    <extends>QDoubleSpinBox</extends>
    <header>qfluentwidgets</header>
   </customwidget>

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 from typing import Callable, List, Awaitable
-
+import asyncio
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore, QtGui
 from qasync import asyncClose, asyncSlot
@@ -88,6 +88,7 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         # 初始化 ListWidget
         self.init_list_widgets()
         # self.test_show()
+        QApplication.instance().installEventFilter(self)
 
     def init_list_widgets(self):
         """初始化列表控件"""
@@ -127,11 +128,14 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         )
         return ret
 
-    @asyncSlot()
-    async def send_data(self):
+    def update_btn_check_state(self):
         launched = self.speed_set != 0
         self.btn_launch_dev.setChecked(launched)
         self.btn_stop_dev.setChecked(not launched)
+
+    @asyncSlot()
+    async def send_data(self):
+        self.update_btn_check_state()
         if self.period_send_sw:
             ret = await self.send_speed_set_cmd()
             if not ret:
@@ -141,6 +145,8 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
     @asyncSlot()
     async def stop_device(self):
         self.speed_set = 0
+        self.update_btn_check_state()
+        self.spinbox_speed.setValue(self.speed_set)
         ret = await self.send_speed_set_cmd()
         if not ret:
             logger.info("停止失败")
@@ -158,6 +164,8 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
     async def launch_device(self):
         if self.speed_set == 0:
             self.speed_set = 10
+            self.update_btn_check_state()
+            self.spinbox_speed.setValue(self.speed_set)
 
         target_addr = (self.cfg.target_host, self.cfg.target_port)
         ret = await self.device_reg_set_func(49, [10 * 100000], target_addr=target_addr)
@@ -263,7 +271,7 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             error_c = (error_code_u32 >> 16) & 0xFF
             error_b = (error_code_u32 >> 8) & 0xFF
             self.label_fault_status.setText(
-                f"故障状态：A:{error_d:02X} B:{error_c:02X} C:{error_b:02X}"
+                f"故障状态：A:0x{error_d:02X} B:0x{error_c:02X} C:0x{error_b:02X}"
             )
             all_errors = info.get("all_errors", [])
             self.update_dev_error_list(all_errors)
@@ -298,16 +306,29 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             self.label_online_status.setText("以太网离线")
             self.badge_online_status.setLevel(InfoLevel.ERROR)
 
-    def keyPressEvent(self, event: QtGui.QKeyEvent):
-        """重写键盘事件处理方法"""
-        if event.key() == QtCore.Qt.Key_Up:
-            # 增加速度，但不超过最大值
-            self.speed_set = min(self.speed_set + self.speed_set_step, self.speed_max)
-            self.spinbox_speed.setValue(self.speed_set)
-        elif event.key() == QtCore.Qt.Key_Down:
-            # 减少速度，但不低于最小值
-            self.speed_set = max(self.speed_set - self.speed_set_step, self.speed_min)
-            self.spinbox_speed.setValue(self.speed_set)
-        else:
-            # 调用父类的 keyPressEvent 方法处理其他按键
-            super().keyPressEvent(event)
+    def increase_speed(self):
+        self.speed_set = min(self.speed_set + self.speed_set_step, self.speed_max)
+        self.spinbox_speed.setValue(self.speed_set)
+        logger.info("Key_Up (global)")
+
+    def decrease_speed(self):
+        self.speed_set = max(self.speed_set - self.speed_set_step, self.speed_min)
+        self.spinbox_speed.setValue(self.speed_set)
+        logger.info("Key_Down (global)")
+
+    def eventFilter(self, source, event):
+        if event.type() == QtCore.QEvent.KeyPress:
+            key = event.key()
+            if key == QtCore.Qt.Key_Up:
+                self.increase_speed()
+                return True  # 拦截事件，防止继续传递
+            elif key == QtCore.Qt.Key_Down:
+                self.decrease_speed()
+                return True
+            elif key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:        
+                asyncio.ensure_future(self.launch_device()) 
+                return True
+            elif key == QtCore.Qt.Key_Space:          
+                asyncio.ensure_future(self.stop_device())
+                return True
+        return super().eventFilter(source, event)
