@@ -165,7 +165,7 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
-                duration=2000,
+                duration=1000,
                 parent=self,
             )
         else:
@@ -195,7 +195,7 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
-                duration=2000,
+                duration=1000,
                 parent=self,
             )
         else:

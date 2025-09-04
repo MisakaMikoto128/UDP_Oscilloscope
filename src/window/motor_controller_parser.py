@@ -1,6 +1,6 @@
 class MotorControllerParser:
     """电机控制器上位机数据解析器"""
-    
+
     # 状态机定义
     STATE_MACHINE = {
         0x00: {"cn": "空闲", "en": "IDLE"},
@@ -21,9 +21,9 @@ class MotorControllerParser:
         0x53: {"cn": "获得零位数据", "en": "ROTTX_ZERO_DATA_READ"},
         0x54: {"cn": "存数据", "en": "ROTTX_ZERO_DATA_LOG"},
         0xFE: {"cn": "故障", "en": "FAULT"},
-        0xFF: {"cn": "故障返回", "en": "FAULT_RET"}
+        0xFF: {"cn": "故障返回", "en": "FAULT_RET"},
     }
-    
+
     # 错误代码位定义
     ERROR_BITS = {
         0: {"cn": "自检异常", "en": "RSVD2"},
@@ -33,9 +33,9 @@ class MotorControllerParser:
         4: {"cn": "功率器件保护2", "en": "DESAT2"},
         5: {"cn": "功率器件保护1", "en": "DESAT1"},
         6: {"cn": "保留1", "en": "RSVD1"},
-        7: {"cn": "总故障标志", "en": "FaultALL"}
+        7: {"cn": "总故障标志", "en": "FaultALL"},
     }
-    
+
     # 故障标志位定义
     FAULT_FLAGS = {
         # MOTSTATUS (位 0-7)
@@ -81,9 +81,9 @@ class MotorControllerParser:
             ("B相软件过流", 1 << 29),
             ("A相软件过流", 1 << 30),
             ("母线软件过流", 1 << 31),
-        ]
+        ],
     }
-    
+
     def parse_temperature(self, temperature_u32):
         """
         解析温度数据
@@ -96,24 +96,20 @@ class MotorControllerParser:
         temp_d = (temperature_u32 >> 24) & 0xFF  # 最高字节
         temp_c = (temperature_u32 >> 16) & 0xFF
         temp_b = (temperature_u32 >> 8) & 0xFF
-        state = temperature_u32 & 0xFF           # 最低字节为状态机
-        
+        state = temperature_u32 & 0xFF  # 最低字节为状态机
+
         # 获取状态机信息
         state_info = self.STATE_MACHINE.get(state, {"cn": "未知状态", "en": "UNKNOWN"})
-        
+
         return {
-            "temperatures": {
-                "temp_d": temp_d,
-                "temp_c": temp_c, 
-                "temp_b": temp_b
-            },
+            "temperatures": {"temp_d": temp_d, "temp_c": temp_c, "temp_b": temp_b},
             "state": {
                 "code": state,
                 "name_cn": state_info["cn"],
-                "name_en": state_info["en"]
-            }
+                "name_en": state_info["en"],
+            },
         }
-    
+
     def parse_error_code(self, error_code_u32):
         """
         解析错误代码
@@ -126,16 +122,16 @@ class MotorControllerParser:
         error_d = (error_code_u32 >> 24) & 0xFF
         error_c = (error_code_u32 >> 16) & 0xFF
         error_b = (error_code_u32 >> 8) & 0xFF
-        
+
         return {
             "error_codes": {
                 "module_d": self._parse_single_error(error_d),
                 "module_c": self._parse_single_error(error_c),
-                "module_b": self._parse_single_error(error_b)
+                "module_b": self._parse_single_error(error_b),
             },
-            "has_error": any([error_d, error_c, error_b])
+            "has_error": any([error_d, error_c, error_b]),
         }
-    
+
     def parse_fault_flags(self, flag1_uint32):
         """
         解析故障标志位
@@ -145,16 +141,16 @@ class MotorControllerParser:
             dict: 包含各类故障信息
         """
         result = {}
-        
+
         for category, flag_bits in self.FAULT_FLAGS.items():
             active_faults = []
             for fault_name, mask in flag_bits:
                 if flag1_uint32 & mask:
                     active_faults.append(fault_name)
             result[category] = active_faults
-        
+
         return result
-    
+
     def _parse_single_error(self, error_byte):
         """
         解析单个字节的错误代码
@@ -166,19 +162,23 @@ class MotorControllerParser:
         errors = []
         for bit in range(8):
             if error_byte & (1 << bit):
-                error_info = self.ERROR_BITS.get(bit, {"cn": "未知错误", "en": "UNKNOWN"})
-                errors.append({
-                    "bit": bit,
-                    "name_cn": error_info["cn"],
-                    "name_en": error_info["en"]
-                })
-        
+                error_info = self.ERROR_BITS.get(
+                    bit, {"cn": "未知错误", "en": "UNKNOWN"}
+                )
+                errors.append(
+                    {
+                        "bit": bit,
+                        "name_cn": error_info["cn"],
+                        "name_en": error_info["en"],
+                    }
+                )
+
         return {
             "raw_value": error_byte,
             "active_errors": errors,
-            "has_error": bool(error_byte)
+            "has_error": bool(error_byte),
         }
-    
+
     def parse_all(self, temperature_u32, error_code_u32, fault_flags_u32=None):
         """
         一次性解析所有数据
@@ -191,14 +191,14 @@ class MotorControllerParser:
         """
         temp_result = self.parse_temperature(temperature_u32)
         error_result = self.parse_error_code(error_code_u32)
-        
+
         result = {
             "timestamp": None,  # 可以添加时间戳
             "temperature_data": temp_result,
             "error_data": error_result,
-            "system_status": "FAULT" if error_result["has_error"] else "NORMAL"
+            "system_status": "FAULT" if error_result["has_error"] else "NORMAL",
         }
-        
+
         if fault_flags_u32 is not None:
             fault_result = self.parse_fault_flags(fault_flags_u32)
             result["fault_flags"] = fault_result
@@ -206,9 +206,9 @@ class MotorControllerParser:
             has_faults = any(faults for faults in fault_result.values())
             if has_faults:
                 result["system_status"] = "FAULT"
-        
+
         return result
-    
+
     def get_display_info(self, temperature_u32, error_code_u32):
         """
         获取用于界面显示的简化信息
@@ -217,46 +217,51 @@ class MotorControllerParser:
         """
         temp_info = self.parse_temperature(temperature_u32)
         error_info = self.parse_error_code(error_code_u32)
-        
+
         # 收集所有错误信息
         all_errors = []
+        module_name_cn = {
+            "module_d": "驱动器1",
+            "module_c": "驱动器2",
+            "module_b": "驱动器3",
+        }
         for module_name, module_data in error_info["error_codes"].items():
             for error in module_data["active_errors"]:
-                all_errors.append(f"{module_name[-1].upper()}:{error['name_cn']}")
-        
+                all_errors.append(f"{module_name_cn[module_name]}:{error['name_cn']}")
+
         return {
             "temp_d": temp_info["temperatures"]["temp_d"],
-            "temp_c": temp_info["temperatures"]["temp_c"], 
+            "temp_c": temp_info["temperatures"]["temp_c"],
             "temp_b": temp_info["temperatures"]["temp_b"],
             "state_en": temp_info["state"]["name_en"],
             "state_cn": temp_info["state"]["name_cn"],
             "has_error": error_info["has_error"],
             "all_errors": all_errors,
-            "error_codes": error_info["error_codes"]
+            "error_codes": error_info["error_codes"],
         }
 
 
 # 使用示例
 if __name__ == "__main__":
     parser = MotorControllerParser()
-    
+
     # 模拟数据
     temperature_u32 = 0x50453A08  # 示例数据
-    error_code_u32 = 0x02010000   # 示例数据
-    fault_flags_u32 = 0xF00F001   # 示例故障标志
-    
+    error_code_u32 = 0x02010000  # 示例数据
+    fault_flags_u32 = 0xF00F001  # 示例故障标志
+
     # 解析温度
     temp_info = parser.parse_temperature(temperature_u32)
     print("温度信息:", temp_info)
-    
+
     # 解析错误代码
     error_info = parser.parse_error_code(error_code_u32)
     print("错误信息:", error_info)
-    
+
     # 解析故障标志
     fault_info = parser.parse_fault_flags(fault_flags_u32)
     print("故障标志:", fault_info)
-    
+
     # 一次性解析
     all_info = parser.parse_all(temperature_u32, error_code_u32, fault_flags_u32)
     print("完整信息:", all_info)
