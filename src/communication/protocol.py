@@ -77,7 +77,8 @@ class ProtocolParser:
 
         while len(self.buffer) >= 6:  # 最小包头大小
             packets_ = self._try_parse_packet()
-            packets.extend(packets_)
+            if packets_:
+                packets.extend(packets_)
 
         return packets
 
@@ -121,9 +122,9 @@ class ProtocolParser:
         payload_with_crc = packet_data[6:]  # 去掉包头
         payload, crc_valid = extract_and_verify_crc(payload_with_crc)
 
-        # if not crc_valid:
-        #     logger.warning(f"CRC校验失败，序号: {sequence}")
-        #     return None
+        if not crc_valid:
+            logger.warning(f"CRC校验失败，序号: {sequence}")
+            return None
 
         # 统计丢包和重复包
         self._update_statistics(sequence)

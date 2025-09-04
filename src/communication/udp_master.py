@@ -81,6 +81,8 @@ class UDPMaster(QObject):
         self.req_seq = 0
         self.resp_queue = queue.Queue(maxsize=1)
 
+        self._reg_set_semaphore = None  # 延迟初始化，避免事件循环问题
+
     async def start(self):
         """启动UDP接收器"""
         if self.running:
@@ -289,7 +291,8 @@ class UDPMaster(QObject):
             self.last_data_time = time.time() * 1000
 
             packets = self.parser.feed_data(data)
-
+            if packets is None:
+                packets = []
             for packet in packets:
                 # 处理电机采样数据
                 if (
@@ -416,59 +419,74 @@ class UDPMaster(QObject):
             TimeoutError: 等待响应超时
             ConnectionError: 网络连接错误
         """
-        # 参数验证
-        if not self.running or not self.send_socket:
-            return False
+        if self._reg_set_semaphore is None:
+            self._reg_set_semaphore = asyncio.Semaphore(1)
 
-        if not datas:
-            return False
+        async with self._reg_set_semaphore:
+            # 参数验证
+            if not self.running or not self.send_socket:
+                return False
 
-        if regAddrStart < 0:
-            return False
+            if not datas:
+                return False
 
-        # 限制寄存器数量
-        if len(datas) > 20:
-            logger.warning(f"数据长度超过限制，截取前20个: {len(datas)} -> 20")
-            datas = datas[:20]
+            if regAddrStart < 0:
+                return False
 
-        regNum = len(datas)
-        req_seq = (self.req_seq + 1) & 0xFFFF
-        self.req_seq = req_seq
+            # 限制寄存器数量
+            if len(datas) > 20:
+                logger.warning(f"数据长度超过限制，截取前20个: {len(datas)} -> 20")
+                datas = datas[:20]
 
-        try:
-            # 构造数据包
-            packet_data = self._build_reg_set_packet(
-                regAddrStart, regNum, datas, req_seq
-            )
+            regNum = len(datas)
+            req_seq = (self.req_seq + 1) & 0xFFFF
+            self.req_seq = req_seq
 
-            # 发送数据包
-            await self._send_packet(packet_data, target_addr)
-
-            # 等待响应
-            resp = await self._wait_for_response(timeout)
-
-            if (
-                resp.packet_type == PACKET_TYPE_SYS_REGS_SET
-                and resp.reg_addr_start == regAddrStart
-            ):  # 响应类型和序号和地址都匹配时认为成功完成配置
-                # logger.info(f"配置成功完成，响应: {resp}")
-                return True
-            else:
-                logger.warning(
-                    f"响应类型错误，期望 {PACKET_TYPE_SYS_REGS_SET}，实际 {resp.packet_type}"
+            try:
+                # 构造数据包
+                packet_data = self._build_reg_set_packet(
+                    regAddrStart, regNum, datas, req_seq
                 )
-                return False  # 响应类型错误，丢弃响应并返回失败
 
-        except asyncio.TimeoutError:
-            logger.warning(f"等待配置响应超时 (序号: {req_seq} {target_addr})")
-            # 清空队列中可能的旧响应
+                # 清空响应队列中的所有旧响应
+                self._clear_response_queue()
+                # 发送数据包
+                await self._send_packet(packet_data, target_addr)
+
+                # 等待响应
+                resp = await self._wait_for_response(timeout)
+
+                if (
+                    resp.packet_type == PACKET_TYPE_SYS_REGS_SET
+                    and resp.reg_addr_start == regAddrStart
+                ):  # 响应类型和序号和地址都匹配时认为成功完成配置
+                    # logger.info(f"配置成功完成，响应: {resp}")
+                    return True
+                else:
+                    logger.warning(
+                        f"响应类型错误，期望 {PACKET_TYPE_SYS_REGS_SET}，实际 {resp.packet_type}"
+                    )
+                    return False  # 响应类型错误，丢弃响应并返回失败
+
+            except asyncio.TimeoutError:
+                logger.warning(f"等待配置响应超时 (序号: {req_seq} {target_addr})")
+                # 清空队列中可能的旧响应
+                self._clear_response_queue()
+            except OSError as e:
+                logger.error(f"网络发送失败: {e}")
+                raise ConnectionError(f"网络连接错误: {e}")
+            except Exception as e:
+                logger.error(f"发送配置数据失败: {e}")
+                raise
+
+    def _clear_response_queue(self):
+        """清空响应队列中的所有消息"""
+        cleared_count = 0
+        while True:
             try:
                 self.resp_queue.get_nowait()
+                cleared_count += 1
             except queue.Empty:
-                pass
-        except OSError as e:
-            logger.error(f"网络发送失败: {e}")
-            raise ConnectionError(f"网络连接错误: {e}")
-        except Exception as e:
-            logger.error(f"发送配置数据失败: {e}")
-            raise
+                break
+        if cleared_count > 0:
+            logger.debug(f"清理了 {cleared_count} 个旧响应")

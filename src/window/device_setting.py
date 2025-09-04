@@ -6,6 +6,17 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QTableWidgetItem
 from qasync import asyncSlot
 from qfluentwidgets import MessageBox
+from qfluentwidgets import (
+    InfoBarIcon,
+    InfoBar,
+    PushButton,
+    setTheme,
+    Theme,
+    FluentIcon,
+    InfoBarPosition,
+    InfoBarManager,
+)
+from PyQt5.QtCore import QPoint, Qt
 
 from src.communication.protocol import (
     SysREGsUpData,
@@ -131,7 +142,7 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         )
 
     @asyncSlot()
-    async def _set_pid_param(self, reg_addr: int, value: float):
+    async def _set_pid_param(self, reg_addr: int, value: float, param_name: str):
         """设置PID参数"""
         try:
             # 转换为定点数
@@ -144,8 +155,26 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             )
 
             if success:
+                InfoBar.success(
+                    title='设置成功',
+                    content=f'{param_name} 已成功设置为 {value:.5f}',
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP,
+                    duration=2000,
+                    parent=self
+                )
                 logger.info(f"PID参数设置成功: 地址{reg_addr}, 值{value}")
             else:
+                InfoBar.error(
+                    title='设置失败',
+                    content=f'{param_name} 设置失败，请检查通信',
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP,
+                    duration=2000,
+                    parent=self
+                )
                 logger.warning(f"PID参数设置失败: 地址{reg_addr}, 值{value}")
 
         except Exception as e:
@@ -163,10 +192,28 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             )
 
             if success:
-                logger.info(f"PID参数设置成功: 地址{reg_addr}, 值{value}")
+                InfoBar.success(
+                    title='保存成功',
+                    content='所有参数已成功写入设备 Flash',
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP,
+                    duration=2000,
+                    parent=self
+                )
+                logger.info("参数保存成功")
             else:
-                logger.warning(f"PID参数设置失败: 地址{reg_addr}, 值{value}")
-
+                InfoBar.error(
+                    title='保存失败',
+                    content='参数保存失败，请检查通信',
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP,
+                    duration=2000,
+                    parent=self
+                )
+                logger.warning("参数保存失败")
+    
         except Exception as e:
             logger.error(f"设置PID参数错误: {e}")
 
@@ -281,7 +328,7 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         box = MessageBox(title, content, self)
         if box.exec():
             # 用户点击“确认”
-            self._set_pid_param(reg_addr, new_value)
+            self._set_pid_param(reg_addr, new_value, param_name)
 
     def _confirm_save_param(self):
         title = "确认保存参数"

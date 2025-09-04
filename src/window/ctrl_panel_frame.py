@@ -11,7 +11,16 @@ from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5.QtCore import QPoint, Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout
 
-from qfluentwidgets import InfoBarIcon, InfoBar, PushButton, setTheme, Theme, FluentIcon, InfoBarPosition, InfoBarManager
+from qfluentwidgets import (
+    InfoBarIcon,
+    InfoBar,
+    PushButton,
+    setTheme,
+    Theme,
+    FluentIcon,
+    InfoBarPosition,
+    InfoBarManager,
+)
 
 from src.communication.protocol import (
     SysREGsUpData,
@@ -38,6 +47,7 @@ def uint32_to_int32(value: int) -> int:
     if value >= 0x80000000:  # 2^31
         return value - 0x100000000  # 2^32
     return value
+
 
 class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
     """主窗口类"""
@@ -117,7 +127,7 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.spinbox_speed.setSingleStep(step)
 
     def on_sw_btn_host_computer_checked_changed(self, checked: bool):
-        self.sw_btn_host_computer = checked
+        self.period_send_sw = checked
 
     async def send_speed_set_cmd(self):
         self.speed_set = min(max(self.speed_set, self.speed_min), self.speed_max)
@@ -148,16 +158,26 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.update_btn_check_state()
         self.spinbox_speed.setValue(self.speed_set)
         ret = await self.send_speed_set_cmd()
-        if not ret:
+        if ret:
+            InfoBar.success(
+                title="电机停止结果",
+                content="停止成功，收到回复！",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self,
+            )
+        else:
             logger.info("停止失败")
             InfoBar.error(
-                title='电机停止结果',
+                title="电机停止结果",
                 content="停止命令发送超时！",
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
                 duration=2000,
-                parent=self
+                parent=self,
             )
 
     @asyncSlot()
@@ -167,18 +187,27 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             self.update_btn_check_state()
             self.spinbox_speed.setValue(self.speed_set)
 
-        target_addr = (self.cfg.target_host, self.cfg.target_port)
-        ret = await self.device_reg_set_func(49, [10 * 100000], target_addr=target_addr)
-        if not ret:
+        ret = await self.send_speed_set_cmd()
+        if ret:
+            InfoBar.success(
+                title="电机启动结果",
+                content="启动成功，收到回复！",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self,
+            )
+        else:
             logger.info("启动失败")
             InfoBar.error(
-                title='电机启动结果',
+                title="电机启动结果",
                 content="启动命令发送超时！",
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP,
                 duration=2000,
-                parent=self
+                parent=self,
             )
 
     def update_dev_error_list(self, error_list: List[str]):
@@ -325,10 +354,10 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             elif key == QtCore.Qt.Key_Down:
                 self.decrease_speed()
                 return True
-            elif key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:        
-                asyncio.ensure_future(self.launch_device()) 
+            elif key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
+                asyncio.ensure_future(self.launch_device())
                 return True
-            elif key == QtCore.Qt.Key_Space:          
+            elif key == QtCore.Qt.Key_Space:
                 asyncio.ensure_future(self.stop_device())
                 return True
         return super().eventFilter(source, event)
