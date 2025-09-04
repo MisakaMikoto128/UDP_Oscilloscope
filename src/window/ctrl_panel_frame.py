@@ -334,6 +334,10 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         else:
             self.label_online_status.setText("以太网离线")
             self.badge_online_status.setLevel(InfoLevel.ERROR)
+            self.speed_set = 0
+            self.update_btn_check_state()
+            self.spinbox_speed.setValue(0)
+
 
     def increase_speed(self):
         self.speed_set = min(self.speed_set + self.speed_set_step, self.speed_max)
