@@ -271,6 +271,7 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             MCV_Ib = uint32_to_int32(sys_regs_up_data.reg[74]) / fixed_point_scale
             MCV_Ic = uint32_to_int32(sys_regs_up_data.reg[75]) / fixed_point_scale
             MCV_Ibus = uint32_to_int32(sys_regs_up_data.reg[79]) / fixed_point_scale
+            flag1_uint32 = sys_regs_up_data.reg[90]
 
             self.label_vdc.setText(f"{Vbus:<7.2f}")
             self.label_vbus_in.setText(f"{Vbus_in:<7.2f}")
@@ -285,29 +286,28 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
 
             info = self.parser.get_display_info(temperature_u32, error_code_u32)
             self.label_speed.setText(f"转速：    {MCV_mSpeed:<7.2f}")
-            self.label_angle.setText(f"角度：    {MCV_angle:<7.2f}")
-            self.label_duty_cycle.setText(f"占空比：{MCV_mDuty:<7.2f}")
+            self.label_angle.setText(f"{MCV_angle:<7.2f}°")
+            self.label_duty_cycle.setText(f"{MCV_mDuty:<7.2f}")
             self.label_temperature.setText(
-                f"逆变温度：A:{info['temp_d']} B:{info['temp_c']} C:{info['temp_b']}℃"
+                f"A:{info['temp_d']} B:{info['temp_c']} C:{info['temp_b']}℃"
             )
             self.label_motor_temp.setText(
-                f"电机温度：{MCV_mPT1:<7.2f} {MCV_mPT2:<7.2f} {MCV_mPT3:<7.2f} {MCV_mPT4:<7.2f} {MCV_mPT5:<7.2f}℃"
+                f"{MCV_mPT1:<7.2f} {MCV_mPT2:<7.2f} {MCV_mPT3:<7.2f} {MCV_mPT4:<7.2f} {MCV_mPT5:<7.2f}℃"
             )
             self.label_sys_status.setText(
-                f"状态：{info['state_en']}:{info['state_cn']}"
+                f"{info['state_en']}:{info['state_cn']}"
             )
             error_d = (error_code_u32 >> 24) & 0xFF
             error_c = (error_code_u32 >> 16) & 0xFF
             error_b = (error_code_u32 >> 8) & 0xFF
             self.label_fault_status.setText(
-                f"故障状态：A:0x{error_d:02X} B:0x{error_c:02X} C:0x{error_b:02X}"
+                f"故障状态：0x{flag1_uint32:08X}"
+            )
+            self.label_dev_error.setText(
+                f"报错：A:0x{error_d:02X} B:0x{error_c:02X} C:0x{error_b:02X}"
             )
             all_errors = info.get("all_errors", [])
             self.update_dev_error_list(all_errors)
-
-            flag1_int32 = sys_regs_up_data.reg[90]
-            flag1_uint32 = flag1_int32 & 0xFFFFFFFF
-            # flag1_uint32 = 0xF00F001  # 示例值
             self.update_fault_status(flag1_uint32)
 
         except Exception as e:

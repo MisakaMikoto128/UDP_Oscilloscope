@@ -558,6 +558,91 @@
      </layout>
     </widget>
    </item>
+   <item row="0" column="0" colspan="3">
+    <widget class="QWidget" name="widget_2" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>80</height>
+      </size>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="2" rowspan="2">
+       <widget class="LargeTitleLabel" name="LargeTitleLabel">
+        <property name="font">
+         <font>
+          <family>华文行楷</family>
+          <pointsize>44</pointsize>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>电机控控制器</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="IconInfoBadge" name="badge_online_status">
+        <property name="minimumSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
+        <property name="level" stdset="0">
+         <string>Error</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="1" column="1">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="0" column="1">
+       <widget class="SubtitleLabel" name="label_online_status">
+        <property name="text">
+         <string>以太网离线</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item row="2" column="0" colspan="3">
     <widget class="CardWidget" name="CardWidget_3">
      <property name="sizePolicy">
@@ -692,101 +777,16 @@
      </layout>
     </widget>
    </item>
-   <item row="0" column="0" colspan="3">
-    <widget class="QWidget" name="widget_2" native="true">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>80</height>
-      </size>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_4">
-      <item row="0" column="2" rowspan="2">
-       <widget class="LargeTitleLabel" name="LargeTitleLabel">
-        <property name="font">
-         <font>
-          <family>华文行楷</family>
-          <pointsize>44</pointsize>
-          <weight>50</weight>
-          <bold>false</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>电机控控制器</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="IconInfoBadge" name="badge_online_status">
-        <property name="minimumSize">
-         <size>
-          <width>22</width>
-          <height>22</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>22</width>
-          <height>22</height>
-         </size>
-        </property>
-        <property name="level" stdset="0">
-         <string>Error</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="3">
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="1" column="1">
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="0" column="1">
-       <widget class="SubtitleLabel" name="label_online_status">
-        <property name="text">
-         <string>以太网离线</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
    <item row="1" column="1" colspan="2">
     <widget class="CardWidget" name="CardWidget_2">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="0">
+      <item row="0" column="0" colspan="3">
        <layout class="QHBoxLayout" name="horizontalLayout">
         <property name="sizeConstraint">
          <enum>QLayout::SetFixedSize</enum>
@@ -951,45 +951,265 @@
         </item>
        </layout>
       </item>
-      <item row="11" column="0">
-       <widget class="ListWidget" name="list_fault_status">
+      <item row="2" column="0" colspan="3">
+       <widget class="HorizontalSeparator" name="HorizontalSeparator"/>
+      </item>
+      <item row="3" column="0">
+       <widget class="QWidget" name="widget_3" native="true">
+        <layout class="QGridLayout" name="gridLayout_5">
+         <item row="0" column="0">
+          <widget class="SubtitleLabel" name="label_2">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>角度：</string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::MarkdownText</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="SubtitleLabel" name="label_angle">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>          </string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::MarkdownText</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="SubtitleLabel" name="label_1">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>占空比：</string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::MarkdownText</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="SubtitleLabel" name="label_duty_cycle">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>          </string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::MarkdownText</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="SubtitleLabel" name="label_4">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>逆变温度：</string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::MarkdownText</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="SubtitleLabel" name="label_temperature">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>                                             </string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::MarkdownText</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0">
+          <widget class="SubtitleLabel" name="label_3">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>电机温度：</string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::MarkdownText</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0">
+          <widget class="SubtitleLabel" name="label_motor_temp">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>          </string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::MarkdownText</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="8" column="0">
+          <widget class="SubtitleLabel" name="label_sys_status_2">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>系统状态：</string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::MarkdownText</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="0">
+          <widget class="SubtitleLabel" name="label_sys_status">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>                 </string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::MarkdownText</enum>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="VerticalSeparator" name="VerticalSeparator"/>
+      </item>
+      <item row="3" column="2">
+       <widget class="QWidget" name="widget" native="true">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="font">
-         <font>
-          <family>0xProto Nerd Font</family>
-          <pointsize>12</pointsize>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="verticalScrollBarPolicy">
-         <enum>Qt::ScrollBarAsNeeded</enum>
-        </property>
-        <property name="horizontalScrollBarPolicy">
-         <enum>Qt::ScrollBarAlwaysOff</enum>
-        </property>
-        <property name="sizeAdjustPolicy">
-         <enum>QAbstractScrollArea::AdjustToContents</enum>
-        </property>
-        <item>
-         <property name="text">
-          <string>无故障</string>
-         </property>
-        </item>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="SubtitleLabel" name="label_dev_error">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>报错：</string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::MarkdownText</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="ListWidget" name="list_dev_error">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <family>0xProto Nerd Font</family>
+             <pointsize>12</pointsize>
+            </font>
+           </property>
+           <item>
+            <property name="text">
+             <string>无</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item>
+          <widget class="SubtitleLabel" name="label_fault_status">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>故障状态：</string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::MarkdownText</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="ListWidget" name="list_fault_status">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="font">
+            <font>
+             <family>0xProto Nerd Font</family>
+             <pointsize>12</pointsize>
+            </font>
+           </property>
+           <item>
+            <property name="text">
+             <string>无故障</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="1" column="0" colspan="3">
        <layout class="QHBoxLayout" name="horizontalLayout_4">
         <item>
          <widget class="SubtitleLabel" name="label_speed_2">
@@ -1039,137 +1259,6 @@
         </item>
        </layout>
       </item>
-      <item row="7" column="0">
-       <widget class="SubtitleLabel" name="label_sys_status">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>系统状态：空闲</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0">
-       <widget class="SubtitleLabel" name="label_temperature">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>逆变温度：</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="0">
-       <widget class="SubtitleLabel" name="label_dev_error">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>报错：</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="0">
-       <widget class="SubtitleLabel" name="label_motor_temp">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>电机温度：</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <item>
-         <widget class="SubtitleLabel" name="label_angle">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>角度：</string>
-          </property>
-          <property name="textFormat">
-           <enum>Qt::MarkdownText</enum>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item row="3" column="0">
-       <widget class="SubtitleLabel" name="label_duty_cycle">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>占空比：</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="10" column="0">
-       <widget class="SubtitleLabel" name="label_fault_status">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>故障状态：</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="9" column="0">
-       <widget class="ListWidget" name="list_dev_error">
-        <property name="font">
-         <font>
-          <family>0xProto Nerd Font</family>
-          <pointsize>12</pointsize>
-         </font>
-        </property>
-        <item>
-         <property name="text">
-          <string>无</string>
-         </property>
-        </item>
-       </widget>
-      </item>
      </layout>
     </widget>
    </item>
@@ -1199,6 +1288,16 @@
   <customwidget>
    <class>ToggleButton</class>
    <extends>PushButton</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>HorizontalSeparator</class>
+   <extends>QWidget</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>VerticalSeparator</class>
+   <extends>QWidget</extends>
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
