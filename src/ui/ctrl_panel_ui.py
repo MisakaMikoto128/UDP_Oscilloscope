@@ -636,7 +636,7 @@ class Ui_Form(object):
         self.label_ib_2.setText(_translate("Form", "Ib:"))
         self.label_iq_2.setText(_translate("Form", "Iq:"))
         self.label_ic_2.setText(_translate("Form", "Ic:"))
-        self.LargeTitleLabel.setText(_translate("Form", "电机控控制器"))
+        self.LargeTitleLabel.setText(_translate("Form", "电机控制器"))
         self.badge_online_status.setProperty("level", _translate("Form", "Error"))
         self.label_online_status.setText(_translate("Form", "以太网离线"))
         self.btn_reset_dev.setText(_translate("Form", "复位"))

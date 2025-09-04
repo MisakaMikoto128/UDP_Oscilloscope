@@ -62,7 +62,7 @@ def main():
 
     # 创建Qt应用
     app = QtWidgets.QApplication(sys.argv)
-    app.setApplicationName("UDP示波器")
+    app.setApplicationName("卡方-电机控制器")
     app.setApplicationVersion("1.0.0")
 
     # 加载配置

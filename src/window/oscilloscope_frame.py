@@ -562,10 +562,8 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         """窗口关闭事件"""
         try:
             # 停止定时器
-            if hasattr(self, "_plot_timer"):
-                self._plot_timer.stop()
-            if hasattr(self, "_stats_timer"):
-                self._stats_timer.stop()
+            self._plot_timer.stop()
+            self._stats_timer.stop()
 
             # 保存配置
             self.cfg.save()

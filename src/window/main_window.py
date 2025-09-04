@@ -73,10 +73,7 @@ class MainWindow(FluentWindow):
         self.setWindowTitle("卡方-电机控制器上位机")
         self.setWindowIcon(QIcon("./img/star.png"))
 
-        desktop = QApplication.desktop().availableGeometry()
-        w, h = desktop.width(), desktop.height()
-        self.resize(w, h)
-        self.move(0, 0)
+        self.showMaximized()
 
     async def start_receiver(self):
         await self.receiver.start()
