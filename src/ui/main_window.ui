@@ -85,6 +85,9 @@
         <property name="text">
          <string>录波使能</string>
         </property>
+        <property name="autoExclusive">
+         <bool>false</bool>
+        </property>
        </widget>
       </item>
       <item>
@@ -136,6 +139,9 @@
        <widget class="RadioButton" name="radioButton">
         <property name="text">
          <string>自动滚动</string>
+        </property>
+        <property name="autoExclusive">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
