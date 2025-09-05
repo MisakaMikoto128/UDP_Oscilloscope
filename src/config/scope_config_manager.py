@@ -152,9 +152,14 @@ class ScopeConfigManager:
 
     @property
     def max_points_window(self) -> int:
-        """最大显示点数"""
+        """实时模式最大显示点数"""
         return self.get('display.max_points_window', 300000)
-    
+
+    @property
+    def max_points_preview(self) -> int:
+        """预览模式最大显示点数"""
+        return self.get('display.max_points_preview', 100000)
+
     @property
     def grid_enabled(self) -> bool:
         """是否显示网格"""

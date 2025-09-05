@@ -23,6 +23,7 @@
     "opengl_enabled": true,
     "auto_roll": true,
     "max_points_window": 10000,
+    "max_points_preview": 50000,
     "sample_rate": 1000.0
   },
   "channels": [

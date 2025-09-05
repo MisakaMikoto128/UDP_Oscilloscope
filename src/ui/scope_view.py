@@ -59,7 +59,8 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
         self.n_channels = n_channels
         self.sample_rate = sample_rate  # 采样频率
         logger.info(f"ScopeWidget 设置采样频率为：{sample_rate:.2f}Hz")
-        self.max_points_window = 60000  # 窗口最大显示点数
+        self.max_points_window = 60000
+        self.max_points_preview = 60000
 
         # 通道数据和曲线
         self.curves = []
@@ -297,19 +298,20 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
             else:
                 self.curves[channel].hide()
 
-    def update_tail(self, data_arrays: List[np.ndarray]):
+    def update_tail(self, data_arrays: List[np.ndarray], realtime_mode:bool = True):
         """
         更新波形显示 - 优化版本
 
         Args:
             data_arrays: 每个通道的数据数组列表
+            _max_points_preview: 预览模式的最大显示点数，默认使用 self.max_points_window
         """
         if not data_arrays:
             return
 
         try:
             n_points = len(data_arrays[0])
-            n = min(n_points, self.max_points_window)
+            n = min(n_points, self.max_points_window if realtime_mode else self.max_points_preview)
             if n == 0:
                 return
 

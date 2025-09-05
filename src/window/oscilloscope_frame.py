@@ -83,6 +83,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
         # 应用配置
         self.scope_widget.max_points_window = self.cfg.max_points_window
+        self.scope_widget.max_points_preview = self.cfg.max_points_preview
         self.scope_widget.reset_time_offset(self.cfg.auto_roll)
 
         # 设置通道颜色和参数
@@ -555,17 +556,8 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
     def refresh_plot(self):
         """刷新绘图"""
         try:
-            # 根据当前模式决定数据源
-            if self._is_preview_mode:
-                if self._preview_buffer is None:
-                    return
-                
-                # 预览模式：使用预览buffer的数据
-                arrays = []
-                for i in range(self._preview_buffer.n_channels):
-                    data = self._preview_buffer.view_tail(i, self.scope_widget.max_points_window)
-                    arrays.append(data)
-            else:
+            # 根据当前模式决定数据源和显示点数
+            if not self._is_preview_mode:
                 # 实时模式：使用实时buffer的数据
                 arrays = []
                 for i in range(self.buffer.n_channels):
@@ -590,11 +582,11 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
                 # 预览模式：显示预览buffer中的数据
                 arrays = []
                 for i in range(self._preview_buffer.n_channels):
-                    data = self._preview_buffer.view_tail(i, self.scope_widget.max_points_window)
+                    data = self._preview_buffer.view_tail(i, self.scope_widget.max_points_preview)
                     arrays.append(data)
 
                 # 更新示波器显示
-                self.scope_widget.update_tail(arrays)
+                self.scope_widget.update_tail(arrays, realtime_mode=False)
 
                 # 更新光标值显示
                 if self.cursor_control.is_enabled():
@@ -603,6 +595,27 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
         except Exception as e:
             logger.error(f"刷新预览绘图时出错: {e}")
+
+    def update_display_points_config(self):
+        """更新显示点数配置"""
+        try:
+            # 更新实时模式显示点数
+            self.scope_widget.max_points_window = self.cfg.max_points_window
+
+            # 更新预览模式显示点数
+            self._max_points_preview = self.cfg.max_points_preview
+
+            logger.info(f"显示点数配置已更新: 实时模式={self.scope_widget.max_points_window}, 预览模式={self._max_points_preview}")
+
+        except Exception as e:
+            logger.error(f"更新显示点数配置失败: {e}")
+
+    def get_current_max_points(self) -> int:
+        """获取当前模式的最大显示点数"""
+        if self._is_preview_mode:
+            return self._max_points_preview
+        else:
+            return self.scope_widget.max_points_window
 
     def update_statistics(self):
         """更新统计信息"""
