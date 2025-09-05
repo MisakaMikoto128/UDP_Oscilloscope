@@ -148,30 +148,6 @@ class MotorSimulator:
         # 创建主数据包
         return self._create_main_packet(sub_packet)
     
-    def _create_config_packet(self) -> bytes:
-        """
-        创建配置数据包
-        
-        Returns:
-            完整的UDP数据包
-        """
-        # 配置上传数据包 (0xF4)
-        packet_type = 0xF4
-        
-        # 打包配置数据
-        sub_packet = struct.pack('<B6f',
-            packet_type,
-            self.pid_config['kp'],
-            self.pid_config['ki'],
-            self.pid_config['kd'],
-            self.pid_config['kp1'],
-            self.pid_config['ki1'],
-            self.pid_config['kd1']
-        )
-        
-        # 创建主数据包
-        return self._create_main_packet(sub_packet)
-    
     def _create_main_packet(self, sub_packet: bytes) -> bytes:
         """
         创建主数据包
@@ -253,7 +229,7 @@ async def main():
     parser = argparse.ArgumentParser(description='电机控制板模拟器')
     parser.add_argument('--host', default='127.0.0.1', help='目标主机地址')
     parser.add_argument('--port', type=int, default=8888, help='目标端口')
-    parser.add_argument('--rate', type=float, default=10000, help='发送频率 (Hz)')
+    parser.add_argument('--rate', type=float, default=100000, help='发送频率 (Hz)')
     
     args = parser.parse_args()
     
