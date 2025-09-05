@@ -39,20 +39,24 @@ def _run_scope_process(scope_ipc):
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
-    # 启用OpenGL加速
+    # 高性能OpenGL配置
     pg.setConfigOptions(
         useOpenGL=True,  # 启用OpenGL加速
-        # enableExperimental=True,  # 启用实验性功能
         antialias=False,  # 关闭抗锯齿（性能提升明显）
         crashWarning=False,  # 关闭崩溃警告
+        useNumba=True,  # 启用Numba加速（如果可用）
+        enableExperimental=False,  # 关闭实验性功能
     )
     try:
         # 创建Qt应用（独立进程）
         app = QApplication(sys.argv)
         app.setQuitOnLastWindowClosed(True)
 
-        # 创建示波器窗口（IPC模式）
-        scope_frame = OscilloscopeFrame(scope_ipc=scope_ipc)
+        # 预设样式表（减少运行时计算）
+        app.setStyleSheet("QWidget { font-family: 'Microsoft YaHei'; }")
+
+        # 创建示波器窗口（仅IPC模式）
+        scope_frame = OscilloscopeFrame(scope_ipc)
         scope_frame.show()
 
         logger.info("示波器进程启动完成")
@@ -246,19 +250,28 @@ class MainWindow(FluentWindow):
         """窗口关闭事件"""
         print("主窗口关闭事件被调用")
 
-        # 停止示波器进程
-        self.stop_scope_process()
-
-        # 异步停止UDP接收器
-        try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # 如果事件循环正在运行，创建任务
-                asyncio.create_task(self.stop_receiver())
-            else:
-                # 如果事件循环未运行，直接运行
-                asyncio.run(self.stop_receiver())
-        except Exception as e:
-            logger.error(f"关闭时停止UDP接收器失败: {e}")
-
+        # 快速关闭：先接受事件，然后在后台清理
         event.accept()
+
+        # 在后台线程中清理资源
+        def cleanup_in_background():
+            try:
+                # 停止示波器进程
+                self.stop_scope_process()
+
+                # 停止UDP接收器
+                try:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    loop.run_until_complete(self.stop_receiver())
+                    loop.close()
+                except Exception as e:
+                    logger.error(f"关闭时停止UDP接收器失败: {e}")
+
+                logger.info("主窗口资源清理完成")
+            except Exception as e:
+                logger.error(f"后台清理资源失败: {e}")
+
+        import threading
+        cleanup_thread = threading.Thread(target=cleanup_in_background, daemon=True)
+        cleanup_thread.start()

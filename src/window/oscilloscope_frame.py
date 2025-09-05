@@ -3,19 +3,13 @@ import logging
 
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore, QtGui
-from qasync import asyncClose
 
-from ..communication.protocol import (
-    SysREGsUpData,
-)
-from ..communication.udp_master import UDPMaster
-from ..config.config_manager import ConfigManager
 from ..config.scope_config_manager import ScopeConfigManager
 from ..data.data_buffer import RingBuffer
 from ..ui import Ui_Form
 from ..ui.channel_config_widget import ChannelConfigWidget, CursorControlWidget
 from ..ui.scope_view import ScopeWidget
-from ..communication.scope_ipc import ScopeIPC, ScopeDataReceiver
+from ..communication.scope_ipc import ScopeIPC
 
 # 设置日志
 logging.basicConfig(
@@ -31,27 +25,18 @@ logger = logging.getLogger(__name__)
 
 
 class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
-    """主窗口类 - 支持IPC模式"""
+    """示波器窗口类 - 仅支持IPC模式"""
 
-    def __init__(self, cfg=None, scope_ipc=None, parent=None):
+    def __init__(self, scope_ipc, parent=None):
         super().__init__(parent=parent)
         self.setupUi(self)
 
-        # IPC模式检测
-        self.ipc_mode = scope_ipc is not None
+        # 使用示波器专用配置
+        self.cfg = ScopeConfigManager()
+        self.scope_ipc = scope_ipc
+        self.data_receiver = scope_ipc.get_receiver()
 
-        if self.ipc_mode:
-            # IPC模式：使用示波器专用配置
-            self.cfg = ScopeConfigManager()
-            self.scope_ipc = scope_ipc
-            self.data_receiver = scope_ipc.get_receiver()
-            logger.info("示波器启动 - IPC模式")
-        else:
-            # 传统模式：使用主配置
-            self.cfg = cfg
-            self.scope_ipc = None
-            self.data_receiver = None
-            logger.info("示波器启动 - 传统模式")
+        logger.info("示波器启动 - IPC模式")
 
         # 设置窗口标题和图标
         self.setWindowTitle(f"{self.cfg.app_name} v{self.cfg.app_version}")
@@ -61,7 +46,6 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         self._init_global_controls_ui()
         self._init_channel_controls_ui()
         self._init_data_storage()
-        self._init_communication()
         self._init_timers()
 
         # 连接信号
@@ -70,9 +54,8 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         # 加载配置
         self._load_configuration()
 
-        # IPC模式下信号就绪
-        if self.ipc_mode:
-            self.scope_ipc.signal_scope_ready()
+        # 信号就绪
+        self.scope_ipc.signal_scope_ready()
 
 
     def _init_scope_view_ui(self):
@@ -270,21 +253,6 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
             n_channels=len(ch_defs), max_bytes=self.cfg.storage_bytes
         )
 
-    def _init_communication(self):
-        """初始化通信"""
-        if self.ipc_mode:
-            # IPC模式：不创建UDP接收器，数据通过IPC接收
-            self.receiver = None
-            logger.info("IPC模式：跳过UDP接收器初始化")
-        else:
-            # 传统模式：创建UDP接收器
-            self.receiver = UDPMaster(
-                host=self.cfg.udp_host,
-                port=self.cfg.udp_port,
-                on_sample=self.on_sample_received,
-            )
-            self.receiver.start()
-            logger.info("传统模式：UDP接收器已启动")
 
     def _init_timers(self):
         """初始化定时器"""
@@ -294,19 +262,18 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         self._plot_timer.setInterval(refresh_interval)
         self._plot_timer.timeout.connect(self.refresh_plot)
 
-        # IPC模式下添加数据接收定时器和关闭检查定时器
-        if self.ipc_mode:
-            self._ipc_timer = QtCore.QTimer(self)
-            self._ipc_timer.setInterval(1)  # 1ms高频接收
-            self._ipc_timer.timeout.connect(self._receive_ipc_data)
-            self._ipc_timer.start()
-            logger.info("IPC数据接收定时器已启动")
+        # IPC数据接收定时器
+        self._ipc_timer = QtCore.QTimer(self)
+        self._ipc_timer.setInterval(1)  # 1ms高频接收
+        self._ipc_timer.timeout.connect(self._receive_ipc_data)
+        self._ipc_timer.start()
+        logger.info("IPC数据接收定时器已启动")
 
-            # 关闭信号检查定时器
-            self._shutdown_timer = QtCore.QTimer(self)
-            self._shutdown_timer.setInterval(100)  # 100ms检查一次
-            self._shutdown_timer.timeout.connect(self._check_shutdown_signal)
-            self._shutdown_timer.start()
+        # 关闭信号检查定时器
+        self._shutdown_timer = QtCore.QTimer(self)
+        self._shutdown_timer.setInterval(100)  # 100ms检查一次
+        self._shutdown_timer.timeout.connect(self._check_shutdown_signal)
+        self._shutdown_timer.start()
 
         # 统计信息更新定时器
         self._stats_timer = QtCore.QTimer(self)
@@ -319,7 +286,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
     def _receive_ipc_data(self):
         """接收IPC数据（高频调用）"""
-        if not self.ipc_mode or not self.data_receiver:
+        if not self.data_receiver:
             return
 
         try:
@@ -335,7 +302,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
     def _check_shutdown_signal(self):
         """检查关闭信号"""
-        if self.ipc_mode and self.scope_ipc and self.scope_ipc.is_shutdown_requested():
+        if self.scope_ipc and self.scope_ipc.is_shutdown_requested():
             logger.info("收到关闭信号，示波器进程即将退出")
             self.close()
 
@@ -595,46 +562,18 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         #         logger.warning("寄存器管理窗口未初始化")
         # except Exception as e:
         #     logger.error(f"切换寄存器管理窗口显示状态失败: {e}")
+  
 
-    async def device_reg_set(self, regAddrStart: int, datas: list[int]) -> bool:
-        """发送配置到下位机
-
-        Returns:
-            bool: 配置是否成功
-        """
-        try:
-            target_addr = (self.cfg.target_host, self.cfg.target_port)
-            success = await self.receiver.reg_set(
-                regAddrStart=regAddrStart, datas=datas, target_addr=target_addr
-            )
-            if success:
-                logger.info("配置已成功发送到下位机")
-            else:
-                logger.warning("配置发送失败")
-            return success
-        except TimeoutError:
-            logger.error("发送配置到下位机超时")
-            return False
-        except Exception as e:
-            logger.error(f"发送配置到下位机失败: {e}")
-            return False
-
-    @asyncClose
-    async def closeEvent(self, event: QtGui.QCloseEvent):
+    def closeEvent(self, event: QtGui.QCloseEvent):
         """窗口关闭事件"""
         try:
-            # 停止定时器
-            if hasattr(self, '_plot_timer'):
-                self._plot_timer.stop()
-            if hasattr(self, '_stats_timer'):
-                self._stats_timer.stop()
+            logger.info("示波器窗口开始关闭")
 
-            # IPC模式下停止相关定时器
-            if self.ipc_mode:
-                if hasattr(self, '_ipc_timer'):
-                    self._ipc_timer.stop()
-                if hasattr(self, '_shutdown_timer'):
-                    self._shutdown_timer.stop()
+            # 停止定时器
+            self._plot_timer.stop()
+            self._stats_timer.stop()
+            self._ipc_timer.stop()
+            self._shutdown_timer.stop()
 
             # 保存配置
             self.cfg.save()

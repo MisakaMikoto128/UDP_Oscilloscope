@@ -154,26 +154,6 @@ class ScopeConfigManager:
     def max_points_window(self) -> int:
         """最大显示点数"""
         return self.get('display.max_points_window', 300000)
-
-    @property
-    def udp_host(self) -> str:
-        """UDP主机地址（兼容性）"""
-        return "localhost"
-
-    @property
-    def udp_port(self) -> int:
-        """UDP端口（兼容性）"""
-        return 16011
-
-    @property
-    def target_host(self) -> str:
-        """目标主机地址（兼容性）"""
-        return "localhost"
-
-    @property
-    def target_port(self) -> int:
-        """目标端口（兼容性）"""
-        return 16011
     
     @property
     def grid_enabled(self) -> bool:
