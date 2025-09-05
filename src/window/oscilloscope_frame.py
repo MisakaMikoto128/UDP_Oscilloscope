@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+from pathlib import Path
 
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -242,6 +243,10 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
             n_channels=len(ch_defs), max_bytes=self.cfg.storage_bytes
         )
 
+        # 数据显示模式状态
+        self._is_preview_mode = False  # False: 实时模式, True: 预览模式
+        self._preview_buffer = None    # 独立的预览数据缓冲区
+
 
     def _init_timers(self):
         """初始化定时器"""
@@ -332,6 +337,11 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
         # 时基控制
         self.hori_div_spinbox.valueChanged.connect(self.on_time_base_changed)
+
+        # HDF5录制和预览功能
+        self.radiobtn_recording_wave_enable.toggled.connect(self.on_recording_wave_toggled)
+        self.sw_mode.checkedChanged.connect(self.on_mode_switch_changed)
+        self.btn_recording_preview.clicked.connect(self.on_recording_preview_clicked)
 
     def _load_configuration(self):
         """加载配置到UI"""
@@ -462,6 +472,78 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         ch_config["vertical_offset"] = value
         self.cfg.set_channel_config(channel, ch_config)
 
+    def on_recording_wave_toggled(self, checked: bool):
+        """录制波形单选按钮切换处理"""
+        try:
+            if checked:
+                # 开始录制
+                file_path = self.buffer.start_recording()
+                logger.info(f"开始录制波形数据到: {file_path}")
+            else:
+                # 停止录制
+                self.buffer.stop_recording()
+                logger.info("停止录制波形数据")
+        except Exception as e:
+            logger.error(f"录制波形切换失败: {e}")
+            # 恢复按钮状态
+            self.radiobtn_recording_wave_enable.blockSignals(True)
+            self.radiobtn_recording_wave_enable.setChecked(not checked)
+            self.radiobtn_recording_wave_enable.blockSignals(False)
+
+    def on_mode_switch_changed(self, checked: bool):
+        """模式切换按钮处理"""
+        try:
+            self._is_preview_mode = checked
+            if checked:
+                logger.info("切换到录波预览模式")
+                # 如果有预览数据，刷新预览显示
+                if self._preview_buffer is not None:
+                    self._refresh_preview_plot()
+            else:
+                logger.info("切换到实时波形显示模式")
+                # 清除预览buffer，释放内存
+                self._preview_buffer = None
+        except Exception as e:
+            logger.error(f"模式切换失败: {e}")
+
+    def on_recording_preview_clicked(self):
+        """录制预览按钮点击处理"""
+        try:
+            from PyQt5.QtWidgets import QFileDialog
+
+            # 打开文件选择对话框
+            data_dir = Path("data")
+            if not data_dir.exists():
+                data_dir.mkdir(parents=True, exist_ok=True)
+
+            file_path, _ = QFileDialog.getOpenFileName(
+                self,
+                "选择波形数据文件",
+                str(data_dir),
+                "HDF5文件 (*.h5);;所有文件 (*)"
+            )
+
+            if file_path:
+                file_path = Path(file_path)
+                logger.info(f"加载波形数据文件: {file_path}")
+
+                # 使用静态方法创建独立的预览buffer
+                self._preview_buffer = RingBuffer.create_from_file(file_path)
+
+                # 自动切换到预览模式
+                self.sw_mode.blockSignals(True)
+                self.sw_mode.setChecked(True)
+                self.sw_mode.blockSignals(False)
+                self._is_preview_mode = True
+
+                # 刷新预览显示
+                self._refresh_preview_plot()
+
+                logger.info("波形数据加载完成，已切换到预览模式")
+
+        except Exception as e:
+            logger.error(f"加载波形数据失败: {e}")
+
     def on_sample_received(self, fmt: int, values: list):
         """接收到采样数据处理"""
         try:
@@ -473,14 +555,25 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
     def refresh_plot(self):
         """刷新绘图"""
         try:
-            # 获取每个通道的数据
-            arrays = []
-            for i in range(self.buffer.n_channels):
-                data = self.buffer.view_tail(i, self.scope_widget.max_points_window)
-                arrays.append(data)
+            # 根据当前模式决定数据源
+            if self._is_preview_mode:
+                if self._preview_buffer is None:
+                    return
+                
+                # 预览模式：使用预览buffer的数据
+                arrays = []
+                for i in range(self._preview_buffer.n_channels):
+                    data = self._preview_buffer.view_tail(i, self.scope_widget.max_points_window)
+                    arrays.append(data)
+            else:
+                # 实时模式：使用实时buffer的数据
+                arrays = []
+                for i in range(self.buffer.n_channels):
+                    data = self.buffer.view_tail(i, self.scope_widget.max_points_window)
+                    arrays.append(data)
 
-            # 更新示波器显示
-            self.scope_widget.update_tail(arrays)
+                # 更新示波器显示
+                self.scope_widget.update_tail(arrays)
 
             # 更新光标值显示
             if self.cursor_control.is_enabled():
@@ -489,6 +582,27 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
         except Exception as e:
             logger.error(f"刷新绘图时出错: {e}")
+
+    def _refresh_preview_plot(self):
+        """刷新预览模式的绘图"""
+        try:
+            if self._preview_buffer is not None:
+                # 预览模式：显示预览buffer中的数据
+                arrays = []
+                for i in range(self._preview_buffer.n_channels):
+                    data = self._preview_buffer.view_tail(i, self.scope_widget.max_points_window)
+                    arrays.append(data)
+
+                # 更新示波器显示
+                self.scope_widget.update_tail(arrays)
+
+                # 更新光标值显示
+                if self.cursor_control.is_enabled():
+                    cursor_values = self.scope_widget.get_cursor_values()
+                    self.cursor_control.update_cursor_values(cursor_values)
+
+        except Exception as e:
+            logger.error(f"刷新预览绘图时出错: {e}")
 
     def update_statistics(self):
         """更新统计信息"""

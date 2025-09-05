@@ -277,6 +277,7 @@ class CursorControlWidget(QtWidgets.QWidget):
         self.x1_spinbox.setDecimals(6)
         self.x1_spinbox.setSuffix(" s")
         self.x1_spinbox.setMinimumWidth(120)  # 设置最小宽度防止文字被遮挡
+        self.x1_spinbox.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
         cursor_layout.addRow("X1:", self.x1_spinbox)
 
         self.x2_spinbox = QtWidgets.QDoubleSpinBox()
@@ -284,6 +285,7 @@ class CursorControlWidget(QtWidgets.QWidget):
         self.x2_spinbox.setDecimals(6)
         self.x2_spinbox.setSuffix(" s")
         self.x2_spinbox.setMinimumWidth(120)
+        self.x2_spinbox.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
         cursor_layout.addRow("X2:", self.x2_spinbox)
 
         # Y轴光标
