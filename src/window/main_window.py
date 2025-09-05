@@ -19,7 +19,7 @@ from qfluentwidgets import (
     SubtitleLabel,
     setFont,
 )
-
+import time
 from .ctrl_panel_frame import CtrlPanelForm
 from .device_setting import DeviceSettingFrom
 from .oscilloscope_frame import OscilloscopeFrame
@@ -120,6 +120,7 @@ class MainWindow(FluentWindow):
 
         # 启动示波器进程（非阻塞）
         self._start_scope_process_async()
+        self.start_time = time.time()
 
     def initNavigation(self):
         self.addSubInterface(self.interface1, FIF.GAME, "监控界面")
@@ -264,6 +265,7 @@ class MainWindow(FluentWindow):
         # except Exception as e:
         #     logger.error(f"关闭子窗口失败: {e}")
         await self.interface1.close_user()
+        await self.stop_receiver()
         
         # 1. 取消所有异步任务（主线程）
         try:

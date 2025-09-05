@@ -384,4 +384,5 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             event.accept()
     
     async def close_user(self):
+        self.send_timer.timeout.disconnect()
         self.send_timer.stop()
