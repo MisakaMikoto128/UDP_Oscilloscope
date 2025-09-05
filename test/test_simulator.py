@@ -9,10 +9,11 @@ import sys
 import logging
 from pathlib import Path
 
+from src.communication import MotorSimulator
+
 # 添加src目录到Python路径
 sys.path.insert(0, str(Path(__file__).parent / ".." / "src"))
 
-from communication import MotorSimulator
 
 # 设置日志
 logging.basicConfig(
@@ -29,19 +30,20 @@ async def main():
     print("UDP示波器 - 下位机模拟器测试")
     print("=" * 50)
     print()
-    
+    target_port = 16011
+
     # 创建模拟器
     simulator = MotorSimulator(
         target_host='127.0.0.1',  # 本地测试
-        target_port=16011
+        target_port=target_port
     )
-    
+
     # 设置发送频率
     simulator.set_sample_rate(1000)  # 100Hz
-    
+
     try:
         print("启动模拟器...")
-        print("目标地址: 127.0.0.1:8888")
+        print(f"目标地址: 127.0.0.1:{target_port}")
         print("发送频率: 100 Hz")
         print("按 Ctrl+C 停止模拟器")
         print()
