@@ -337,3 +337,18 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         box = MessageBox(title, content, self)
         if box.exec():
             self.save_param_cmd()
+
+    def closeEvent(self, event):
+        """窗口关闭事件"""
+        try:
+            logger.info("DeviceSettingFrom开始关闭")
+
+            # 取消所有正在运行的异步任务
+            # DeviceSettingFrom主要是按钮触发的异步操作，通常在关闭时已完成
+
+            logger.info("DeviceSettingFrom正常退出")
+            event.accept()
+
+        except Exception as e:
+            logger.error(f"关闭DeviceSettingFrom时出错: {e}")
+            event.accept()

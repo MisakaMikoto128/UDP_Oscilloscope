@@ -25,6 +25,8 @@ from .device_setting import DeviceSettingFrom
 from .oscilloscope_frame import OscilloscopeFrame
 from ..communication.udp_master import UDPMaster
 from ..communication.scope_ipc import create_scope_ipc
+from PyQt5.QtGui import QCloseEvent
+from qasync import asyncClose, asyncSlot
 
 logger = logging.getLogger(__name__)
 
@@ -246,32 +248,51 @@ class MainWindow(FluentWindow):
         except Exception as e:
             logger.error(f"停止示波器进程失败: {e}")
 
-    def closeEvent(self, event):
+    @asyncSlot(QCloseEvent)
+    async def closeEvent(self, event):
         """窗口关闭事件"""
         print("主窗口关闭事件被调用")
 
-        # 快速关闭：先接受事件，然后在后台清理
-        event.accept()
-
-        # 在后台线程中清理资源
-        def cleanup_in_background():
-            try:
-                # 停止示波器进程
-                self.stop_scope_process()
-
-                # 停止UDP接收器
+        # 0. 关闭子窗口
+        # try:
+        #     if hasattr(self, 'interface1') and self.interface1:
+        #         self.interface1.close()
+        #         logger.info("CtrlPanelForm已关闭")
+        #     if hasattr(self, 'interface2') and self.interface2:
+        #         self.interface2.close()
+        #         logger.info("DeviceSettingFrom已关闭")
+        # except Exception as e:
+        #     logger.error(f"关闭子窗口失败: {e}")
+        await self.interface1.close_user()
+        
+        # 1. 取消所有异步任务（主线程）
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # 创建任务但不等待完成，让事件循环自然处理
+                asyncio.create_task(self.stop_receiver())
+            else:
+                # 如果事件循环未运行，同步停止
+                asyncio.run(self.stop_receiver())
+        except Exception as e:
+            logger.error(f"停止UDP接收器失败: {e}")
+        
+        try:
+            # 3. 停止示波器进程（后台线程，避免阻塞主线程）
+            def stop_scope_in_background():
                 try:
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    loop.run_until_complete(self.stop_receiver())
-                    loop.close()
+                    self.stop_scope_process()
+                    logger.info("示波器进程后台清理完成")
                 except Exception as e:
-                    logger.error(f"关闭时停止UDP接收器失败: {e}")
+                    logger.error(f"后台停止示波器进程失败: {e}")
+            import threading
+            scope_cleanup_thread = threading.Thread(target=stop_scope_in_background, daemon=True)
+            scope_cleanup_thread.start()
 
-                logger.info("主窗口资源清理完成")
-            except Exception as e:
-                logger.error(f"后台清理资源失败: {e}")
+            logger.info("主窗口关闭处理完成")
 
-        import threading
-        cleanup_thread = threading.Thread(target=cleanup_in_background, daemon=True)
-        cleanup_thread.start()
+        except Exception as e:
+            logger.error(f"关闭窗口时出错: {e}")
+        finally:
+            # 接受关闭事件
+            event.accept()

@@ -10,6 +10,7 @@ from qfluentwidgets import InfoLevel, TeachingTip, InfoBarIcon, TeachingTipTailP
 from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5.QtCore import QPoint, Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout
+from PyQt5.QtGui import QCloseEvent
 
 from qfluentwidgets import (
     InfoBarIcon,
@@ -365,3 +366,22 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
                 asyncio.ensure_future(self.stop_device())
                 return True
         return super().eventFilter(source, event)
+
+    @asyncSlot(QCloseEvent)
+    async def closeEvent(self, event):
+        """窗口关闭事件"""
+        try:
+            # 停止定时器
+            if hasattr(self, 'send_timer') and self.send_timer:
+                self.send_timer.stop()
+                logger.info("发送定时器已停止")
+            
+            logger.info("CtrlPanelForm正常退出")
+            event.accept()
+
+        except Exception as e:
+            logger.error(f"关闭CtrlPanelForm时出错: {e}")
+            event.accept()
+    
+    async def close_user(self):
+        self.send_timer.stop()
