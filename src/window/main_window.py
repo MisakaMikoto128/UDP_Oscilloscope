@@ -48,6 +48,7 @@ def _run_scope_process(scope_ipc):
         crashWarning=False,  # 关闭崩溃警告
         useNumba=True,  # 启用Numba加速（如果可用）
         enableExperimental=False,  # 关闭实验性功能
+        # leftButtonPan=False,  # 禁用不必要的交互
     )
     try:
         # 创建Qt应用（独立进程）

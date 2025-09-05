@@ -6,9 +6,11 @@
 
 import numpy as np
 import logging
-from typing import Tuple, Optional
-from collections import deque
+from typing import Tuple, Optional, Dict, List
 import threading
+from pathlib import Path
+
+from .persistence_manager import WaveformPersistence
 
 logger = logging.getLogger(__name__)
 
@@ -22,37 +24,68 @@ class RingBuffer:
     def __init__(self, n_channels: int, max_bytes: int = 1024 * 1024 * 1024):
         """
         初始化环形缓冲区
-        
+
         Args:
             n_channels: 通道数量
             max_bytes: 最大内存使用量（字节）
         """
         self.n_channels = n_channels
         self.max_bytes = max_bytes
-        
+
         # 估算每个样本的字节数（float32 * 通道数）
         self.bytes_per_sample = n_channels * 4
         self.max_samples = max_bytes // self.bytes_per_sample
-        
+
         # 为每个通道创建缓冲区
         self.buffers = []
         self.write_positions = []
         self.sample_counts = []
-        
+
         for i in range(n_channels):
             # 使用numpy数组作为底层存储
             buffer = np.zeros(self.max_samples, dtype=np.float32)
             self.buffers.append(buffer)
             self.write_positions.append(0)
             self.sample_counts.append(0)
-        
+
         # 线程锁保证线程安全
         self._lock = threading.RLock()
-        
+
+        # 持久化功能
+        self._persistence_manager = WaveformPersistence()
+
         logger.info(f"环形缓冲区已初始化: {n_channels}通道, "
                    f"最大样本数: {self.max_samples:,}, "
                    f"内存使用: {max_bytes / 1024 / 1024:.1f}MB")
     
+    def append_batch(self, channel_values: List[float]):
+        """
+        批量添加所有通道的数据（优化版本）
+
+        Args:
+            channel_values: 所有通道的数据列表，按通道顺序 [ch0_value, ch1_value, ch2_value, ...]
+        """
+        if len(channel_values) != self.n_channels:
+            raise ValueError(f"数据长度 {len(channel_values)} 与通道数 {self.n_channels} 不匹配")
+
+        with self._lock:
+            # 为每个通道添加一个数据点
+            for channel, value in enumerate(channel_values):
+                buffer = self.buffers[channel]
+                write_pos = self.write_positions[channel]
+                sample_count = self.sample_counts[channel]
+
+                # 添加单个数据点
+                buffer[write_pos] = float(value)
+
+                # 更新位置和计数
+                new_write_pos = (write_pos + 1) % self.max_samples
+                self.write_positions[channel] = new_write_pos
+                self.sample_counts[channel] = min(sample_count + 1, self.max_samples)
+
+            # 持久化存储（批量保存所有通道）
+            self._persistence_manager.push_save_data(channel_values)
+
     def append(self, channel: int, values: Tuple[float, ...]):
         """
         向指定通道添加数据
@@ -63,19 +96,37 @@ class RingBuffer:
         """
         if not (0 <= channel < self.n_channels):
             return
-        
+
+        # 转换为numpy数组以利用向量化操作
+        if isinstance(values, (list, tuple)):
+            values_array = np.array(values, dtype=np.float32)
+        else:
+            values_array = np.asarray(values, dtype=np.float32)
+
+        if values_array.size == 0:
+            return
+
         with self._lock:
             buffer = self.buffers[channel]
             write_pos = self.write_positions[channel]
             sample_count = self.sample_counts[channel]
-            
-            for value in values:
-                buffer[write_pos] = value
-                write_pos = (write_pos + 1) % self.max_samples
-                sample_count = min(sample_count + 1, self.max_samples)
-            
-            self.write_positions[channel] = write_pos
-            self.sample_counts[channel] = sample_count
+            n_values = len(values_array)
+
+            # 优化：批量写入，减少循环开销
+            if write_pos + n_values <= self.max_samples:
+                # 数据不跨越环形边界，直接批量写入
+                buffer[write_pos:write_pos + n_values] = values_array
+                new_write_pos = (write_pos + n_values) % self.max_samples
+            else:
+                # 数据跨越环形边界，分两次写入
+                first_part = self.max_samples - write_pos
+                buffer[write_pos:] = values_array[:first_part]
+                buffer[:n_values - first_part] = values_array[first_part:]
+                new_write_pos = n_values - first_part
+
+            # 更新位置和计数
+            self.write_positions[channel] = new_write_pos
+            self.sample_counts[channel] = min(sample_count + n_values, self.max_samples)
     
     def view_tail(self, channel: int, max_points: int) -> np.ndarray:
         """
@@ -300,3 +351,69 @@ class RingBuffer:
                 'mean': float(np.mean(data)),
                 'std': float(np.std(data))
             }
+
+    # ==================== 持久化功能接口 ====================
+
+    def start_recording(self, filename: Optional[str] = None) -> Path:
+        """
+        开始录制数据到文件
+
+        Args:
+            filename: 自定义文件名，None则自动生成
+
+        Returns:
+            录制文件路径
+        """
+        return self._persistence_manager.start_recording(filename, self.n_channels)
+
+    def stop_recording(self):
+        """停止录制数据"""
+        self._persistence_manager.stop_recording()
+
+    def is_recording(self) -> bool:
+        """检查是否正在录制"""
+        return self._persistence_manager.is_recording()
+
+    def get_recording_file(self) -> Optional[Path]:
+        """获取当前录制文件路径"""
+        return self._persistence_manager.get_current_file()
+
+    def load_waveform_data(self, filepath: Path) -> Dict[int, np.ndarray]:
+        """
+        从文件加载波形数据到内存
+
+        Args:
+            filepath: 文件路径
+
+        Returns:
+            字典，键为通道索引，值为数据数组
+        """
+        return self._persistence_manager.load_data(filepath)
+
+    def reload_to_buffer(self, filepath: Path):
+        """
+        从文件重新加载数据到RingBuffer
+
+        Args:
+            filepath: 文件路径
+        """
+        data_dict = self.load_waveform_data(filepath)
+
+        # 清空当前缓冲区
+        self.clear()
+
+        # 重新加载数据
+        with self._lock:
+            for channel, data in data_dict.items():
+                if 0 <= channel < self.n_channels and len(data) > 0:
+                    # 如果数据太大，只取最新的部分
+                    if len(data) > self.max_samples:
+                        data = data[-self.max_samples:]
+
+                    # 直接写入缓冲区
+                    n_values = len(data)
+                    self.buffers[channel][:n_values] = data
+                    self.write_positions[channel] = n_values % self.max_samples
+                    self.sample_counts[channel] = min(n_values, self.max_samples)
+
+        logger.info(f"已从文件重新加载数据: {filepath}")

@@ -88,7 +88,7 @@ class MotorSimulator:
                 self.socket.sendto(packet, (self.target_host, self.target_port))
                 
                 # 等待下次发送
-                await asyncio.sleep(self.send_interval)
+                # await asyncio.sleep(self.send_interval)
 
             except Exception as e:
                 logger.error(f"发送电机数据失败: {e}")

@@ -1,0 +1,307 @@
+# -*- coding: utf-8 -*-
+"""
+HDF5波形数据持久化管理器
+使用HDF5格式实现真正的数据追加，支持大文件高效处理
+"""
+
+import numpy as np
+import h5py
+import logging
+import threading
+import queue
+import time
+from pathlib import Path
+from typing import Optional, Dict, List
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
+
+
+class WaveformPersistence:
+    """
+    HDF5波形数据持久化管理器
+    使用HDF5格式实现真正的数据追加，支持大文件高效处理
+    """
+
+    def __init__(self, base_dir: str = "data"):
+        self.base_dir = Path(base_dir)
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+
+        # 异步写入相关
+        self._write_queue = queue.Queue(maxsize=5000)
+        self._write_thread = None
+        self._stop_event = threading.Event()
+        self._current_file = None
+        self._h5_file = None
+        self._recording = False
+
+        # 数据缓存 - 改为批量缓存所有通道
+        self._data_cache = []  # list of channel_data_arrays
+        self._cache_size = 0
+        self._max_cache_size = 1000  # 缓存1000个样本后写入
+
+    def start_recording(self, filename: Optional[str] = None, n_channels: int = 4) -> Path:
+        """
+        开始录制数据
+
+        Args:
+            filename: 自定义文件名，None则自动生成
+            n_channels: 通道数量
+
+        Returns:
+            录制文件路径
+        """
+        if self._recording:
+            logger.warning("已在录制中")
+            return self._current_file
+
+        # 生成文件名
+        if filename:
+            if not filename.endswith('.h5'):
+                filename += '.h5'
+            self._current_file = self.base_dir / filename
+        else:
+            now = datetime.now()
+            microseconds = now.strftime('%f')[:3]  # 取前3位微秒
+            auto_name = f"waveform_{now.strftime('%Y%m%d_%H%M%S')}{microseconds}.h5"
+            self._current_file = self.base_dir / auto_name
+
+        # 处理文件名冲突
+        if self._current_file.exists():
+            self._current_file = self._resolve_filename_conflict(self._current_file)
+
+        # 创建HDF5文件并初始化数据集
+        self._create_h5_file(n_channels)
+
+        # 启动写入线程
+        self._start_write_thread()
+        self._recording = True
+
+        logger.info(f"开始录制波形数据到: {self._current_file}")
+        return self._current_file
+
+    def stop_recording(self):
+        """停止录制数据"""
+        if not self._recording:
+            return
+
+        self._recording = False
+
+        # 刷新剩余缓存
+        self._flush_cache()
+
+        # 停止写入线程
+        self._stop_write_thread()
+
+        # 关闭HDF5文件
+        if self._h5_file:
+            self._h5_file.close()
+            self._h5_file = None
+
+        logger.info(f"停止录制，文件: {self._current_file}")
+        self._current_file = None
+
+    def _create_h5_file(self, n_channels: int):
+        """创建HDF5文件并初始化数据集"""
+        self._h5_file = h5py.File(self._current_file, 'w')
+
+        # 创建元数据组
+        metadata = self._h5_file.create_group('metadata')
+        metadata.attrs['created_time'] = datetime.now().isoformat()
+        metadata.attrs['version'] = '2.0.0'
+        metadata.attrs['format'] = 'HDF5_Waveform'
+        metadata.attrs['n_channels'] = n_channels
+        metadata.attrs['sample_rate'] = 0  # 可以后续设置
+
+        # 为每个通道创建可扩展数据集
+        for ch in range(n_channels):
+            dataset = self._h5_file.create_dataset(
+                f'channel_{ch:02d}',
+                shape=(0,),  # 初始为空
+                maxshape=(None,),  # 可无限扩展
+                dtype=np.float32,
+                chunks=True,  # 启用分块存储
+                compression='gzip',  # 启用压缩
+                compression_opts=1  # 压缩级别1（快速）
+            )
+            dataset.attrs['channel'] = ch
+            dataset.attrs['unit'] = 'V'
+
+        # 刷新到磁盘
+        self._h5_file.flush()
+
+    def push_save_data(self, channel_data: List[float]):
+        """
+        保存所有通道的数据到缓存
+
+        Args:
+            channel_data: 所有通道的数据列表，按通道顺序
+        """
+        if not self._recording:
+            return
+
+        # 添加到缓存
+        self._data_cache.append(np.array(channel_data, dtype=np.float32))
+        self._cache_size += 1
+
+        # 检查是否需要刷新缓存
+        if self._cache_size >= self._max_cache_size:
+            self._flush_cache()
+
+    def _flush_cache(self):
+        """刷新缓存到写入队列"""
+        if not self._data_cache:
+            return
+
+        try:
+            # 将缓存数据转换为按通道分组的格式
+            if self._data_cache:
+                # 转换为numpy数组 (n_samples, n_channels)
+                batch_data = np.array(self._data_cache)
+                self._write_queue.put_nowait(batch_data)
+
+            # 清空缓存
+            self._data_cache.clear()
+            self._cache_size = 0
+
+        except queue.Full:
+            logger.warning("写入队列已满，丢弃数据")
+
+    def _start_write_thread(self):
+        """启动写入线程"""
+        if self._write_thread is not None:
+            return
+
+        self._stop_event.clear()
+        self._write_thread = threading.Thread(
+            target=self._write_worker,
+            name="WaveformWriter",
+            daemon=True
+        )
+        self._write_thread.start()
+
+    def _stop_write_thread(self):
+        """停止写入线程"""
+        if self._write_thread is None:
+            return
+
+        try:
+            self._stop_event.set()
+            self._write_queue.put_nowait(None)  # 停止信号
+
+            if self._write_thread.is_alive():
+                self._write_thread.join(timeout=3.0)
+
+            self._write_thread = None
+
+        except Exception as e:
+            logger.error(f"停止写入线程时出错: {e}")
+
+    def _write_worker(self):
+        """写入工作线程"""
+        while not self._stop_event.is_set():
+            try:
+                # 获取数据
+                try:
+                    batch_data = self._write_queue.get(timeout=0.1)
+                except queue.Empty:
+                    continue
+
+                if batch_data is None:  # 停止信号
+                    break
+
+                # 写入HDF5文件
+                self._append_to_h5(batch_data)
+                self._write_queue.task_done()
+
+            except Exception as e:
+                logger.error(f"写入线程错误: {e}")
+
+        logger.info("波形写入线程已停止")
+
+    def _append_to_h5(self, batch_data: np.ndarray):
+        """追加数据到HDF5文件"""
+        if not self._h5_file:
+            return
+
+        try:
+            # batch_data shape: (n_samples, n_channels)
+            n_samples, n_channels = batch_data.shape
+
+            # 为每个通道追加数据
+            for ch in range(n_channels):
+                dataset_name = f'channel_{ch:02d}'
+                if dataset_name in self._h5_file:
+                    dataset = self._h5_file[dataset_name]
+
+                    # 扩展数据集
+                    old_size = dataset.shape[0]
+                    new_size = old_size + n_samples
+                    dataset.resize((new_size,))
+
+                    # 追加新数据
+                    dataset[old_size:new_size] = batch_data[:, ch]
+
+            # 刷新到磁盘
+            self._h5_file.flush()
+
+        except Exception as e:
+            logger.error(f"追加数据到HDF5文件失败: {e}")
+
+    def _resolve_filename_conflict(self, filepath: Path) -> Path:
+        """解决文件名冲突"""
+        base_name = filepath.stem
+        extension = filepath.suffix
+        parent = filepath.parent
+
+        counter = 1
+        while True:
+            new_name = f"{base_name}_{counter:03d}{extension}"
+            new_path = parent / new_name
+            if not new_path.exists():
+                return new_path
+            counter += 1
+
+            if counter > 999:
+                timestamp = int(time.time() * 1000) % 100000
+                new_name = f"{base_name}_{timestamp}{extension}"
+                return parent / new_name
+
+    def load_data(self, filepath: Path) -> Dict[int, np.ndarray]:
+        """
+        从HDF5文件加载波形数据
+
+        Args:
+            filepath: 文件路径
+
+        Returns:
+            字典，键为通道索引，值为数据数组
+        """
+        try:
+            data_dict = {}
+            with h5py.File(filepath, 'r') as f:
+                # 读取所有通道数据
+                for key in f.keys():
+                    if key.startswith('channel_'):
+                        channel = int(key.replace('channel_', ''))
+                        data_dict[channel] = f[key][:]  # 读取整个数据集
+
+            logger.info(f"成功加载HDF5波形数据: {filepath}")
+            return data_dict
+
+        except Exception as e:
+            logger.error(f"加载HDF5波形数据失败 {filepath}: {e}")
+            return {}
+
+    def is_recording(self) -> bool:
+        """检查是否正在录制"""
+        return self._recording
+
+    def get_current_file(self) -> Optional[Path]:
+        """获取当前录制文件路径"""
+        return self._current_file
+
+    def __del__(self):
+        """析构函数"""
+        if self._recording:
+            self.stop_recording()

@@ -484,10 +484,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         """接收到采样数据处理"""
         try:
             # fmt: 0xA1 for uint16, 0xA2 for float32 (当前都作为float处理)
-            for ch in range(min(self.buffer.n_channels, len(values))):
-                sample_value = float(values[ch])
-                self.buffer.append(ch, (sample_value,))
-
+            self.buffer.append_batch(values)
         except Exception as e:
             logger.error(f"处理采样数据时出错: {e}")
 

@@ -5,5 +5,6 @@
 
 from .data_buffer import RingBuffer
 from .storage import PersistentStorage
+from .persistence_manager import WaveformPersistence
 
-__all__ = ['RingBuffer', 'PersistentStorage']
+__all__ = ['RingBuffer', 'PersistentStorage', 'WaveformPersistence']

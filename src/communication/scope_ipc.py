@@ -62,8 +62,8 @@ class ScopeDataSender:
         except queue.Full:
             # 队列满时丢弃数据，记录统计
             self.drop_count += 1
-            if self.drop_count % 1000 == 0:  # 每1000次丢包记录一次
-                logger.warning(f"数据队列满，已丢弃 {self.drop_count} 个数据包")
+            # if self.drop_count % 1000 == 0:  # 每1000次丢包记录一次
+            #     logger.warning(f"数据队列满，已丢弃 {self.drop_count} 个数据包")
             return False
         except Exception as e:
             logger.error(f"发送采样数据失败: {e}")
