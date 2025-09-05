@@ -68,9 +68,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
             parent=self,
         )
 
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding
-        )
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.scope_widget.sizePolicy().hasHeightForWidth())
@@ -80,7 +78,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         font.setPointSize(12)
         self.scope_widget.setFont(font)
         self.scope_widget.setObjectName("scope_widget")
-        self.gridLayout_7.addWidget(self.scope_widget, 0, 0, 1, 1)
+        self.gridLayout.addWidget(self.scope_widget, 0, 0, 1, 1)
 
         # 应用配置
         self.scope_widget.max_points_window = self.cfg.max_points_window
@@ -117,9 +115,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         self.cursor_control = CursorControlWidget(ch_defs, self.scope_widget)
 
         # 获取现有布局
-        layout = self.ch_scroll_area_contents.layout()
-        # 添加重新加载配置按钮
-        layout.addWidget(self.reload_conf_btn)
+        layout:QtWidgets.QVBoxLayout = self.ch_scroll_area_contents_layout
         # 隐藏所有通道配置组件
         for config_widget in self.channel_configs:
             config_widget.setVisible(False)
@@ -222,16 +218,11 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
     def _init_global_controls_ui(self):
         """初始化全局控制"""
-        global_ctrl_widget_layout = self.global_ctrl_widget.layout()
-        # 确保自动滚动按钮存在
-        self.radioButton = QtWidgets.QRadioButton(self.global_ctrl_widget)
-        self.radioButton.setText("自动滚动")
-        global_ctrl_widget_layout.addWidget(self.radioButton, 4, 0, 1, 1)
-
+        global_ctrl_widget_layout:QtWidgets.QVBoxLayout = self.global_ctrl_widget_layout
         # 创建通道显示开关按钮组
         channel_toggle_frame = self._create_channel_toggle_buttons()
         # 添加到主布局
-        global_ctrl_widget_layout.addWidget(channel_toggle_frame, 5, 0, 1, 1)
+        global_ctrl_widget_layout.addWidget(channel_toggle_frame)
 
         # 设置默认状态
         self.radioButton.setChecked(self.cfg.auto_roll)
@@ -241,8 +232,6 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         self.hori_div_spinbox.setSuffix(
             f" {self.cfg.get('display.time_base_unit', 'ms')}/div"
         )
-
-        self.hori_div_offset_spinbox.setValue(self.cfg.get("display.time_offset", 0.0))
 
     def _init_data_storage(self):
         """初始化数据存储"""
@@ -343,7 +332,6 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
         # 时基控制
         self.hori_div_spinbox.valueChanged.connect(self.on_time_base_changed)
-        self.hori_div_offset_spinbox.valueChanged.connect(self.on_time_offset_changed)
 
     def _load_configuration(self):
         """加载配置到UI"""
@@ -443,12 +431,6 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
     def on_scope_time_offset_changed(self, value: float):
         """示波器时间偏移改变处理（来自鼠标拖拽）"""
-        # 更新UI控件，避免循环调用
-        if hasattr(self, "doubleSpinBox_2"):
-            self.hori_div_offset_spinbox.blockSignals(True)
-            self.hori_div_offset_spinbox.setValue(value)
-            self.hori_div_offset_spinbox.blockSignals(False)
-
         # 保存到配置
         self.cfg.set("display.time_offset", value)
 
