@@ -39,21 +39,6 @@ def verify_crc(data: bytes, expected_crc: int) -> bool:
     calculated_crc = calculate_crc(data)
     return calculated_crc == expected_crc
 
-
-def append_crc(data: bytes) -> bytes:
-    """
-    在数据末尾添加CRC校验值（小端序）
-    
-    Args:
-        data: 原始数据
-        
-    Returns:
-        添加CRC后的数据
-    """
-    crc_value = calculate_crc(data)
-    # 小端序添加CRC
-    return data + crc_value.to_bytes(2, byteorder='little')
-
 def insert_zeros(data: bytes) -> bytes:
     """
     在每个字节之间插入一个 0x00。
