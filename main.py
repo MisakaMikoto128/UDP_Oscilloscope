@@ -2,7 +2,6 @@ import asyncio
 import logging
 import sys
 
-import pyqtgraph as pg
 import winloop
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
@@ -39,14 +38,6 @@ def main():
     QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
-
-    # 启用OpenGL加速
-    pg.setConfigOptions(
-        useOpenGL=True,  # 启用OpenGL加速
-        # enableExperimental=True,  # 启用实验性功能
-        antialias=False,  # 关闭抗锯齿（性能提升明显）
-        crashWarning=False,  # 关闭崩溃警告
-    )
 
     try:
         winloop.install()  # 必须在任何 asyncio/qasync 调用之前

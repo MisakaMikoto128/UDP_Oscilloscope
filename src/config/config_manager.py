@@ -7,7 +7,7 @@
 import json
 import logging
 import os
-from typing import Dict, Any, List
+from typing import Dict, Any
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -194,92 +194,6 @@ class ConfigManager:
         return self.get('udp.target_port', 8889)
     
     @property
-    def storage_bytes(self) -> int:
-        """存储大小（字节）"""
-        mb = self.get('storage.max_memory_mb', 1024)
-        return mb * 1024 * 1024
-    
-    @property
-    def enable_persistent_storage(self) -> bool:
-        """是否启用永久存储"""
-        return self.get('storage.enable_persistent', False)
-    
-    @property
-    def persistent_path(self) -> str:
-        """永久存储路径"""
-        return self.get('storage.persistent_path', 'data/oscilloscope_data.h5')
-    
-    @property
-    def channel_defs(self) -> List[Dict[str, Any]]:
-        """通道定义列表"""
-        return self.get('channels', [])
-    
-    @property
     def opengl_enabled(self) -> bool:
         """是否启用OpenGL"""
         return self.get('display.opengl_enabled', True)
-    
-    @property
-    def auto_roll(self) -> bool:
-        """是否自动滚动"""
-        return self.get('display.auto_roll', True)
-    
-    @property
-    def max_points_window(self) -> int:
-        """窗口最大显示点数"""
-        return self.get('display.max_points_window', 10000)
-    
-    @property
-    def grid_enabled(self) -> bool:
-        """是否显示网格"""
-        return self.get('display.grid_enabled', True)
-
-    @property
-    def sample_rate(self) -> float:
-        """采样频率 (Hz)"""
-        return self.get('display.sample_rate', 1000.0)
-    
-    def get_channel_config(self, channel_index: int) -> Dict[str, Any]:
-        """
-        获取指定通道的配置
-        
-        Args:
-            channel_index: 通道索引
-            
-        Returns:
-            通道配置字典
-        """
-        channels = self.channel_defs
-        if 0 <= channel_index < len(channels):
-            return channels[channel_index].copy()
-        else:
-            # 返回默认通道配置
-            return {
-                'name': f'CH{channel_index + 1}',
-                'enabled': True,
-                'color': '#FFFFFF',
-                'vertical_div': 1.0,
-                'vertical_offset': 0.0,
-                'unit': 'V',
-                'scale_factor': 1.0,
-                'visible': True
-            }
-    
-    def set_channel_config(self, channel_index: int, config: Dict[str, Any]):
-        """
-        设置指定通道的配置
-        
-        Args:
-            channel_index: 通道索引
-            config: 通道配置字典
-        """
-        channels = self.get('channels', [])
-        
-        # 确保通道列表足够长
-        while len(channels) <= channel_index:
-            channels.append(self.get_channel_config(len(channels)))
-        
-        # 更新通道配置
-        channels[channel_index].update(config)
-        self.set('channels', channels)
-    

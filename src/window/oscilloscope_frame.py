@@ -10,10 +10,12 @@ from ..communication.protocol import (
 )
 from ..communication.udp_master import UDPMaster
 from ..config.config_manager import ConfigManager
+from ..config.scope_config_manager import ScopeConfigManager
 from ..data.data_buffer import RingBuffer
 from ..ui import Ui_Form
 from ..ui.channel_config_widget import ChannelConfigWidget, CursorControlWidget
 from ..ui.scope_view import ScopeWidget
+from ..communication.scope_ipc import ScopeIPC, ScopeDataReceiver
 
 # 设置日志
 logging.basicConfig(
@@ -29,16 +31,30 @@ logger = logging.getLogger(__name__)
 
 
 class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
-    """主窗口类"""
+    """主窗口类 - 支持IPC模式"""
 
-    def __init__(self, cfg: ConfigManager, parent=None):
+    def __init__(self, cfg=None, scope_ipc=None, parent=None):
         super().__init__(parent=parent)
         self.setupUi(self)
-        # 配置管理器
-        self.cfg = cfg
+
+        # IPC模式检测
+        self.ipc_mode = scope_ipc is not None
+
+        if self.ipc_mode:
+            # IPC模式：使用示波器专用配置
+            self.cfg = ScopeConfigManager()
+            self.scope_ipc = scope_ipc
+            self.data_receiver = scope_ipc.get_receiver()
+            logger.info("示波器启动 - IPC模式")
+        else:
+            # 传统模式：使用主配置
+            self.cfg = cfg
+            self.scope_ipc = None
+            self.data_receiver = None
+            logger.info("示波器启动 - 传统模式")
 
         # 设置窗口标题和图标
-        self.setWindowTitle(f"{cfg.app_name} v{cfg.app_version}")
+        self.setWindowTitle(f"{self.cfg.app_name} v{self.cfg.app_version}")
 
         # 初始化组件
         self._init_scope_view_ui()
@@ -54,7 +70,10 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         # 加载配置
         self._load_configuration()
 
-        logger.info("主窗口初始化完成")
+        # IPC模式下信号就绪
+        if self.ipc_mode:
+            self.scope_ipc.signal_scope_ready()
+
 
     def _init_scope_view_ui(self):
         """初始化示波器视图"""
@@ -253,12 +272,19 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
     def _init_communication(self):
         """初始化通信"""
-        self.receiver = UDPMaster(
-            host=self.cfg.udp_host,
-            port=self.cfg.udp_port,
-            on_sample=self.on_sample_received,
-        )
-        self.receiver.start()
+        if self.ipc_mode:
+            # IPC模式：不创建UDP接收器，数据通过IPC接收
+            self.receiver = None
+            logger.info("IPC模式：跳过UDP接收器初始化")
+        else:
+            # 传统模式：创建UDP接收器
+            self.receiver = UDPMaster(
+                host=self.cfg.udp_host,
+                port=self.cfg.udp_port,
+                on_sample=self.on_sample_received,
+            )
+            self.receiver.start()
+            logger.info("传统模式：UDP接收器已启动")
 
     def _init_timers(self):
         """初始化定时器"""
@@ -268,6 +294,20 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         self._plot_timer.setInterval(refresh_interval)
         self._plot_timer.timeout.connect(self.refresh_plot)
 
+        # IPC模式下添加数据接收定时器和关闭检查定时器
+        if self.ipc_mode:
+            self._ipc_timer = QtCore.QTimer(self)
+            self._ipc_timer.setInterval(1)  # 1ms高频接收
+            self._ipc_timer.timeout.connect(self._receive_ipc_data)
+            self._ipc_timer.start()
+            logger.info("IPC数据接收定时器已启动")
+
+            # 关闭信号检查定时器
+            self._shutdown_timer = QtCore.QTimer(self)
+            self._shutdown_timer.setInterval(100)  # 100ms检查一次
+            self._shutdown_timer.timeout.connect(self._check_shutdown_signal)
+            self._shutdown_timer.start()
+
         # 统计信息更新定时器
         self._stats_timer = QtCore.QTimer(self)
         self._stats_timer.setInterval(500)  # 每秒更新一次
@@ -276,6 +316,28 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
         # 启动绘图定时器
         self._plot_timer.start()
+
+    def _receive_ipc_data(self):
+        """接收IPC数据（高频调用）"""
+        if not self.ipc_mode or not self.data_receiver:
+            return
+
+        try:
+            # 批量接收数据以提高性能
+            samples = self.data_receiver.receive_batch(max_count=50, timeout=0.001)
+
+            for sample in samples:
+                # 处理接收到的采样数据
+                self.on_sample_received(sample.packet_type, sample.channels)
+
+        except Exception as e:
+            logger.error(f"接收IPC数据失败: {e}")
+
+    def _check_shutdown_signal(self):
+        """检查关闭信号"""
+        if self.ipc_mode and self.scope_ipc and self.scope_ipc.is_shutdown_requested():
+            logger.info("收到关闭信号，示波器进程即将退出")
+            self.close()
 
     def _connect_signals(self):
         """连接信号槽"""
@@ -562,15 +624,24 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         """窗口关闭事件"""
         try:
             # 停止定时器
-            self._plot_timer.stop()
-            self._stats_timer.stop()
+            if hasattr(self, '_plot_timer'):
+                self._plot_timer.stop()
+            if hasattr(self, '_stats_timer'):
+                self._stats_timer.stop()
+
+            # IPC模式下停止相关定时器
+            if self.ipc_mode:
+                if hasattr(self, '_ipc_timer'):
+                    self._ipc_timer.stop()
+                if hasattr(self, '_shutdown_timer'):
+                    self._shutdown_timer.stop()
 
             # 保存配置
             self.cfg.save()
 
-            logger.info("应用程序正常退出")
+            logger.info("示波器窗口正常退出")
             event.accept()
 
         except Exception as e:
-            logger.error(f"关闭应用程序时出错: {e}")
+            logger.error(f"关闭示波器窗口时出错: {e}")
             event.accept()

@@ -1,4 +1,7 @@
-from PyQt5.QtCore import Qt
+import logging
+import multiprocessing as mp
+import asyncio
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (
     QAction,
@@ -19,11 +22,68 @@ from qfluentwidgets import (
 
 from .ctrl_panel_frame import CtrlPanelForm
 from .device_setting import DeviceSettingFrom
-from ..window.oscilloscope_frame import OscilloscopeFrame
+from .oscilloscope_frame import OscilloscopeFrame
+from ..communication.udp_master import UDPMaster
+from ..communication.scope_ipc import create_scope_ipc
+
+logger = logging.getLogger(__name__)
+
+
+def _run_scope_process(scope_ipc):
+    """在独立进程中运行示波器"""
+    import sys
+    from PyQt5.QtWidgets import QApplication
+    import pyqtgraph as pg
+
+    QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
+
+    # 启用OpenGL加速
+    pg.setConfigOptions(
+        useOpenGL=True,  # 启用OpenGL加速
+        # enableExperimental=True,  # 启用实验性功能
+        antialias=False,  # 关闭抗锯齿（性能提升明显）
+        crashWarning=False,  # 关闭崩溃警告
+    )
+    try:
+        # 创建Qt应用（独立进程）
+        app = QApplication(sys.argv)
+        app.setQuitOnLastWindowClosed(True)
+
+        # 创建示波器窗口（IPC模式）
+        scope_frame = OscilloscopeFrame(scope_ipc=scope_ipc)
+        scope_frame.show()
+
+        logger.info("示波器进程启动完成")
+
+        # 运行Qt事件循环
+        sys.exit(app.exec_())
+
+    except Exception as e:
+        logger.error(f"示波器进程运行失败: {e}")
+        raise
+
 
 class MainWindow(FluentWindow):
     def __init__(self, cfg):
         super().__init__()
+
+        # 保存配置引用
+        self.cfg = cfg
+
+        # 初始化进程间通信
+        self.scope_ipc = create_scope_ipc(queue_size=10000)
+
+        # 初始化UDP接收器（移到主进程）
+        self.receiver = UDPMaster(
+            host=cfg.udp_host,
+            port=cfg.udp_port,
+            on_sample=self._on_sample_received,
+        )
+
+        # 示波器进程
+        self.scope_process = None
 
         # 添加一个退出菜单项
         exitAction = QAction(QIcon("./img/sp-exit.png"), "Exit", self)
@@ -38,19 +98,22 @@ class MainWindow(FluentWindow):
         self.trayIcon.setContextMenu(trayMenu)
         self.trayIcon.show()
 
-        self.scope_frame = OscilloscopeFrame(cfg,)
-        self.scope_frame.show()
-
-        self.receiver = self.scope_frame.receiver
-        self.interface1 = CtrlPanelForm(cfg,None, self.receiver.reg_set, self)
+        self.interface1 = CtrlPanelForm(cfg, None, self.receiver.reg_set, self)
         self.receiver.on_sys_regs_upload.connect(self.interface1.on_on_sys_regs_uploaded)
         self.receiver.client_online_status_changed.connect(self.interface1.on_net_online_status_changed)
-        
-        self.interface2 = DeviceSettingFrom(cfg,None, self.receiver.reg_set, self)
+
+        self.interface2 = DeviceSettingFrom(cfg, None, self.receiver.reg_set, self)
         self.receiver.on_sys_regs_upload.connect(self.interface2.on_on_sys_regs_uploaded)
-        
+
+        # 初始化界面
         self.initNavigation()
         self.initWindow()
+
+        # 启动性能监控
+        self._init_performance_monitor()
+
+        # 启动示波器进程（非阻塞）
+        self._start_scope_process_async()
 
     def initNavigation(self):
         self.addSubInterface(self.interface1, FIF.GAME, "监控界面")
@@ -75,11 +138,127 @@ class MainWindow(FluentWindow):
 
         self.showMaximized()
 
+    def _init_performance_monitor(self):
+        """初始化性能监控"""
+        self.perf_timer = QTimer(self)
+        self.perf_timer.timeout.connect(self._update_performance_stats)
+        self.perf_timer.start(5000)  # 每5秒更新一次
+
+    def _update_performance_stats(self):
+        """更新性能统计"""
+        try:
+            stats = self.scope_ipc.get_combined_stats()
+            logger.debug(f"性能统计: {stats}")
+
+            # 检查队列健康状态
+            if stats['sender']['drop_count'] > 100:
+                logger.warning(f"检测到队列丢包: {stats['sender']['drop_count']}")
+
+        except Exception as e:
+            logger.error(f"更新性能统计失败: {e}")
+
+    def _start_scope_process_async(self):
+        """异步启动示波器进程（避免主界面卡顿）"""
+        def start_in_thread():
+            try:
+                success = self.start_scope_process()
+                if success:
+                    logger.info("示波器进程异步启动成功")
+                else:
+                    logger.error("示波器进程异步启动失败")
+            except Exception as e:
+                logger.error(f"异步启动示波器进程失败: {e}")
+
+        import threading
+        thread = threading.Thread(target=start_in_thread, daemon=True)
+        thread.start()
+
+    def _on_sample_received(self, fmt: int, values: list):
+        """UDP采样数据回调 - 转发到示波器进程"""
+        try:
+            # 高性能转发到示波器进程
+            sender = self.scope_ipc.get_sender()
+            success = sender.send_sample(fmt, values)
+            if not success:
+                # 记录转发失败，但不影响主进程性能
+                pass
+        except Exception as e:
+            logger.error(f"转发采样数据失败: {e}")
+
+    def start_scope_process(self):
+        """启动示波器进程"""
+        try:
+            self.scope_process = mp.Process(
+                target=_run_scope_process,
+                args=(self.scope_ipc,),
+                name="ScopeProcess",
+                daemon=True
+            )
+            self.scope_process.start()
+
+            # 等待示波器进程就绪
+            if self.scope_ipc.wait_scope_ready(timeout=10):
+                logger.info("示波器进程启动成功")
+                return True
+            else:
+                logger.error("示波器进程启动超时")
+                return False
+
+        except Exception as e:
+            logger.error(f"启动示波器进程失败: {e}")
+            return False
+
     async def start_receiver(self):
-        await self.receiver.start()
+        """启动UDP接收器"""
+        try:
+            await self.receiver.start()
+            logger.info("UDP接收器已启动")
+        except Exception as e:
+            logger.error(f"启动UDP接收器失败: {e}")
 
     async def stop_receiver(self):
-        await self.receiver.stop()
+        """停止UDP接收器"""
+        try:
+            await self.receiver.stop()
+            logger.info("UDP接收器已停止")
+        except Exception as e:
+            logger.error(f"停止UDP接收器失败: {e}")
+
+    def stop_scope_process(self):
+        """停止示波器进程"""
+        try:
+            if self.scope_process and self.scope_process.is_alive():
+                self.scope_ipc.signal_shutdown()
+                self.scope_process.join(timeout=3)
+                if self.scope_process.is_alive():
+                    logger.warning("强制终止示波器进程")
+                    self.scope_process.terminate()
+                    self.scope_process.join(timeout=2)
+                logger.info("示波器进程已停止")
+
+            # 清理IPC资源
+            self.scope_ipc.cleanup()
+
+        except Exception as e:
+            logger.error(f"停止示波器进程失败: {e}")
 
     def closeEvent(self, event):
+        """窗口关闭事件"""
         print("主窗口关闭事件被调用")
+
+        # 停止示波器进程
+        self.stop_scope_process()
+
+        # 异步停止UDP接收器
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # 如果事件循环正在运行，创建任务
+                asyncio.create_task(self.stop_receiver())
+            else:
+                # 如果事件循环未运行，直接运行
+                asyncio.run(self.stop_receiver())
+        except Exception as e:
+            logger.error(f"关闭时停止UDP接收器失败: {e}")
+
+        event.accept()
