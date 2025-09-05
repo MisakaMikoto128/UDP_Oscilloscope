@@ -390,6 +390,70 @@ class RingBuffer:
         """
         return self._persistence_manager.load_data(filepath)
 
+    @staticmethod
+    def create_from_file(filepath: Path) -> 'RingBuffer':
+        """
+        从HDF5文件创建一个新的RingBuffer实例，自动设置合适的缓存大小
+
+        这个方法会创建一个独立的RingBuffer实例用于预览，不会影响实时数据缓冲区
+
+        Args:
+            filepath: HDF5文件路径
+
+        Returns:
+            加载了文件数据的新RingBuffer实例
+        """
+        try:
+            import h5py
+
+            # 获取文件信息
+            with h5py.File(filepath, 'r') as f:
+                # 读取元数据
+                metadata = f.get('metadata', {})
+                n_channels = metadata.attrs.get('n_channels', 4)
+
+                # 估算数据大小
+                total_samples = 0
+                for ch in range(n_channels):
+                    dataset_name = f'channel_{ch:02d}'
+                    if dataset_name in f:
+                        total_samples = max(total_samples, len(f[dataset_name]))
+
+                # 根据数据量自动设置缓存大小
+                # 每个样本约4字节(float32)，加上一些余量
+                estimated_bytes = total_samples * n_channels * 4 * 2  # 2倍余量
+                # 最小10MB，最大1GB，确保能容纳所有数据
+                min_size = 10 * 1024 * 1024
+                max_size = 1024 * 1024 * 1024
+                buffer_size = max(min_size, min(estimated_bytes, max_size))
+
+                # 如果估算的大小小于最小值，但数据量很大，则适当增加
+                if estimated_bytes < min_size and total_samples > 1000:
+                    buffer_size = min(estimated_bytes * 5, max_size)  # 5倍余量
+
+                logger.info(f"为预览创建RingBuffer: {n_channels}通道, {total_samples}样本, {buffer_size//1024//1024}MB缓存")
+
+                # 创建新的RingBuffer实例
+                preview_buffer = RingBuffer(
+                    n_channels=n_channels,
+                    max_bytes=buffer_size
+                )
+
+                # 加载数据
+                for ch in range(n_channels):
+                    dataset_name = f'channel_{ch:02d}'
+                    if dataset_name in f:
+                        data = f[dataset_name][:]
+                        preview_buffer.append(ch, data)
+
+                logger.info(f"成功创建预览RingBuffer，加载了{total_samples}样本")
+                return preview_buffer
+
+        except Exception as e:
+            logger.error(f"从文件创建RingBuffer失败 {filepath}: {e}")
+            # 返回一个空的默认buffer
+            return RingBuffer(n_channels=4, max_bytes=10*1024*1024)
+
     def reload_to_buffer(self, filepath: Path):
         """
         从文件重新加载数据到RingBuffer
