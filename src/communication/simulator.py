@@ -10,7 +10,7 @@ import struct
 import time
 import math
 import logging
-from src.utils.crc import append_crc
+from src.utils.crc import calculate_crc
 
 logger = logging.getLogger(__name__)
 
@@ -194,14 +194,15 @@ class MotorSimulator:
         
         # 打包包头
         header_data = struct.pack('<HHH', header, remaining_length, sequence)
-        
-        # 组合数据 (包头 + 子数据包)
-        packet_data = header_data + sub_packet
-        
+
         # 添加CRC校验
-        full_packet = append_crc(packet_data)
-        
-        return full_packet
+        crc_var = calculate_crc(sub_packet)
+        crc_data = struct.pack('<H', crc_var)
+
+        # 组合数据 (包头 + 子数据包)
+        packet_data = header_data + sub_packet + crc_data
+
+        return packet_data
     
     def update_pid_config(self, kp: float, ki: float, kd: float,
                          kp1: float, ki1: float, kd1: float):
