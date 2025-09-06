@@ -472,17 +472,15 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
                     0 if "x" in cursor_name else 1
                 ]
 
-        curr_vertical_scale = self.vertical_scale_factors[self.current_channel]
         curr_vertical_offset = self.vertical_offsets[self.current_channel]
 
         return {
             "x1": self.cursor_values["x1"],
             "x2": self.cursor_values["x2"],
-            "y1": (self.cursor_values["y1"] - curr_vertical_offset) * curr_vertical_scale,
-            "y2": (self.cursor_values["y2"] - curr_vertical_offset) * curr_vertical_scale,
+            "y1": (self.cursor_values["y1"] - curr_vertical_offset),
+            "y2": (self.cursor_values["y2"] - curr_vertical_offset),
             "dx": (self.cursor_values["x2"] - self.cursor_values["x1"]),
-            "dy": (self.cursor_values["y2"] - self.cursor_values["y1"])
-            * curr_vertical_scale,
+            "dy": (self.cursor_values["y2"] - self.cursor_values["y1"]),
             "frequency": 1.0 / abs(self.cursor_values["x2"] - self.cursor_values["x1"])
             if abs(self.cursor_values["x2"] - self.cursor_values["x1"]) > 0
             else 0.0,
