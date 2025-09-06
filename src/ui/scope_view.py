@@ -25,8 +25,7 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
 
     # 信号定义
     timeBaseChanged = QtCore.pyqtSignal(float)  # 时基改变信号
-    timeOffsetChanged = QtCore.pyqtSignal(float)  # 时间偏移改变信号
-    verticalDivChanged = QtCore.pyqtSignal(
+    verticalScaleChanged = QtCore.pyqtSignal(
         int, float
     )  # 垂直挡位改变信号 (channel, div)
     verticalOffsetChanged = QtCore.pyqtSignal(
@@ -75,9 +74,8 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
         # 显示参数
         self.x_spin = 0.1  # 0.1s
         self.x_offset = 0.0  # 0s
-        self.vertical_divs = [100.0] * n_channels  # 1unit/div for each channel
+        self.vertical_scale_factors = [1.0] * n_channels  # 1unit/div for each channel
         self.vertical_offsets = [0.0] * n_channels
-        self.vertical_scale_factors = [1.0 / div for div in self.vertical_divs]
         self._dt_cache = 1.0 / self.sample_rate  # 缓存采样间隔
         self._time_axis_cache = np.array([], dtype=np.float32)  # 时间轴缓存
         self._last_time_axis_len = 0  # 上次时间轴长度
@@ -106,11 +104,7 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
     def _update_dt_cache(self):
         """更新采样间隔缓存"""
         self._dt_cache = 1.0 / self.sample_rate
-
-    def _update_scale_factors(self):
-        """更新垂直缩放因子缓存"""
-        self.vertical_scale_factors = [1.0 / div for div in self.vertical_divs]
-
+  
     def wheelEvent(self, event):
         """重写滚轮事件处理"""
         delta = event.angleDelta().y()
@@ -159,8 +153,7 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
 
         if new_vertical_scale_factor != current_vertical_scale_factor:
             self.vertical_scale_factors[curr_ch] = new_vertical_scale_factor
-            self.vertical_divs[curr_ch] = 1.0 / new_vertical_scale_factor
-            self.verticalDivChanged.emit(curr_ch, self.vertical_divs[curr_ch])
+            self.verticalScaleChanged.emit(curr_ch, self.vertical_scale_factors[curr_ch])
 
     def handle_shift_wheel(self, delta):
         offset_delta = 0.1 if delta > 0 else -0.1
@@ -368,7 +361,7 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
             offset: 垂直偏移值（可选）
         """
         if 0 <= channel < self.n_channels:
-            self.vertical_divs[channel] = div_value
+            self.vertical_scale_factors[channel] = div_value
 
     def set_vertical_offset(self, channel: int, offset: float):
         """
@@ -480,41 +473,21 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
                     0 if "x" in cursor_name else 1
                 ]
 
-        curr_vertical_div = self.vertical_divs[self.current_channel]
+        curr_vertical_scale = self.vertical_scale_factors[self.current_channel]
         curr_vertical_offset = self.vertical_offsets[self.current_channel]
 
         return {
             "x1": self.cursor_values["x1"],
             "x2": self.cursor_values["x2"],
-            "y1": (self.cursor_values["y1"] - curr_vertical_offset) * curr_vertical_div,
-            "y2": (self.cursor_values["y2"] - curr_vertical_offset) * curr_vertical_div,
+            "y1": (self.cursor_values["y1"] - curr_vertical_offset) * curr_vertical_scale,
+            "y2": (self.cursor_values["y2"] - curr_vertical_offset) * curr_vertical_scale,
             "dx": (self.cursor_values["x2"] - self.cursor_values["x1"]),
             "dy": (self.cursor_values["y2"] - self.cursor_values["y1"])
-            * curr_vertical_div,
+            * curr_vertical_scale,
             "frequency": 1.0 / abs(self.cursor_values["x2"] - self.cursor_values["x1"])
             if abs(self.cursor_values["x2"] - self.cursor_values["x1"]) > 0
             else 0.0,
         }
-
-    def auto_scale(self, channel: Optional[int] = None):
-        """
-        自动缩放
-
-        Args:
-            channel: 指定通道，None表示所有通道
-        """
-        if channel is not None:
-            # 单通道自动缩放
-            if 0 <= channel < self.n_channels and len(self.channel_data[channel]) > 0:
-                data = self.channel_data[channel]
-                if len(data) > 0:
-                    data_range = np.max(data) - np.min(data)
-                    if data_range > 0:
-                        self.vertical_divs[channel] = data_range / 8  # 8个垂直格
-                        self.vertical_offsets[channel] = -np.mean(data)
-        else:
-            # 全部通道自动缩放
-            self.plot_item.enableAutoRange()
 
     def clear_display(self):
         """清空显示"""
@@ -554,7 +527,7 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
             "max_points_window": self.max_points_window,
             "time_base": self.time_div,
             "time_offset": self.x_offset,
-            "vertical_divs": self.vertical_divs.copy(),
+            "vertical_scales": self.vertical_scale_factors.copy(),
             "vertical_offsets": self.vertical_offsets.copy(),
             "cursors_enabled": self.cursors_enabled,
             "cursor_values": self.cursor_values.copy() if self.cursors_enabled else {},

@@ -87,12 +87,12 @@ class ChannelConfigWidget(QtWidgets.QWidget):
 
         unit = self.config.get("unit", "V")
         # 垂直挡位
-        self.vertical_div_spinbox = QtWidgets.QDoubleSpinBox()
-        self.vertical_div_spinbox.setRange(0.001, 1000.0)
-        self.vertical_div_spinbox.setDecimals(3)
-        self.vertical_div_spinbox.setSingleStep(0.1)
-        self.vertical_div_spinbox.setSuffix(f" {unit}/div")
-        layout.addRow("垂直挡位:", self.vertical_div_spinbox)
+        self.vertical_scale_spinbox = QtWidgets.QDoubleSpinBox()
+        self.vertical_scale_spinbox.setRange(0.001, 1000.0)
+        self.vertical_scale_spinbox.setDecimals(3)
+        self.vertical_scale_spinbox.setSingleStep(0.1)
+        self.vertical_scale_spinbox.setSuffix(" 倍")
+        layout.addRow("垂直缩放:", self.vertical_scale_spinbox)
 
         # 垂直偏移
         self.vertical_offset_spinbox = QtWidgets.QDoubleSpinBox()
@@ -108,13 +108,6 @@ class ChannelConfigWidget(QtWidgets.QWidget):
         self.unit_combobox.setEditable(True)
         layout.addRow("单位:", self.unit_combobox)
 
-        # 缩放比例
-        self.scale_factor_spinbox = QtWidgets.QDoubleSpinBox()
-        self.scale_factor_spinbox.setRange(0.001, 1000.0)
-        self.scale_factor_spinbox.setDecimals(6)
-        self.scale_factor_spinbox.setSingleStep(0.1)
-        self.scale_factor_spinbox.setValue(1.0)
-        layout.addRow("缩放比例:", self.scale_factor_spinbox)
 
         # 通道颜色
         color_layout = QtWidgets.QHBoxLayout()
@@ -154,7 +147,7 @@ class ChannelConfigWidget(QtWidgets.QWidget):
     def _load_config(self):
         """加载配置到UI"""
         self.enabled_checkbox.setChecked(self.config.get("enabled", True))
-        self.vertical_div_spinbox.setValue(self.config.get("vertical_div", 1.0))
+        self.vertical_scale_spinbox.setValue(self.config.get("vertical_scale", 1.0))
         self.vertical_offset_spinbox.setValue(self.config.get("vertical_offset", 0.0))
 
         unit = self.config.get("unit", "V")
@@ -164,35 +157,33 @@ class ChannelConfigWidget(QtWidgets.QWidget):
         else:
             self.unit_combobox.setCurrentText(unit)
 
-        self.scale_factor_spinbox.setValue(self.config.get("scale_factor", 1.0))
         self.color_button.set_color(self.config.get("color", "#FFFFFF"))
         self.visible_checkbox.setChecked(self.config.get("visible", True))
 
     def _connect_signals(self):
         """连接信号"""
         self.enabled_checkbox.toggled.connect(self._on_config_changed)
-        self.vertical_div_spinbox.valueChanged.connect(self._on_config_changed)
+        self.vertical_scale_spinbox.valueChanged.connect(self._on_config_changed)
         self.vertical_offset_spinbox.valueChanged.connect(self._on_config_changed)
         self.unit_combobox.currentTextChanged.connect(self._on_config_changed)
-        self.scale_factor_spinbox.valueChanged.connect(self._on_config_changed)
         self.color_button.colorChanged.connect(self._on_config_changed)
         self.visible_checkbox.toggled.connect(self._on_config_changed)
 
     def _on_config_changed(self):
         """配置改变处理"""
+
         self.config.update(
             {
                 "enabled": self.enabled_checkbox.isChecked(),
-                "vertical_div": self.vertical_div_spinbox.value(),
+                "vertical_div": self.vertical_scale_spinbox.value(),
                 "vertical_offset": self.vertical_offset_spinbox.value(),
                 "unit": self.unit_combobox.currentText(),
-                "scale_factor": self.scale_factor_spinbox.value(),
                 "color": self.color_button.get_color(),
                 "visible": self.visible_checkbox.isChecked(),
             }
         )
         unit = self.unit_combobox.currentText()
-        self.vertical_div_spinbox.setSuffix(f" {unit}/div")
+        self.vertical_scale_spinbox.setSuffix(f" {unit}/div")
         self.vertical_offset_spinbox.setSuffix(f" {unit}")
         self.configChanged.emit(self.channel_index, self.config.copy())
 

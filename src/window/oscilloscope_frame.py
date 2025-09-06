@@ -324,8 +324,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
         # 示波器信号连接
         self.scope_widget.timeBaseChanged.connect(self.on_scope_time_base_changed)
-        self.scope_widget.timeOffsetChanged.connect(self.on_scope_time_offset_changed)
-        self.scope_widget.verticalDivChanged.connect(self.on_scope_vertical_div_changed)
+        self.scope_widget.verticalScaleChanged.connect(self.on_scope_vertical_scale_changed)
         self.scope_widget.verticalOffsetChanged.connect(
             self.on_scope_vertical_offset_changed
         )
@@ -441,23 +440,18 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         # 保存到配置
         self.cfg.set("display.time_base_div", value)
 
-    def on_scope_time_offset_changed(self, value: float):
-        """示波器时间偏移改变处理（来自鼠标拖拽）"""
-        # 保存到配置
-        self.cfg.set("display.time_offset", value)
-
-    def on_scope_vertical_div_changed(self, channel: int, value: float):
+    def on_scope_vertical_scale_changed(self, channel: int, value: float):
         """示波器垂直挡位改变处理（来自Ctrl+滚轮）"""
         # 更新通道配置
         if 0 <= channel < len(self.channel_configs):
             config_widget = self.channel_configs[channel]
-            config_widget.vertical_div_spinbox.blockSignals(True)
-            config_widget.vertical_div_spinbox.setValue(value)
-            config_widget.vertical_div_spinbox.blockSignals(False)
+            config_widget.vertical_scale_spinbox.blockSignals(True)
+            config_widget.vertical_scale_spinbox.setValue(value)
+            config_widget.vertical_scale_spinbox.blockSignals(False)
 
         # 保存到配置
         ch_config = self.cfg.get_channel_config(channel)
-        ch_config["vertical_div"] = value
+        ch_config["vertical_scale"] = value
         self.cfg.set_channel_config(channel, ch_config)
 
     def on_scope_vertical_offset_changed(self, channel: int, value: float):
@@ -661,7 +655,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
             # 保存配置
             self.cfg.save()
-            
+
             self._stats_timer.stop()
             self._ipc_timer.stop()
             self._shutdown_timer.stop()

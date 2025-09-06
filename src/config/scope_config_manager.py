@@ -184,10 +184,9 @@ class ScopeConfigManager:
                 'name': f'CH{channel_index + 1}',
                 'enabled': True,
                 'color': '#FFFFFF',
-                'vertical_div': 1.0,
+                'vertical_scale': 1.0,
                 'vertical_offset': 0.0,
                 'unit': 'V',
-                'scale_factor': 1.0,
                 'visible': True
             }
     
