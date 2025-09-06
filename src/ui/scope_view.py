@@ -229,7 +229,6 @@ class ScopeWidget(pg.GraphicsLayoutWidget):
         self.plot_item.setClipToView(True)  # 只渲染可见区域
 
         # 设置固定的Y轴范围（专业示波器风格）
-        self.plot_item.setYRange(-5, 5)  # 10个垂直格，每格1单位
         self.plot_item.setXRange(-self.x_spin, 0)
 
     def _create_curves(self):
