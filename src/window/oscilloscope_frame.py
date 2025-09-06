@@ -333,10 +333,6 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         # 重新加载配置
         self.reload_conf_btn.clicked.connect(self.reload_configuration)
 
-        # 测试按钮
-        self.test_btn.setText("显示寄存器管理")
-        self.test_btn.clicked.connect(self.on_test_clicked_cb)
-
         # 时基控制
         self.hori_div_spinbox.valueChanged.connect(self.on_time_base_changed)
 
@@ -655,26 +651,6 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         except Exception as e:
             logger.error(f"重新加载配置失败: {e}")
 
-    def on_test_clicked_cb(self):
-        """显示/隐藏寄存器管理窗口"""
-        # try:
-        #     if hasattr(self, "register_tab_widget") and self.register_tab_widget:
-        #         if self.register_tab_widget.isVisible():
-        #             self.register_tab_widget.hide()
-        #             self.test_btn.setText("显示寄存器管理")
-        #             logger.info("隐藏寄存器管理窗口")
-        #         else:
-        #             self.register_tab_widget.show()
-        #             self.register_tab_widget.raise_()  # 将窗口置于前台
-        #             self.register_tab_widget.activateWindow()  # 激活窗口
-        #             self.test_btn.setText("隐藏寄存器管理")
-        #             logger.info("显示寄存器管理窗口")
-        #     else:
-        #         logger.warning("寄存器管理窗口未初始化")
-        # except Exception as e:
-        #     logger.error(f"切换寄存器管理窗口显示状态失败: {e}")
-  
-
     def closeEvent(self, event: QtGui.QCloseEvent):
         """窗口关闭事件"""
         try:
@@ -682,12 +658,13 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
             # 停止定时器
             self._plot_timer.stop()
-            self._stats_timer.stop()
-            self._ipc_timer.stop()
-            self._shutdown_timer.stop()
 
             # 保存配置
             self.cfg.save()
+            
+            self._stats_timer.stop()
+            self._ipc_timer.stop()
+            self._shutdown_timer.stop()
 
             logger.info("示波器窗口正常退出")
             event.accept()

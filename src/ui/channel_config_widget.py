@@ -338,7 +338,7 @@ class CursorControlWidget(QtWidgets.QWidget):
 
         # 设置整个widget的最小尺寸
         self.setMinimumWidth(250)  # 确保有足够宽度显示所有控件
-        self.setMinimumHeight(200)  # 设置合理的最小高度
+        self.setMinimumHeight(280)  # 设置合理的最小高度
 
         # 初始状态
         self.cursor_group.setEnabled(False)

@@ -14,22 +14,6 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="QWidget" name="scope_widget" native="true">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="font">
-      <font>
-       <family>Times New Roman</family>
-       <pointsize>12</pointsize>
-      </font>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="1">
     <widget class="CardWidget" name="CardWidget">
      <layout class="QVBoxLayout" name="verticalLayout">
@@ -94,6 +78,9 @@
        </widget>
       </item>
       <item>
+       <widget class="ComboBox" name="ch_setting_comboBox"/>
+      </item>
+      <item>
        <widget class="PushButton" name="btn_recording_preview">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -103,13 +90,6 @@
         </property>
         <property name="text">
          <string>录波预览</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="HyperlinkButton" name="test_btn">
-        <property name="text">
-         <string>测试</string>
         </property>
        </widget>
       </item>
@@ -127,16 +107,6 @@
           <layout class="QVBoxLayout" name="global_ctrl_widget_layout"/>
          </item>
         </layout>
-       </widget>
-      </item>
-      <item>
-       <widget class="QComboBox" name="ch_setting_comboBox">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
        </widget>
       </item>
       <item>
@@ -175,6 +145,12 @@
          <layout class="QGridLayout" name="gridLayout_5">
           <item row="0" column="0">
            <widget class="ScrollArea" name="ch_scroll_area_contents">
+            <property name="frameShape">
+             <enum>QFrame::NoFrame</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
             <property name="widgetResizable">
              <bool>true</bool>
             </property>
@@ -183,8 +159,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>210</width>
-               <height>206</height>
+               <width>212</width>
+               <height>232</height>
               </rect>
              </property>
              <layout class="QGridLayout" name="gridLayout_4">
@@ -202,9 +178,30 @@
      </layout>
     </widget>
    </item>
+   <item row="0" column="0">
+    <widget class="QWidget" name="scope_widget" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="font">
+      <font>
+       <family>Times New Roman</family>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>ComboBox</class>
+   <extends>QPushButton</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
   <customwidget>
    <class>HyperlinkButton</class>
    <extends>PushButton</extends>
