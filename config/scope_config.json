@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "NASA电机控制器示波器",
+    "name": "卡方电机控制器示波器",
     "version": "1.0.0",
     "refresh_rate": 120
   },

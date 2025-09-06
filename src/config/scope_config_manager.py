@@ -117,7 +117,7 @@ class ScopeConfigManager:
     @property
     def app_name(self) -> str:
         """应用名称"""
-        return self.get('app.name', 'NASA电机控制器示波器')
+        return self.get('app.name', '卡方电机控制器示波器')
     
     @property
     def app_version(self) -> str:

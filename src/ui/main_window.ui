@@ -35,27 +35,20 @@
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="0" column="0">
-         <widget class="CaptionLabel" name="CaptionLabel">
-          <property name="text">
-           <string>时基挡位</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QDoubleSpinBox" name="hori_div_spinbox">
-          <property name="font">
-           <font>
-            <family>Times New Roman</family>
-            <pointsize>12</pointsize>
-           </font>
-          </property>
-         </widget>
-        </item>
         <item row="0" column="2">
          <widget class="CaptionLabel" name="CaptionLabel_2">
           <property name="text">
            <string>1ms/div</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="DoubleSpinBox" name="hori_div_spinbox"/>
+        </item>
+        <item row="0" column="0">
+         <widget class="CaptionLabel" name="CaptionLabel">
+          <property name="text">
+           <string>时基挡位</string>
           </property>
          </widget>
         </item>
@@ -91,15 +84,12 @@
        </widget>
       </item>
       <item>
-       <widget class="QCommandLinkButton" name="test_btn">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
+       <widget class="RadioButton" name="radioButton">
         <property name="text">
-         <string>测试</string>
+         <string>自动滚动</string>
+        </property>
+        <property name="autoExclusive">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -117,31 +107,16 @@
        </widget>
       </item>
       <item>
-       <widget class="QCommandLinkButton" name="reload_conf_btn">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="font">
-         <font>
-          <family>Segoe UI</family>
-          <pointsize>12</pointsize>
-         </font>
-        </property>
+       <widget class="HyperlinkButton" name="test_btn">
         <property name="text">
-         <string>重新载入配置文件</string>
+         <string>测试</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="RadioButton" name="radioButton">
+       <widget class="HyperlinkButton" name="reload_conf_btn">
         <property name="text">
-         <string>自动滚动</string>
-        </property>
-        <property name="autoExclusive">
-         <bool>false</bool>
+         <string>重新载入配置文件</string>
         </property>
        </widget>
       </item>
@@ -208,8 +183,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>146</width>
-               <height>197</height>
+               <width>210</width>
+               <height>206</height>
               </rect>
              </property>
              <layout class="QGridLayout" name="gridLayout_4">
@@ -230,6 +205,11 @@
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>HyperlinkButton</class>
+   <extends>PushButton</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
   <customwidget>
    <class>PushButton</class>
    <extends>QPushButton</extends>
@@ -260,6 +240,11 @@
   <customwidget>
    <class>CaptionLabel</class>
    <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>DoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
    <header>qfluentwidgets</header>
   </customwidget>
  </customwidgets>
