@@ -104,9 +104,10 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
     def _init_channel_controls_ui(self):
         """初始化通道控制界面"""
-        # 填充通道列表
+        # 填充通道列表，优先显示别名
         ch_defs = self.cfg.channel_defs
-        self.ch_setting_comboBox.addItems([c["name"] for c in ch_defs])
+        channel_items = [c.get("alias", c["name"]) for c in ch_defs]
+        self.ch_setting_comboBox.addItems(channel_items)
 
         # 创建通道配置组件
         self.channel_configs = []
@@ -152,10 +153,12 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         ch_defs = self.cfg.channel_defs
 
         for i, ch_config in enumerate(ch_defs):
-            button = QtWidgets.QPushButton(ch_config["name"])
+            # 优先显示别名，如果没有别名则显示通道名
+            display_text = ch_config.get("alias", ch_config["name"])
+            button = QtWidgets.QPushButton(display_text)
             button.setCheckable(True)
             button.setChecked(ch_config.get("enabled", True))
-            button.setFixedSize(60, 30)
+            button.setFixedSize(80, 30)  # 增加宽度以适应别名显示
 
             # 设置按钮颜色
             color = ch_config.get("color", "#FFFFFF")
@@ -181,9 +184,9 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
                 lambda checked, ch=i: self.on_channel_toggle(ch, checked)
             )
 
-            # 添加到网格布局（4列）
-            row = i // 5
-            col = i % 5
+            # 添加到网格布局（3列，因为别名较长）
+            row = i // 3
+            col = i % 3
             button_grid.addWidget(button, row, col)
 
             self.channel_toggle_buttons.append(button)
