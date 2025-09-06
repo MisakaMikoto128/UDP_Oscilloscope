@@ -11,7 +11,6 @@ from ..data.data_buffer import RingBuffer
 from ..ui import Ui_Form
 from ..ui.channel_config_widget import ChannelConfigWidget, CursorControlWidget
 from ..ui.scope_view import ScopeWidget
-from ..communication.scope_ipc import ScopeIPC
 
 # 设置日志
 logging.basicConfig(
@@ -290,7 +289,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
         try:
             # 批量接收数据以提高性能
-            samples = self.data_receiver.receive_batch(max_count=50, timeout=0.001)
+            samples = self.data_receiver.receive_batch(max_count=50000, timeout=0.0001)
 
             for sample in samples:
                 # 处理接收到的采样数据

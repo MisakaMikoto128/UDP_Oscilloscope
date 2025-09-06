@@ -80,7 +80,7 @@ class MainWindow(FluentWindow):
         self.cfg = cfg
 
         # 初始化进程间通信
-        self.scope_ipc = create_scope_ipc(queue_size=60000)
+        self.scope_ipc = create_scope_ipc(queue_size=1024*1024*10)
 
         # 初始化UDP接收器（移到主进程）
         self.receiver = UDPMaster(

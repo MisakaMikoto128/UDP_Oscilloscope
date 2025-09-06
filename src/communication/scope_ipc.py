@@ -103,7 +103,7 @@ class ScopeDataReceiver:
             采样数据或None
         """
         try:
-            sample = self.data_queue.get(timeout=timeout)
+            sample = self.data_queue.get_nowait()
             self.received_count += 1
             self.last_receive_time = time.time()
             return sample
