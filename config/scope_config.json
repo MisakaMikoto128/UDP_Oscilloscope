@@ -26,25 +26,27 @@
   "channels": [
     {
       "name": "CH1",
+      "alias": "MCV.Ia",
       "enabled": true,
       "color": "#edff23",
-      "vertical_scale": 52.6315789473684,
+      "vertical_scale": 1.22,
       "vertical_offset": 0.0,
-      "unit": "V",
-      "visible": true,
-      "vertical_div": 1.0
+      "unit": "A",
+      "visible": true
     },
     {
       "name": "CH2",
+      "alias": "MCV.Ib",
       "enabled": false,
       "color": "#4ECDC4",
       "vertical_scale": 1.0,
       "vertical_offset": 3.4,
-      "unit": "V",
+      "unit": "A",
       "visible": true
     },
     {
       "name": "CH3",
+      "alias": "MCV.Ic",
       "enabled": false,
       "color": "#45B7D1",
       "vertical_scale": 1.0,
@@ -54,24 +56,27 @@
     },
     {
       "name": "CH4",
+      "alias": "MCV.mEtheta",
       "enabled": false,
       "color": "#FFA07A",
       "vertical_scale": 1.0,
       "vertical_offset": 0.0,
-      "unit": "A",
+      "unit": "°",
       "visible": true
     },
     {
       "name": "CH5",
+      "alias": "MCV.mEthetaZero",
       "enabled": false,
       "color": "#98D8C8",
       "vertical_scale": 1.0,
       "vertical_offset": 0.0,
-      "unit": "V",
+      "unit": "°",
       "visible": true
     },
     {
       "name": "CH6",
+      "alias": "test_zero",
       "enabled": false,
       "color": "#F7DC6F",
       "vertical_scale": 1.0,
@@ -81,29 +86,32 @@
     },
     {
       "name": "CH7",
+      "alias": "MCV.mDuty",
       "enabled": false,
       "color": "#BB8FCE",
       "vertical_scale": 1.0,
       "vertical_offset": 0.0,
-      "unit": "V",
+      "unit": "%",
       "visible": true
     },
     {
       "name": "CH8",
+      "alias": "MCV.mSpeed",
       "enabled": false,
       "color": "#85C1E9",
       "vertical_scale": 1.0,
       "vertical_offset": 0.0,
-      "unit": "V",
+      "unit": "rpm",
       "visible": true
     },
     {
       "name": "CH9",
+      "alias": "MCV.Ibus",
       "enabled": false,
       "color": "#F8C471",
       "vertical_scale": 1.0,
       "vertical_offset": 0.0,
-      "unit": "V",
+      "unit": "A",
       "visible": true
     },
     {

@@ -85,7 +85,7 @@ class ChannelConfigWidget(QtWidgets.QWidget):
         self.enabled_checkbox = QtWidgets.QCheckBox("启用通道")
         layout.addRow(self.enabled_checkbox)
 
-        unit = self.config.get("unit", "V")
+        unit = self.config.get("unit", " ")
         # 垂直挡位
         self.vertical_scale_spinbox = QtWidgets.QDoubleSpinBox()
         self.vertical_scale_spinbox.setRange(0.001, 1000.0)
@@ -104,8 +104,9 @@ class ChannelConfigWidget(QtWidgets.QWidget):
 
         # 单位选择
         self.unit_combobox = QtWidgets.QComboBox()
-        self.unit_combobox.addItems(["V", "A", "W", "Hz", "rpm", "°C", "%", "bar"])
+        self.unit_combobox.addItems(["V", "A", "W", "Hz", "rpm", "°C", "%", "bar", "rpm", "rad", "°", "mV"])
         self.unit_combobox.setEditable(True)
+        self.unit_combobox.setMouseTracking(False)
         layout.addRow("单位:", self.unit_combobox)
 
 
@@ -150,7 +151,7 @@ class ChannelConfigWidget(QtWidgets.QWidget):
         self.vertical_scale_spinbox.setValue(self.config.get("vertical_scale", 1.0))
         self.vertical_offset_spinbox.setValue(self.config.get("vertical_offset", 0.0))
 
-        unit = self.config.get("unit", "V")
+        unit = self.config.get("unit", " ")
         index = self.unit_combobox.findText(unit)
         if index >= 0:
             self.unit_combobox.setCurrentIndex(index)
@@ -175,16 +176,14 @@ class ChannelConfigWidget(QtWidgets.QWidget):
         self.config.update(
             {
                 "enabled": self.enabled_checkbox.isChecked(),
-                "vertical_div": self.vertical_scale_spinbox.value(),
+                "vertical_scale": self.vertical_scale_spinbox.value(),
                 "vertical_offset": self.vertical_offset_spinbox.value(),
                 "unit": self.unit_combobox.currentText(),
                 "color": self.color_button.get_color(),
                 "visible": self.visible_checkbox.isChecked(),
             }
         )
-        unit = self.unit_combobox.currentText()
-        self.vertical_scale_spinbox.setSuffix(f" {unit}/div")
-        self.vertical_offset_spinbox.setSuffix(f" {unit}")
+        self.vertical_offset_spinbox.setSuffix(f" {self.config['unit']}")
         self.configChanged.emit(self.channel_index, self.config.copy())
 
     def update_statistics(self, stats: Dict[str, float]):

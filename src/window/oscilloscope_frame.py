@@ -96,7 +96,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
             # 设置垂直挡位和偏移
             self.scope_widget.set_vertical_scale(
                 i,
-                ch_config.get("vertical_div", 1.0),
+                ch_config.get("vertical_scale", 1.0),
             )
             self.scope_widget.set_vertical_offset(
                 i, ch_config.get("vertical_offset", 0.0)
@@ -408,8 +408,8 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
             button.setChecked(enabled)
             button.blockSignals(False)
 
-        if "vertical_div" in config:
-            self.scope_widget.set_vertical_scale(channel_index, config["vertical_div"])
+        if "vertical_scale" in config:
+            self.scope_widget.set_vertical_scale(channel_index, config["vertical_scale"])
 
         if "vertical_offset" in config:
             self.scope_widget.set_vertical_offset(
