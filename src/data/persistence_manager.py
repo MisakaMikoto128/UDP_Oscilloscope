@@ -11,8 +11,12 @@ import threading
 import queue
 import time
 from pathlib import Path
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Union
 from datetime import datetime
+import pandas as pd
+import scipy.io
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +44,7 @@ class WaveformPersistence:
         self._cache_size = 0
         self._max_cache_size = 1000  # 缓存1000个样本后写入
 
-    def start_recording(self, filename: Optional[str] = None, n_channels: int = 4) -> Path:
+    def start_recording(self, channel_config: List[Dict], sample_rate: int = 0, filename: Optional[str] = None, n_channels: int = 4) -> Path:
         """
         开始录制数据
 
@@ -71,7 +75,7 @@ class WaveformPersistence:
             self._current_file = self._resolve_filename_conflict(self._current_file)
 
         # 创建HDF5文件并初始化数据集
-        self._create_h5_file(n_channels)
+        self._create_h5_file(n_channels, channel_config, sample_rate)
 
         # 启动写入线程
         self._start_write_thread()
@@ -101,7 +105,7 @@ class WaveformPersistence:
         logger.info(f"停止录制，文件: {self._current_file}")
         self._current_file = None
 
-    def _create_h5_file(self, n_channels: int):
+    def _create_h5_file(self, n_channels: int, channel_config:List[Dict], sample_rate: int = 0):
         """创建HDF5文件并初始化数据集"""
         self._h5_file = h5py.File(self._current_file, 'w')
 
@@ -111,10 +115,13 @@ class WaveformPersistence:
         metadata.attrs['version'] = '2.0.0'
         metadata.attrs['format'] = 'HDF5_Waveform'
         metadata.attrs['n_channels'] = n_channels
-        metadata.attrs['sample_rate'] = 0  # 可以后续设置
+        metadata.attrs['sample_rate'] = sample_rate
 
         # 为每个通道创建可扩展数据集
         for ch in range(n_channels):
+            # 获取通道配置
+            ch_config = channel_config[ch]
+
             dataset = self._h5_file.create_dataset(
                 f'channel_{ch:02d}',
                 shape=(0,),  # 初始为空
@@ -125,7 +132,9 @@ class WaveformPersistence:
                 compression_opts=1  # 压缩级别1（快速）
             )
             dataset.attrs['channel'] = ch
-            dataset.attrs['unit'] = 'V'
+            dataset.attrs['unit'] = ch_config.get('unit', 'V')  # 从配置读取单位
+            dataset.attrs['name'] = ch_config.get('name', f'CH{ch+1}')  # 通道名称
+            # dataset.attrs['scale_factor'] = ch_config.get('scale_factor', 1.0)  # 缩放因子
 
         # 刷新到磁盘
         self._h5_file.flush()
@@ -300,6 +309,315 @@ class WaveformPersistence:
     def get_current_file(self) -> Optional[Path]:
         """获取当前录制文件路径"""
         return self._current_file
+
+    def export_to_csv(self, hdf5_filepath: Path, output_filepath: Optional[Path] = None,
+                     include_metadata: bool = True) -> Path:
+        """
+        将HDF5文件导出为CSV格式
+
+        Args:
+            hdf5_filepath: 源HDF5文件路径
+            output_filepath: 输出CSV文件路径，如果为None则自动生成
+            include_metadata: 是否包含元数据信息
+
+        Returns:
+            输出文件路径
+        """
+        try:
+            # 生成输出文件路径
+            if output_filepath is None:
+                output_filepath = hdf5_filepath.with_suffix('.csv')
+
+            # 加载数据
+            data_dict = self.load_data(hdf5_filepath)
+            if not data_dict:
+                raise ValueError("无法加载HDF5数据")
+
+            # 创建DataFrame
+            df_data = {}
+            max_length = 0
+
+            # 获取所有通道数据
+            for ch, data in data_dict.items():
+                df_data[f'Channel_{ch:02d}'] = data
+                max_length = max(max_length, len(data))
+
+            # 创建时间轴
+            with h5py.File(hdf5_filepath, 'r') as f:
+                sample_rate = f['metadata'].attrs.get('sample_rate', 1000.0)
+
+            time_axis = np.arange(max_length) / sample_rate
+            df_data['Time_s'] = time_axis
+
+            # 创建DataFrame
+            df = pd.DataFrame(df_data)
+
+            # 重新排列列顺序，时间轴在前
+            cols = ['Time_s'] + [col for col in df.columns if col != 'Time_s']
+            df = df[cols]
+
+            # 导出CSV（暂时不包含元数据注释以避免编码问题）
+            df.to_csv(output_filepath, index=False, encoding='utf-8-sig')
+
+            # 如果需要包含元数据，创建单独的元数据文件
+            if include_metadata:
+                metadata_file = output_filepath.with_suffix('.metadata.txt')
+                self._create_metadata_file(hdf5_filepath, metadata_file)
+
+            logger.info(f"成功导出CSV文件: {output_filepath}")
+            return output_filepath
+
+        except Exception as e:
+            logger.error(f"导出CSV失败: {e}")
+            raise
+
+    def export_to_excel(self, hdf5_filepath: Path, output_filepath: Optional[Path] = None,
+                       include_metadata: bool = True) -> Path:
+        """
+        将HDF5文件导出为Excel格式
+
+        Args:
+            hdf5_filepath: 源HDF5文件路径
+            output_filepath: 输出Excel文件路径，如果为None则自动生成
+            include_metadata: 是否包含元数据工作表
+
+        Returns:
+            输出文件路径
+        """
+        try:
+            # 生成输出文件路径
+            if output_filepath is None:
+                output_filepath = hdf5_filepath.with_suffix('.xlsx')
+
+            # 加载数据
+            data_dict = self.load_data(hdf5_filepath)
+            if not data_dict:
+                raise ValueError("无法加载HDF5数据")
+
+            # 创建Excel工作簿
+            wb = Workbook()
+
+            # 删除默认工作表
+            wb.remove(wb.active)
+
+            # 创建数据工作表
+            ws_data = wb.create_sheet("Data")
+
+            # 准备数据
+            df_data = {}
+            max_length = 0
+
+            for ch, data in data_dict.items():
+                df_data[f'Channel_{ch:02d}'] = data
+                max_length = max(max_length, len(data))
+
+            # 创建时间轴
+            with h5py.File(hdf5_filepath, 'r') as f:
+                sample_rate = f['metadata'].attrs.get('sample_rate', 1000.0)
+
+            time_axis = np.arange(max_length) / sample_rate
+            df_data['Time_s'] = time_axis
+
+            # 创建DataFrame
+            df = pd.DataFrame(df_data)
+            cols = ['Time_s'] + [col for col in df.columns if col != 'Time_s']
+            df = df[cols]
+
+            # 写入数据到Excel
+            for r in dataframe_to_rows(df, index=False, header=True):
+                ws_data.append(r)
+
+            # 如果需要，添加元数据工作表
+            if include_metadata:
+                self._add_metadata_to_excel(hdf5_filepath, wb)
+
+            # 保存Excel文件
+            wb.save(output_filepath)
+
+            logger.info(f"成功导出Excel文件: {output_filepath}")
+            return output_filepath
+
+        except Exception as e:
+            logger.error(f"导出Excel失败: {e}")
+            raise
+
+    def export_to_matlab(self, hdf5_filepath: Path, output_filepath: Optional[Path] = None) -> Path:
+        """
+        将HDF5文件导出为MATLAB .mat格式
+
+        Args:
+            hdf5_filepath: 源HDF5文件路径
+            output_filepath: 输出.mat文件路径，如果为None则自动生成
+
+        Returns:
+            输出文件路径
+        """
+        try:
+            # 生成输出文件路径
+            if output_filepath is None:
+                output_filepath = hdf5_filepath.with_suffix('.mat')
+
+            # 加载数据
+            data_dict = self.load_data(hdf5_filepath)
+            if not data_dict:
+                raise ValueError("无法加载HDF5数据")
+
+            # 准备MATLAB数据结构
+            matlab_data = {}
+
+            # 添加通道数据
+            for ch, data in data_dict.items():
+                matlab_data[f'channel_{ch:02d}'] = data
+
+            # 添加元数据
+            with h5py.File(hdf5_filepath, 'r') as f:
+                metadata = dict(f['metadata'].attrs)
+                matlab_data['metadata'] = metadata
+
+                # 创建时间轴
+                sample_rate = metadata.get('sample_rate', 1000.0)
+                max_length = max(len(data) for data in data_dict.values())
+                time_axis = np.arange(max_length) / sample_rate
+                matlab_data['time_axis'] = time_axis
+
+            # 保存为.mat文件
+            scipy.io.savemat(output_filepath, matlab_data)
+
+            logger.info(f"成功导出MATLAB文件: {output_filepath}")
+            return output_filepath
+
+        except Exception as e:
+            logger.error(f"导出MATLAB失败: {e}")
+            raise
+
+    def _add_metadata_to_csv(self, hdf5_filepath: Path, csv_filepath: Path):
+        """在CSV文件开头添加元数据注释"""
+        try:
+            # 读取现有CSV内容
+            with open(csv_filepath, 'r', encoding='utf-8-sig') as f:
+                csv_content = f.read()
+
+            # 读取元数据
+            with h5py.File(hdf5_filepath, 'r') as f:
+                metadata = dict(f['metadata'].attrs)
+
+            # 创建元数据注释
+            metadata_lines = [
+                "# HDF5 Waveform Data Export",
+                f"# Source File: {hdf5_filepath.name}",
+                f"# Export Time: {datetime.now().isoformat()}",
+                "# Metadata:",
+            ]
+
+            for key, value in metadata.items():
+                # 确保值是可序列化的字符串
+                if isinstance(value, bytes):
+                    value = value.decode('utf-8', errors='ignore')
+                metadata_lines.append(f"# {key}: {value}")
+
+            metadata_lines.append("# Data Format: Time_s, Channel_00, Channel_01, ...")
+            metadata_lines.append("")  # 空行分隔
+
+            # 重写文件
+            with open(csv_filepath, 'w', encoding='utf-8-sig', newline='') as f:
+                f.write('\n'.join(metadata_lines))
+                f.write(csv_content)
+
+        except Exception as e:
+            logger.warning(f"添加CSV元数据失败: {e}")
+
+    def _create_metadata_file(self, hdf5_filepath: Path, metadata_filepath: Path):
+        """创建单独的元数据文件"""
+        try:
+            # 读取元数据
+            with h5py.File(hdf5_filepath, 'r') as f:
+                metadata = dict(f['metadata'].attrs)
+
+            # 创建元数据文件
+            with open(metadata_filepath, 'w', encoding='utf-8') as f:
+                f.write("HDF5 Waveform Data Export Metadata\n")
+                f.write("=" * 40 + "\n")
+                f.write(f"Source File: {hdf5_filepath.name}\n")
+                f.write(f"Export Time: {datetime.now().isoformat()}\n")
+                f.write("\nMetadata:\n")
+                f.write("-" * 20 + "\n")
+
+                for key, value in metadata.items():
+                    # 确保值是可序列化的字符串
+                    if isinstance(value, bytes):
+                        value = value.decode('utf-8', errors='ignore')
+                    f.write(f"{key}: {value}\n")
+
+                f.write("\nData Format:\n")
+                f.write("-" * 20 + "\n")
+                f.write("CSV columns: Time_s, Channel_00, Channel_01, Channel_02, ...\n")
+
+        except Exception as e:
+            logger.warning(f"创建元数据文件失败: {e}")
+
+    def _add_metadata_to_excel(self, hdf5_filepath: Path, workbook: Workbook):
+        """在Excel工作簿中添加元数据工作表"""
+        try:
+            # 创建元数据工作表
+            ws_meta = workbook.create_sheet("Metadata", 0)  # 插入到第一个位置
+
+            # 读取元数据
+            with h5py.File(hdf5_filepath, 'r') as f:
+                metadata = dict(f['metadata'].attrs)
+
+            # 添加标题
+            ws_meta.append(["HDF5 Waveform Data Export"])
+            ws_meta.append([f"Source File: {hdf5_filepath.name}"])
+            ws_meta.append([f"Export Time: {datetime.now().isoformat()}"])
+            ws_meta.append([])  # 空行
+
+            # 添加元数据
+            ws_meta.append(["Metadata", "Value"])
+            for key, value in metadata.items():
+                ws_meta.append([key, str(value)])
+
+        except Exception as e:
+            logger.warning(f"添加Excel元数据失败: {e}")
+
+    def export_batch(self, hdf5_filepath: Path, formats: List[str],
+                    output_dir: Optional[Path] = None) -> Dict[str, Path]:
+        """
+        批量导出为多种格式
+
+        Args:
+            hdf5_filepath: 源HDF5文件路径
+            formats: 要导出的格式列表 ['csv', 'excel', 'matlab']
+            output_dir: 输出目录，如果为None则使用源文件目录
+
+        Returns:
+            格式到输出文件路径的映射
+        """
+        if output_dir is None:
+            output_dir = hdf5_filepath.parent
+
+        results = {}
+
+        for fmt in formats:
+            try:
+                if fmt.lower() == 'csv':
+                    output_path = output_dir / f"{hdf5_filepath.stem}.csv"
+                    results['csv'] = self.export_to_csv(hdf5_filepath, output_path)
+
+                elif fmt.lower() in ['excel', 'xlsx']:
+                    output_path = output_dir / f"{hdf5_filepath.stem}.xlsx"
+                    results['excel'] = self.export_to_excel(hdf5_filepath, output_path)
+
+                elif fmt.lower() in ['matlab', 'mat']:
+                    output_path = output_dir / f"{hdf5_filepath.stem}.mat"
+                    results['matlab'] = self.export_to_matlab(hdf5_filepath, output_path)
+
+                else:
+                    logger.warning(f"不支持的导出格式: {fmt}")
+
+            except Exception as e:
+                logger.error(f"导出格式 {fmt} 失败: {e}")
+
+        return results
 
     def __del__(self):
         """析构函数"""

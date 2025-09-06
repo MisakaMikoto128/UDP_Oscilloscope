@@ -9,6 +9,7 @@ import logging
 from typing import Tuple, Optional, Dict, List
 import threading
 from pathlib import Path
+from datetime import datetime
 
 from .persistence_manager import WaveformPersistence
 
@@ -53,6 +54,7 @@ class RingBuffer:
 
         # 持久化功能
         self._persistence_manager = WaveformPersistence()
+        self.persistence_manager = self._persistence_manager
 
         logger.info(f"环形缓冲区已初始化: {n_channels}通道, "
                    f"最大样本数: {self.max_samples:,}, "
@@ -180,7 +182,38 @@ class RingBuffer:
                         result[first_part:] = buffer[:actual_points - first_part]
                     
                     return result
-    
+
+    def view_all(self, channel: int) -> np.ndarray:
+        """
+        获取指定通道的所有数据
+
+        Args:
+            channel: 通道索引
+
+        Returns:
+            数据数组
+        """
+        if not (0 <= channel < self.n_channels):
+            return np.array([], dtype=np.float32)
+
+        with self._lock:
+            sample_count = self.sample_counts[channel]
+            if sample_count == 0:
+                return np.array([], dtype=np.float32)
+
+            buffer = self.buffers[channel]
+            write_pos = self.write_positions[channel]
+
+            if sample_count < self.max_samples:
+                # 缓冲区未满，直接返回有效数据
+                return buffer[:sample_count].copy()
+            else:
+                # 缓冲区已满，需要重新排列
+                result = np.empty(sample_count, dtype=np.float32)
+                result[:self.max_samples-write_pos] = buffer[write_pos:]
+                result[self.max_samples-write_pos:] = buffer[:write_pos]
+                return result
+
     def view_range(self, channel: int, start_idx: int, end_idx: int) -> np.ndarray:
         """
         获取指定通道的指定范围数据
@@ -354,7 +387,7 @@ class RingBuffer:
 
     # ==================== 持久化功能接口 ====================
 
-    def start_recording(self, filename: Optional[str] = None) -> Path:
+    def start_recording(self, channel_config: List[Dict], sample_rate: int = 0, filename: Optional[str] = None) -> Path:
         """
         开始录制数据到文件
 
@@ -364,7 +397,7 @@ class RingBuffer:
         Returns:
             录制文件路径
         """
-        return self._persistence_manager.start_recording(filename, self.n_channels)
+        return self._persistence_manager.start_recording(channel_config, sample_rate, filename, self.n_channels)
 
     def stop_recording(self):
         """停止录制数据"""
@@ -481,3 +514,99 @@ class RingBuffer:
                     self.sample_counts[channel] = min(n_values, self.max_samples)
 
         logger.info(f"已从文件重新加载数据: {filepath}")
+
+    def export_data(self, formats: List[str], output_dir: Optional[Path] = None,
+                   filename_prefix: str = "ringbuffer_export") -> Dict[str, Path]:
+        """
+        导出当前缓冲区数据为多种格式
+        注意：HDF5格式通过录制功能实现，其他格式通过转换实现
+
+        Args:
+            formats: 要导出的格式列表 ['csv', 'excel', 'matlab', 'hdf5']
+            output_dir: 输出目录，如果为None则使用默认data目录
+            filename_prefix: 文件名前缀
+
+        Returns:
+            格式到输出文件路径的映射
+        """
+        try:
+            if output_dir is None:
+                output_dir = Path("data")
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            results = {}
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+            # 创建临时HDF5文件（通过录制功能）
+            temp_h5_file = None
+            if formats:  # 如果有任何格式需要导出
+                # 使用录制功能创建HDF5文件
+                self.start_recording(f"{filename_prefix}_{timestamp}_temp")
+
+                # 获取所有通道的最大样本数
+                max_samples = max(self.get_sample_count(ch) for ch in range(self.n_channels))
+
+                # 逐个样本写入所有通道数据
+                for i in range(max_samples):
+                    channel_values = []
+                    for ch in range(self.n_channels):
+                        data = self.view_all(ch)
+                        if i < len(data):
+                            channel_values.append(data[i])
+                        else:
+                            channel_values.append(0.0)
+
+                    self.persistence_manager.push_save_data(channel_values)
+
+                self.stop_recording()
+                temp_h5_file = self.persistence_manager.get_current_file()
+
+            # 导出各种格式
+            for fmt in formats:
+                try:
+                    fmt_lower = fmt.lower()
+
+                    if fmt_lower == 'hdf5':
+                        # HDF5格式直接重命名临时文件
+                        output_path = output_dir / f"{filename_prefix}_{timestamp}.h5"
+                        if temp_h5_file and temp_h5_file != output_path:
+                            import shutil
+                            shutil.move(temp_h5_file, output_path)
+                            temp_h5_file = output_path  # 更新引用
+                        elif temp_h5_file:
+                            output_path = temp_h5_file
+                        results['hdf5'] = output_path
+
+                    elif fmt_lower == 'csv':
+                        if temp_h5_file:
+                            output_path = output_dir / f"{filename_prefix}_{timestamp}.csv"
+                            results['csv'] = self.persistence_manager.export_to_csv(temp_h5_file, output_path)
+
+                    elif fmt_lower in ['excel', 'xlsx']:
+                        if temp_h5_file:
+                            output_path = output_dir / f"{filename_prefix}_{timestamp}.xlsx"
+                            results['excel'] = self.persistence_manager.export_to_excel(temp_h5_file, output_path)
+
+                    elif fmt_lower in ['matlab', 'mat']:
+                        if temp_h5_file:
+                            output_path = output_dir / f"{filename_prefix}_{timestamp}.mat"
+                            results['matlab'] = self.persistence_manager.export_to_matlab(temp_h5_file, output_path)
+
+                    else:
+                        logger.warning(f"不支持的导出格式: {fmt}")
+
+                except Exception as e:
+                    logger.error(f"导出格式 {fmt} 失败: {e}")
+
+            # 清理临时文件（如果不需要HDF5格式）
+            if temp_h5_file and temp_h5_file.exists() and 'hdf5' not in [f.lower() for f in formats]:
+                temp_h5_file.unlink()
+
+            logger.info(f"数据导出完成，共导出 {len(results)} 种格式")
+            return results
+
+        except Exception as e:
+            logger.error(f"导出数据失败: {e}")
+            return {}
+
+

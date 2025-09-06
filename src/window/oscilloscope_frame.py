@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 from pathlib import Path
+from typing import List
 
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -344,6 +345,10 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         self.sw_mode.checkedChanged.connect(self.on_mode_switch_changed)
         self.btn_recording_preview.clicked.connect(self.on_recording_preview_clicked)
 
+        # 数据导出功能
+        # self._create_export_buttons()
+        # self._connect_export_signals()
+
     def _load_configuration(self):
         """加载配置到UI"""
         # 设置示波器参数
@@ -478,7 +483,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         try:
             if checked:
                 # 开始录制
-                file_path = self.buffer.start_recording()
+                file_path = self.buffer.start_recording(self.cfg.channel_defs, self.cfg.sample_rate)
                 logger.info(f"开始录制波形数据到: {file_path}")
             else:
                 # 停止录制
@@ -690,3 +695,341 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         except Exception as e:
             logger.error(f"关闭示波器窗口时出错: {e}")
             event.accept()
+
+    def _create_export_buttons(self):
+        """创建数据导出按钮"""
+        try:
+            # 在全局控制区域添加导出按钮组
+            export_group = QtWidgets.QGroupBox("数据导出")
+            export_layout = QtWidgets.QVBoxLayout(export_group)
+
+            # 导出当前数据按钮
+            self.btn_export_current = QtWidgets.QPushButton("导出当前数据")
+            self.btn_export_current.setToolTip("导出当前缓冲区中的数据")
+            export_layout.addWidget(self.btn_export_current)
+
+            # 导出录制文件按钮
+            self.btn_export_file = QtWidgets.QPushButton("导出录制文件")
+            self.btn_export_file.setToolTip("选择并导出已录制的HDF5文件")
+            export_layout.addWidget(self.btn_export_file)
+
+            # 批量导出按钮
+            self.btn_batch_export = QtWidgets.QPushButton("批量导出")
+            self.btn_batch_export.setToolTip("批量导出多种格式")
+            export_layout.addWidget(self.btn_batch_export)
+
+            # 添加到主布局
+            self.global_ctrl_widget_layout.addWidget(export_group)
+
+        except Exception as e:
+            logger.error(f"创建导出按钮失败: {e}")
+
+    def _connect_export_signals(self):
+        """连接导出功能信号"""
+        try:
+            self.btn_export_current.clicked.connect(self.on_export_current_data)
+            self.btn_export_file.clicked.connect(self.on_export_file)
+            self.btn_batch_export.clicked.connect(self.on_batch_export)
+        except Exception as e:
+            logger.error(f"连接导出信号失败: {e}")
+
+    def _show_format_selection_dialog(self, title: str) -> List[str]:
+        """显示格式选择对话框"""
+        try:
+            dialog = QtWidgets.QDialog(self)
+            dialog.setWindowTitle(title)
+            dialog.setModal(True)
+            dialog.resize(300, 200)
+
+            layout = QtWidgets.QVBoxLayout(dialog)
+
+            # 添加说明
+            label = QtWidgets.QLabel("请选择要导出的格式:")
+            layout.addWidget(label)
+
+            # 格式选择复选框
+            self.format_checkboxes = {}
+            formats = [
+                ('csv', 'CSV格式 (Excel兼容)'),
+                ('excel', 'Excel格式 (.xlsx)'),
+                ('matlab', 'MATLAB格式 (.mat)'),
+                ('hdf5', 'HDF5格式 (原始)')
+            ]
+
+            for fmt_key, fmt_name in formats:
+                checkbox = QtWidgets.QCheckBox(fmt_name)
+                if fmt_key == 'csv':  # 默认选择CSV
+                    checkbox.setChecked(True)
+                self.format_checkboxes[fmt_key] = checkbox
+                layout.addWidget(checkbox)
+
+            # 按钮
+            button_layout = QtWidgets.QHBoxLayout()
+            ok_button = QtWidgets.QPushButton("确定")
+            cancel_button = QtWidgets.QPushButton("取消")
+
+            ok_button.clicked.connect(dialog.accept)
+            cancel_button.clicked.connect(dialog.reject)
+
+            button_layout.addWidget(ok_button)
+            button_layout.addWidget(cancel_button)
+            layout.addLayout(button_layout)
+
+            # 显示对话框
+            if dialog.exec_() == QtWidgets.QDialog.Accepted:
+                selected_formats = []
+                for fmt_key, checkbox in self.format_checkboxes.items():
+                    if checkbox.isChecked():
+                        selected_formats.append(fmt_key)
+                return selected_formats
+            else:
+                return []
+
+        except Exception as e:
+            logger.error(f"显示格式选择对话框失败: {e}")
+            return ['csv']  # 默认返回CSV格式
+
+    def on_export_current_data(self):
+        """导出当前缓冲区数据"""
+        try:
+            # 显示格式选择对话框
+            formats = self._show_format_selection_dialog("导出当前数据")
+            if not formats:
+                return
+
+            # 显示文件保存对话框
+            output_dir = QtWidgets.QFileDialog.getExistingDirectory(
+                self, "选择导出目录", "data"
+            )
+            if not output_dir:
+                return
+
+            # 显示进度对话框
+            progress = QtWidgets.QProgressDialog("正在导出数据...", "取消", 0, 100, self)
+            progress.setWindowModality(QtCore.Qt.WindowModal)
+            progress.show()
+
+            # 执行导出
+            QtCore.QTimer.singleShot(100, lambda: self._do_export_current(
+                formats, Path(output_dir), progress
+            ))
+
+        except Exception as e:
+            logger.error(f"导出当前数据失败: {e}")
+            QtWidgets.QMessageBox.critical(self, "错误", f"导出失败: {e}")
+
+    def _do_export_current(self, formats: List[str], output_dir: Path, progress: QtWidgets.QProgressDialog):
+        """执行当前数据导出"""
+        try:
+            progress.setValue(10)
+            if progress.wasCanceled():
+                return
+
+            # 使用当前buffer导出数据
+            results = self.buffer.export_data(formats, output_dir, "current_data")
+
+            progress.setValue(90)
+            if progress.wasCanceled():
+                return
+
+            # 显示结果
+            self._show_export_results(results, "当前数据导出完成")
+            progress.setValue(100)
+
+        except Exception as e:
+            logger.error(f"执行当前数据导出失败: {e}")
+            QtWidgets.QMessageBox.critical(self, "错误", f"导出失败: {e}")
+        finally:
+            progress.close()
+
+    def on_export_file(self):
+        """导出录制文件"""
+        try:
+            # 选择HDF5文件
+            file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
+                self, "选择HDF5文件", "data", "HDF5 Files (*.h5 *.hdf5)"
+            )
+            if not file_path:
+                return
+
+            # 显示格式选择对话框
+            formats = self._show_format_selection_dialog("导出录制文件")
+            if not formats:
+                return
+
+            # 显示进度对话框
+            progress = QtWidgets.QProgressDialog("正在导出文件...", "取消", 0, 100, self)
+            progress.setWindowModality(QtCore.Qt.WindowModal)
+            progress.show()
+
+            # 执行导出
+            QtCore.QTimer.singleShot(100, lambda: self._do_export_file(
+                Path(file_path), formats, progress
+            ))
+
+        except Exception as e:
+            logger.error(f"导出文件失败: {e}")
+            QtWidgets.QMessageBox.critical(self, "错误", f"导出失败: {e}")
+
+    def _do_export_file(self, file_path: Path, formats: List[str], progress: QtWidgets.QProgressDialog):
+        """执行文件导出"""
+        try:
+            progress.setValue(10)
+            if progress.wasCanceled():
+                return
+
+            # 使用persistence_manager导出
+            results = self.buffer.persistence_manager.export_batch(file_path, formats)
+
+            progress.setValue(90)
+            if progress.wasCanceled():
+                return
+
+            # 显示结果
+            self._show_export_results(results, f"文件 {file_path.name} 导出完成")
+            progress.setValue(100)
+
+        except Exception as e:
+            logger.error(f"执行文件导出失败: {e}")
+            QtWidgets.QMessageBox.critical(self, "错误", f"导出失败: {e}")
+        finally:
+            progress.close()
+
+    def on_batch_export(self):
+        """批量导出"""
+        try:
+            # 选择多个HDF5文件
+            file_paths, _ = QtWidgets.QFileDialog.getOpenFileNames(
+                self, "选择HDF5文件", "data", "HDF5 Files (*.h5 *.hdf5)"
+            )
+            if not file_paths:
+                return
+
+            # 显示格式选择对话框
+            formats = self._show_format_selection_dialog("批量导出")
+            if not formats:
+                return
+
+            # 选择输出目录
+            output_dir = QtWidgets.QFileDialog.getExistingDirectory(
+                self, "选择导出目录", "data"
+            )
+            if not output_dir:
+                return
+
+            # 显示进度对话框
+            progress = QtWidgets.QProgressDialog("正在批量导出...", "取消", 0, len(file_paths), self)
+            progress.setWindowModality(QtCore.Qt.WindowModal)
+            progress.show()
+
+            # 执行批量导出
+            QtCore.QTimer.singleShot(100, lambda: self._do_batch_export(
+                [Path(p) for p in file_paths], formats, Path(output_dir), progress
+            ))
+
+        except Exception as e:
+            logger.error(f"批量导出失败: {e}")
+            QtWidgets.QMessageBox.critical(self, "错误", f"批量导出失败: {e}")
+
+    def _do_batch_export(self, file_paths: List[Path], formats: List[str],
+                        output_dir: Path, progress: QtWidgets.QProgressDialog):
+        """执行批量导出"""
+        try:
+            all_results = {}
+
+            for i, file_path in enumerate(file_paths):
+                if progress.wasCanceled():
+                    break
+
+                progress.setLabelText(f"正在导出: {file_path.name}")
+                progress.setValue(i)
+
+                try:
+                    # 为每个文件创建子目录
+                    file_output_dir = output_dir / file_path.stem
+                    file_output_dir.mkdir(exist_ok=True)
+
+                    # 导出文件
+                    results = self.buffer.persistence_manager.export_batch(
+                        file_path, formats, file_output_dir
+                    )
+                    all_results[file_path.name] = results
+
+                except Exception as e:
+                    logger.error(f"导出文件 {file_path.name} 失败: {e}")
+                    all_results[file_path.name] = {"error": str(e)}
+
+            progress.setValue(len(file_paths))
+
+            # 显示批量导出结果
+            self._show_batch_export_results(all_results)
+
+        except Exception as e:
+            logger.error(f"执行批量导出失败: {e}")
+            QtWidgets.QMessageBox.critical(self, "错误", f"批量导出失败: {e}")
+        finally:
+            progress.close()
+
+    def _show_export_results(self, results: dict, title: str):
+        """显示导出结果"""
+        try:
+            if not results:
+                QtWidgets.QMessageBox.warning(self, "警告", "没有成功导出任何文件")
+                return
+
+            message = f"{title}\n\n导出的文件:\n"
+            for fmt, file_path in results.items():
+                message += f"• {fmt.upper()}: {file_path}\n"
+
+            QtWidgets.QMessageBox.information(self, "导出完成", message)
+
+        except Exception as e:
+            logger.error(f"显示导出结果失败: {e}")
+
+    def _show_batch_export_results(self, all_results: dict):
+        """显示批量导出结果"""
+        try:
+            dialog = QtWidgets.QDialog(self)
+            dialog.setWindowTitle("批量导出结果")
+            dialog.setModal(True)
+            dialog.resize(500, 400)
+
+            layout = QtWidgets.QVBoxLayout(dialog)
+
+            # 创建文本显示区域
+            text_edit = QtWidgets.QTextEdit()
+            text_edit.setReadOnly(True)
+
+            # 构建结果文本
+            result_text = "批量导出结果:\n\n"
+            success_count = 0
+            error_count = 0
+
+            for file_name, results in all_results.items():
+                result_text += f"文件: {file_name}\n"
+
+                if "error" in results:
+                    result_text += f"  ❌ 错误: {results['error']}\n"
+                    error_count += 1
+                else:
+                    result_text += "  ✅ 成功导出:\n"
+                    for fmt, file_path in results.items():
+                        result_text += f"    • {fmt.upper()}: {file_path}\n"
+                    success_count += 1
+
+                result_text += "\n"
+
+            result_text += f"总结: 成功 {success_count} 个, 失败 {error_count} 个"
+
+            text_edit.setPlainText(result_text)
+            layout.addWidget(text_edit)
+
+            # 关闭按钮
+            close_button = QtWidgets.QPushButton("关闭")
+            close_button.clicked.connect(dialog.accept)
+            layout.addWidget(close_button)
+
+            dialog.exec_()
+
+        except Exception as e:
+            logger.error(f"显示批量导出结果失败: {e}")
