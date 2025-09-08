@@ -5,13 +5,13 @@ import socket
 import struct
 
 from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtCore import Qt, pyqtSignal
 from qasync import asyncSlot
-from qfluentwidgets import MessageBox
+from src.ui.async_message_box import async_confirm
 from qfluentwidgets import (
     InfoBar,
     InfoBarPosition,
 )
-from PyQt5.QtCore import Qt
 
 from src.communication.protocol import SysREGsUpData
 from src.config.config_manager import ConfigManager
@@ -38,6 +38,9 @@ def uint32_to_mac(value: int) -> str:
 
 class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
     """网络设置窗口类"""
+
+    # 定义信号：设备信息更新信号
+    device_info_updated = pyqtSignal(str, str, str, int, int)  # device_name, uid, device_ip, pc_port, device_port
 
     def __init__(
         self,
@@ -75,7 +78,10 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
 
         # 设备名称设置按钮
         self.btn_device_name_set.clicked.connect(self._set_device_name)
-        
+
+        # 子网掩码设置按钮（如果存在的话）
+        self.btn_device_ip_mask_set.clicked.connect(self._set_netmask)
+
         # 连接双击label事件
         self._connect_label_double_click()
 
@@ -140,9 +146,9 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
             # 确认对话框
             title = "确认设置本机IP地址"
             content = f"本机IP地址将从 {current_ip} 设置为 {new_ip}\n\n确认后将立即发送设置命令！"
-            
-            box = MessageBox(title, content, self)
-            if box.exec():
+
+            confirmed = await async_confirm(title, content, self)
+            if confirmed:
                 # 转换IP为uint32
                 ip_uint32 = ipv4_to_uint32(new_ip)
                 target_addr = (self.cfg.target_host, self.cfg.target_port)
@@ -152,7 +158,6 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
                 success2 = await self.device_reg_set_func(5, [ip_uint32], target_addr=target_addr)
                 
                 if success1 and success2:
-                    # self.cfg.set_pc_ip(new_ip)
                     InfoBar.success(
                         title='设置成功',
                         content=f'PC IP和网关IP已设置为 {new_ip}，保存参数重启设备后生效。',
@@ -163,6 +168,7 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
                         parent=self
                     )
                     logger.info(f"PC IP和网关IP设置成功: {new_ip}")
+                    # 注意：ConfigManager更新将在保存参数成功后进行
                 else:
                     InfoBar.error(
                         title='设置失败',
@@ -201,9 +207,9 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
             # 确认对话框
             title = "确认设置设备IP地址"
             content = f"设备IP地址将从 {current_device_ip} 设置为 {new_ip}\n\n确认后将立即发送设置命令！"
-            
-            box = MessageBox(title, content, self)
-            if box.exec():
+
+            confirmed = await async_confirm(title, content, self)
+            if confirmed:
                 # 转换IP为uint32
                 ip_uint32 = ipv4_to_uint32(new_ip)
                 target_addr = (self.cfg.target_host, self.cfg.target_port)
@@ -237,6 +243,66 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
         except Exception as e:
             logger.error(f"设置设备IP地址错误: {e}")
 
+    @asyncSlot()
+    async def _set_netmask(self):
+        """设置子网掩码"""
+        try:
+            new_netmask = self.line_edit_device_ip_mask.text().strip()
+            if not self._validate_ip(new_netmask):
+                InfoBar.error(
+                    title='子网掩码格式错误',
+                    content='请输入正确的子网掩码格式',
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP,
+                    duration=2000,
+                    parent=self
+                )
+                return
+
+            # 获取当前子网掩码用于确认对话框
+            current_netmask = self.label_device_ip_mask.text()
+
+            # 确认对话框
+            title = "确认设置子网掩码"
+            content = f"子网掩码将从 {current_netmask} 设置为 {new_netmask}\n\n确认后将立即发送设置命令！"
+
+            confirmed = await async_confirm(title, content, self)
+            if confirmed:
+                # 转换子网掩码为uint32
+                netmask_uint32 = ipv4_to_uint32(new_netmask)
+                target_addr = (self.cfg.target_host, self.cfg.target_port)
+
+                # 设置子网掩码 (寄存器地址3)
+                success = await self.device_reg_set_func(3, [netmask_uint32], target_addr=target_addr)
+
+                if success:
+                    InfoBar.success(
+                        title='设置成功',
+                        content=f'子网掩码已设置为 {new_netmask}',
+                        orient=Qt.Horizontal,
+                        isClosable=True,
+                        position=InfoBarPosition.TOP,
+                        duration=2000,
+                        parent=self
+                    )
+                    logger.info(f"子网掩码设置成功: {new_netmask}")
+                    # 注意：ConfigManager更新将在保存参数成功后进行
+                else:
+                    InfoBar.error(
+                        title='设置失败',
+                        content='子网掩码设置失败，请检查通信',
+                        orient=Qt.Horizontal,
+                        isClosable=True,
+                        position=InfoBarPosition.TOP,
+                        duration=2000,
+                        parent=self
+                    )
+                    logger.warning("子网掩码设置失败")
+
+        except Exception as e:
+            logger.error(f"设置子网掩码错误: {e}")
+
     def _validate_ip(self, ip_str: str) -> bool:
         """验证IP地址格式"""
         try:
@@ -250,7 +316,8 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
         except (ValueError, AttributeError):
             return False
 
-    def _set_device_name(self):
+    @asyncSlot()
+    async def _set_device_name(self):
         """设置设备名称"""
         try:
             # 获取当前UID
@@ -265,8 +332,8 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
                     title = "确认设置设备名称"
                     content = f"设备名称将从 '{current_name}' 设置为 '{device_name}'\n\n确认后将立即保存到配置文件！"
 
-                    box = MessageBox(title, content, self)
-                    if box.exec():
+                    confirmed = await async_confirm(title, content, self)
+                    if confirmed:
                         self.cfg.set_device_name(uid, device_name)
                         self.label_device_name.setText(device_name)
 
@@ -317,8 +384,8 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
             title = "确认设置端口配置"
             content = f"本机端口将从 {current_pc_port} 设置为 {pc_port}\n设备端口将从 {current_device_port} 设置为 {device_port}\n\n确认后将立即发送设置命令！"
 
-            box = MessageBox(title, content, self)
-            if box.exec():
+            confirmed = await async_confirm(title, content, self)
+            if confirmed:
                 # 按照下位机格式：高16位为设备端口，低16位为本机端口
                 port_config = ((device_port & 0xFFFF) << 16) | (pc_port & 0xFFFF)
                 target_addr = (self.cfg.target_host, self.cfg.target_port)
@@ -337,6 +404,7 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
                         parent=self
                     )
                     logger.info(f"端口配置设置成功: PC端口{pc_port}, 设备端口{device_port}")
+                    # 注意：ConfigManager更新将在保存参数成功后进行
                 else:
                     InfoBar.error(
                         title='设置失败',
@@ -375,6 +443,9 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
                     parent=self
                 )
                 logger.info("网络参数保存成功")
+
+                # 保存成功后更新ConfigManager中的网络参数
+                self._update_config_after_save()
             else:
                 InfoBar.error(
                     title='保存失败',
@@ -390,14 +461,48 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
         except Exception as e:
             logger.error(f"保存网络参数错误: {e}")
 
-    def _confirm_save_param(self):
+    def _update_config_after_save(self):
+        """保存参数成功后更新ConfigManager中的网络参数"""
+        try:
+            # 获取当前显示的网络参数
+            pc_ip = self.label_pc_ip.text()
+            device_ip = self.label_device_ip.text()
+            netmask = self.label_device_ip_mask.text()
+            pc_port = self.label_pc_port.text()
+            device_port = self.label_device_port.text()
+
+            # 更新ConfigManager
+            if pc_ip and self._validate_ip(pc_ip):
+                self.cfg.set('network.pc_ip', pc_ip)
+
+            if device_ip and self._validate_ip(device_ip):
+                self.cfg.set('network.device_ip', device_ip)
+
+            if netmask and self._validate_ip(netmask):
+                self.cfg.set('network.netmask', netmask)
+
+            if pc_port.isdigit():
+                self.cfg.set('network.pc_port', int(pc_port))
+
+            if device_port.isdigit():
+                self.cfg.set('network.device_port', int(device_port))
+
+            # 保存配置文件
+            self.cfg.save()
+            logger.info("网络参数已更新到ConfigManager")
+
+        except Exception as e:
+            logger.error(f"更新ConfigManager失败: {e}")
+
+    @asyncSlot()
+    async def _confirm_save_param(self):
         """确认保存参数"""
         title = "确认保存网络参数"
         content = "即将把所有当前网络参数写入设备 Flash 永久保存，请确认是否继续？"
 
-        box = MessageBox(title, content, self)
-        if box.exec():
-            self.save_param_cmd()
+        confirmed = await async_confirm(title, content, self)
+        if confirmed:
+            await self.save_param_cmd()
 
     @asyncSlot(SysREGsUpData)
     async def on_on_sys_regs_uploaded(self, sys_regs_up_data: SysREGsUpData):
@@ -414,9 +519,9 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
                 device_name = self.cfg.get_device_name(uid)
                 self.label_device_name.setText(device_name)
 
-                # 本机IP (寄存器5)
-                pc_ip = uint32_to_ipv4(sys_regs_up_data.reg[5])
-                self.label_pc_ip.setText(pc_ip)
+                # 设备IP (寄存器1)
+                device_ip = uint32_to_ipv4(sys_regs_up_data.reg[1])
+                self.label_device_ip.setText(device_ip)
 
                 # 网关IP (寄存器2)
                 # gateway_ip = uint32_to_ipv4(sys_regs_up_data.reg[2])
@@ -430,9 +535,9 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
                 mac_str = uint32_to_mac(mac_low)
                 self.label_device_mac_addr.setText(mac_str)
 
-                # 设备IP (寄存器5)
-                device_ip = uint32_to_ipv4(sys_regs_up_data.reg[5])
-                self.label_device_ip.setText(device_ip)
+                # PC IP (寄存器5)
+                pc_ip = uint32_to_ipv4(sys_regs_up_data.reg[5])
+                self.label_pc_ip.setText(pc_ip)
 
                 # 端口配置 (寄存器6)
                 port_config = sys_regs_up_data.reg[6]
@@ -443,6 +548,9 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
                 self.label_device_port.setText(str(device_port))
 
                 # logger.info(f"网络参数已更新: UID={uid_str}, PC_IP={pc_ip}, Device_IP={device_ip}, PC_Port={pc_port}, Device_Port={device_port}")
+
+                # 发射设备信息更新信号给主窗口
+                self.device_info_updated.emit(device_name, uid_str, device_ip, pc_port, device_port)
 
         except Exception as e:
             logger.error(f"处理网络参数数据错误: {e}")

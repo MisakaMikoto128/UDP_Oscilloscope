@@ -27,7 +27,7 @@
     {
       "name": "CH1",
       "alias": "Ia",
-      "enabled": false,
+      "enabled": true,
       "color": "#edff23",
       "vertical_scale": 1.22,
       "vertical_offset": 0.0,

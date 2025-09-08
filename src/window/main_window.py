@@ -115,6 +115,8 @@ class MainWindow(FluentWindow):
 
         self.interface3 = NetworkSettingFrom(cfg, None, self.receiver.reg_set, self)
         self.receiver.on_sys_regs_upload.connect(self.interface3.on_on_sys_regs_uploaded)
+        # 连接设备信息更新信号
+        self.interface3.device_info_updated.connect(self.update_window_title)
 
         # 初始化界面
         self.initNavigation()
@@ -150,6 +152,22 @@ class MainWindow(FluentWindow):
         self.setWindowIcon(QIcon("./img/star.png"))
 
         self.showMaximized()
+
+    def update_window_title(self, device_name: str, uid: str, device_ip: str, pc_port: int, device_port: int):
+        """更新窗口标题显示设备信息"""
+        try:
+            # 构建美观的标题
+            base_title = "卡方-电机控制器上位机"
+            device_info = f"{device_name} ({uid}) | 设备IP: {device_ip} | PC端口: {pc_port} | 设备端口: {device_port}"
+            full_title = f"{base_title} - {device_info}"
+
+            self.setWindowTitle(full_title)
+            logger.info(f"窗口标题已更新: {device_info}")
+
+        except Exception as e:
+            logger.error(f"更新窗口标题失败: {e}")
+            # 如果更新失败，至少保持基本标题
+            self.setWindowTitle("卡方-电机控制器上位机")
 
     def _init_performance_monitor(self):
         """初始化性能监控"""

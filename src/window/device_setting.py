@@ -5,7 +5,7 @@ from typing import Callable, List, Awaitable
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QTableWidgetItem
 from qasync import asyncSlot
-from qfluentwidgets import MessageBox
+from src.ui.async_message_box import async_confirm
 from qfluentwidgets import (
     InfoBarIcon,
     InfoBar,
@@ -315,7 +315,8 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             logger.error(f"同步PID参数到spinbox失败: {e}")
 
 
-    def _confirm_and_set_pid(self, reg_addr: int, new_value: float, param_name: str):
+    @asyncSlot()
+    async def _confirm_and_set_pid(self, reg_addr: int, new_value: float, param_name: str):
         """
         弹出确认框，确认后真正发送 PID 设置指令
         :param reg_addr: 寄存器地址
@@ -325,18 +326,19 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         title = "确认设置 PID 参数"
         content = f"{param_name} 参数将要从当前值设置为 {new_value:.5f}，请确认是否正确。\n确认后将立即发送设置命令！"
 
-        box = MessageBox(title, content, self)
-        if box.exec():
+        confirmed = await async_confirm(title, content, self)
+        if confirmed:
             # 用户点击“确认”
-            self._set_pid_param(reg_addr, new_value, param_name)
+            await self._set_pid_param(reg_addr, new_value, param_name)
 
-    def _confirm_save_param(self):
+    @asyncSlot()
+    async def _confirm_save_param(self):
         title = "确认保存参数"
         content = "即将把所有当前参数写入设备 Flash 永久保存，请确认是否继续？"
 
-        box = MessageBox(title, content, self)
-        if box.exec():
-            self.save_param_cmd()
+        confirmed = await async_confirm(title, content, self)
+        if confirmed:
+            await self.save_param_cmd()
 
     def closeEvent(self, event):
         """窗口关闭事件"""
