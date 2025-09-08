@@ -106,7 +106,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         """初始化通道控制界面"""
         # 填充通道列表，优先显示别名
         ch_defs = self.cfg.channel_defs
-        channel_items = [c.get("alias", c["name"]) for c in ch_defs]
+        channel_items = [f"{c['name']}:{c.get('alias', c['name'])}" for c in ch_defs]
         self.ch_setting_comboBox.addItems(channel_items)
 
         # 创建通道配置组件
