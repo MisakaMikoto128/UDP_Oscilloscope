@@ -495,7 +495,7 @@
        </widget>
       </item>
       <item row="4" column="3">
-       <widget class="ToolButton" name="btn_vbus_ref_2">
+       <widget class="ToolButton" name="btn_device_ip_mask_set">
         <property name="minimumSize">
          <size>
           <width>44</width>
@@ -581,7 +581,7 @@
        </widget>
       </item>
       <item row="5" column="3">
-       <widget class="ToolButton" name="btn_vbus_ref_3">
+       <widget class="ToolButton" name="btn_device_name_set">
         <property name="minimumSize">
          <size>
           <width>44</width>
