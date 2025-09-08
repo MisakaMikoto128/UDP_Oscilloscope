@@ -83,6 +83,9 @@
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
         </property>
+        <property name="textInteractionFlags">
+         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+        </property>
        </widget>
       </item>
       <item row="0" column="3">
@@ -178,6 +181,9 @@
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
         </property>
+        <property name="textInteractionFlags">
+         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+        </property>
        </widget>
       </item>
       <item row="1" column="3">
@@ -267,6 +273,9 @@
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
         </property>
+        <property name="textInteractionFlags">
+         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
+        </property>
        </widget>
       </item>
       <item row="2" column="3">
@@ -352,6 +361,9 @@
         </property>
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="textInteractionFlags">
+         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
         </property>
        </widget>
       </item>
@@ -441,6 +453,9 @@
         </property>
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="textInteractionFlags">
+         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
         </property>
        </widget>
       </item>
@@ -608,11 +623,26 @@
           <height>0</height>
          </size>
         </property>
+        <property name="frameShape">
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
+        </property>
         <property name="text">
          <string>0x12345678</string>
         </property>
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="indent">
+         <number>-1</number>
+        </property>
+        <property name="openExternalLinks">
+         <bool>false</bool>
+        </property>
+        <property name="textInteractionFlags">
+         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
         </property>
        </widget>
       </item>
@@ -695,6 +725,9 @@
         </property>
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="textInteractionFlags">
+         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByMouse</set>
         </property>
        </widget>
       </item>
