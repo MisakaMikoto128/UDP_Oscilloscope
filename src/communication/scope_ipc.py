@@ -24,15 +24,17 @@ class SampleData:
 
 class ScopeDataSender:
     """示波器数据发送器（主进程端）"""
-    
-    def __init__(self, data_queue: mp.Queue):
+
+    def __init__(self, data_queue: mp.Queue, command_queue: mp.Queue = None):
         """
         初始化数据发送器
-        
+
         Args:
             data_queue: 数据传输队列
+            command_queue: 命令传输队列
         """
         self.data_queue = data_queue
+        self.command_queue = command_queue
         self.sent_count = 0
         self.drop_count = 0
         
@@ -68,7 +70,30 @@ class ScopeDataSender:
         except Exception as e:
             logger.error(f"发送采样数据失败: {e}")
             return False
-    
+
+    def send_command(self, command: dict) -> bool:
+        """
+        发送命令到示波器进程
+
+        Args:
+            command: 命令字典
+
+        Returns:
+            是否发送成功
+        """
+        if not self.command_queue:
+            return False
+
+        try:
+            self.command_queue.put_nowait(command)
+            return True
+        except queue.Full:
+            # 静默丢弃命令，避免日志循环
+            return False
+        except Exception as e:
+            logger.error(f"发送命令失败: {e}")
+            return False
+
     def get_stats(self) -> dict:
         """获取发送统计"""
         return {
@@ -159,13 +184,15 @@ class ScopeIPC:
         """
         # 创建高性能数据队列
         self.data_queue = mp.Queue(maxsize=queue_size)
-        
+        # 创建命令队列
+        self.command_queue = mp.Queue(maxsize=100)  # 命令队列较小即可
+
         # 进程控制事件
         self.shutdown_event = mp.Event()
         self.scope_ready_event = mp.Event()
-        
+
         # 创建发送器和接收器
-        self.sender = ScopeDataSender(self.data_queue)
+        self.sender = ScopeDataSender(self.data_queue, self.command_queue)
         self.receiver = ScopeDataReceiver(self.data_queue)
         
         logger.info(f"示波器IPC管理器初始化完成，队列大小: {queue_size}")
@@ -177,6 +204,14 @@ class ScopeIPC:
     def get_receiver(self) -> ScopeDataReceiver:
         """获取数据接收器（示波器进程使用）"""
         return self.receiver
+
+    def send_scope_command(self, command: dict) -> bool:
+        """发送命令到示波器进程"""
+        return self.sender.send_command(command)
+
+    def get_command_queue(self):
+        """获取命令队列（示波器进程使用）"""
+        return self.command_queue
     
     def signal_shutdown(self):
         """发送关闭信号"""
