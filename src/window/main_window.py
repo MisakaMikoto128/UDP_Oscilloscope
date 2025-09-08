@@ -61,12 +61,25 @@ def _run_scope_process(scope_ipc):
 
         # 创建示波器窗口（仅IPC模式）
         scope_frame = OscilloscopeFrame(scope_ipc)
+
+        # 设置窗口关闭事件为隐藏而非退出
+        def on_close_event(event):
+            scope_frame.hide()  # 隐藏窗口
+            # 通过命令队列发送预览模式命令
+            try:
+                command_queue = scope_ipc.get_command_queue()
+                command_queue.put_nowait({'action': 'set_preview_mode'})
+            except Exception:
+                pass  # 队列满时忽略
+            event.ignore()  # 忽略关闭事件
+
+        scope_frame.closeEvent = on_close_event
         scope_frame.show()
 
         logger.info("示波器进程启动完成")
 
         # 运行Qt事件循环
-        sys.exit(app.exec_())
+        app.exec_()
 
     except Exception as e:
         logger.error(f"示波器进程运行失败: {e}")
@@ -92,6 +105,7 @@ class MainWindow(FluentWindow):
 
         # 示波器进程
         self.scope_process = None
+        self.scope_window_visible = True  # 示波器窗口可见状态
 
         # 添加一个退出菜单项
         exitAction = QAction(QIcon("./img/sp-exit.png"), "Exit", self)
@@ -162,6 +176,15 @@ class MainWindow(FluentWindow):
             full_title = f"{base_title} - {device_info}"
 
             self.setWindowTitle(full_title)
+
+            # 同时更新示波器窗口标题
+            if self.scope_process and self.scope_process.is_alive():
+                scope_title = f"示波器 - {device_info}"
+                self.scope_ipc.send_scope_command({
+                    'action': 'update_title',
+                    'title': scope_title
+                })
+
             # logger.info(f"窗口标题已更新: {device_info}")
 
         except Exception as e:
@@ -254,6 +277,38 @@ class MainWindow(FluentWindow):
             logger.info("UDP接收器已停止")
         except Exception as e:
             logger.error(f"停止UDP接收器失败: {e}")
+
+    def show_scope_window(self):
+        """显示示波器窗口"""
+        try:
+            if self.scope_process and self.scope_process.is_alive():
+                self.scope_ipc.send_scope_command({'action': 'show_window'})
+                self.scope_window_visible = True
+                logger.info("示波器窗口已显示")
+            else:
+                logger.warning("示波器进程未运行，无法显示窗口")
+        except Exception as e:
+            logger.error(f"显示示波器窗口失败: {e}")
+
+    def hide_scope_window(self):
+        """隐藏示波器窗口"""
+        try:
+            if self.scope_process and self.scope_process.is_alive():
+                self.scope_ipc.send_scope_command({'action': 'hide_window'})
+                self.scope_ipc.send_scope_command({'action': 'set_preview_mode'})  # 设置为预览模式减少GPU占用
+                self.scope_window_visible = False
+                logger.info("示波器窗口已隐藏并切换到预览模式")
+            else:
+                logger.warning("示波器进程未运行，无法隐藏窗口")
+        except Exception as e:
+            logger.error(f"隐藏示波器窗口失败: {e}")
+
+    def toggle_scope_window(self):
+        """切换示波器窗口显示/隐藏状态"""
+        if self.scope_window_visible:
+            self.hide_scope_window()
+        else:
+            self.show_scope_window()
 
     def stop_scope_process(self):
         """停止示波器进程"""

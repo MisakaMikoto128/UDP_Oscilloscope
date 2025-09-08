@@ -5,7 +5,8 @@ from typing import List
 
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore, QtGui
-
+from PyQt5.QtCore import QTimer
+import os
 from ..config.scope_config_manager import ScopeConfigManager
 from ..data.data_buffer import RingBuffer
 from ..ui import Ui_Form
@@ -295,14 +296,72 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
                 # 处理接收到的采样数据
                 self.on_sample_received(sample.packet_type, sample.channels)
 
+            # 处理命令队列
+            self._process_commands()
+
         except Exception as e:
             logger.error(f"接收IPC数据失败: {e}")
+
+    def _process_commands(self):
+        """处理来自主进程的命令"""
+        if not self.scope_ipc:
+            return
+
+        try:
+            command_queue = self.scope_ipc.get_command_queue()
+            while True:
+                try:
+                    command = command_queue.get_nowait()
+                    self._handle_command(command)
+                except Exception:
+                    break  # 队列为空
+        except Exception as e:
+            logger.error(f"处理命令失败: {e}")
+
+    def _handle_command(self, command: dict):
+        """处理单个命令"""
+        try:
+            action = command.get('action')
+
+            if action == 'show_window':
+                self.show()
+                self.raise_()
+                self.activateWindow()
+
+            elif action == 'hide_window':
+                self.hide()
+
+            elif action == 'update_title':
+                title = command.get('title', '示波器')
+                self.setWindowTitle(title)
+
+            elif action == 'set_preview_mode':
+                # 设置为预览模式，减少GPU占用
+                # 这里可以添加具体的预览模式逻辑
+                logger.info("示波器切换到预览模式")
+
+            else:
+                logger.warning(f"未知命令: {action}")
+
+        except Exception as e:
+            logger.error(f"处理命令失败: {e}")
 
     def _check_shutdown_signal(self):
         """检查关闭信号"""
         if self.scope_ipc and self.scope_ipc.is_shutdown_requested():
             logger.info("收到关闭信号，示波器进程即将退出")
-            self.close()
+            # 停止所有定时器，避免循环调用
+            if hasattr(self, '_shutdown_timer'):
+                self._shutdown_timer.stop()
+            if hasattr(self, '_ipc_timer'):
+                self._ipc_timer.stop()
+            if hasattr(self, '_stats_timer'):
+                self._stats_timer.stop()
+
+            # 退出应用程序
+            from PyQt5.QtWidgets import QApplication
+            QApplication.instance().quit()
+            QTimer.singleShot(1000, lambda: os._exit(0))  # 1秒后强制退出
 
     def _connect_signals(self):
         """连接信号槽"""
