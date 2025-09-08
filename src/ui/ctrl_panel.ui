@@ -820,6 +820,25 @@
          </widget>
         </item>
         <item>
+         <widget class="SubtitleLabel" name="SubtitleLabel_3">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>rpm</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="DoubleSpinBox" name="spinbox_speed">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -897,26 +916,7 @@
            </font>
           </property>
           <property name="text">
-           <string>设置</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="SubtitleLabel" name="SubtitleLabel_3">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="text">
-           <string>rpm</string>
+           <string>设置转速</string>
           </property>
          </widget>
         </item>
@@ -982,7 +982,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>          </string>
+            <string/>
            </property>
            <property name="textFormat">
             <enum>Qt::MarkdownText</enum>
@@ -1014,7 +1014,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>          </string>
+            <string/>
            </property>
            <property name="textFormat">
             <enum>Qt::MarkdownText</enum>
@@ -1046,7 +1046,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>                                             </string>
+            <string/>
            </property>
            <property name="textFormat">
             <enum>Qt::MarkdownText</enum>
@@ -1078,7 +1078,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>          </string>
+            <string/>
            </property>
            <property name="textFormat">
             <enum>Qt::MarkdownText</enum>
@@ -1110,7 +1110,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>                 </string>
+            <string/>
            </property>
            <property name="textFormat">
             <enum>Qt::MarkdownText</enum>
