@@ -338,6 +338,7 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
             elif action == 'set_preview_mode':
                 # 设置为预览模式，减少GPU占用
                 # 这里可以添加具体的预览模式逻辑
+                self.sw_mode.setChecked(True)
                 logger.info("示波器切换到预览模式")
 
             else:
