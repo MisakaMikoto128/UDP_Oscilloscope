@@ -673,7 +673,7 @@
        </widget>
       </item>
       <item row="6" column="3">
-       <widget class="SwitchButton" name="sw_btn_ctrl_mode_select_2">
+       <widget class="SwitchButton" name="sw_btn_upgrade_mode_select">
         <property name="text">
          <string>正常模式</string>
         </property>
