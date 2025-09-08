@@ -27,7 +27,17 @@
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="DoubleSpinBox" name="hori_div_spinbox"/>
+         <widget class="DoubleSpinBox" name="hori_div_spinbox">
+          <property name="mouseTracking">
+           <bool>false</bool>
+          </property>
+          <property name="focusPolicy">
+           <enum>Qt::WheelFocus</enum>
+          </property>
+          <property name="keyboardTracking">
+           <bool>true</bool>
+          </property>
+         </widget>
         </item>
         <item row="0" column="0">
          <widget class="CaptionLabel" name="CaptionLabel">
