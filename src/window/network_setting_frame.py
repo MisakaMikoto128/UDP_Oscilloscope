@@ -33,7 +33,7 @@ def ipv4_to_uint32(ip_str: str) -> int:
 
 def uint32_to_mac(value: int) -> str:
     """将32位无符号整数转换为MAC地址字符串（低4字节）"""
-    return f"{(value >> 24) & 0xFF:02X}:{(value >> 16) & 0xFF:02X}:{(value >> 8) & 0xFF:02X}:{value & 0xFF:02X}:XX:XX"
+    return f"00:08:{(value >> 24) & 0xFF:02X}:{(value >> 16) & 0xFF:02X}:{(value >> 8) & 0xFF:02X}:{value & 0xFF:02X}"
 
 
 class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
@@ -72,9 +72,50 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
         
         # 设备端口设置按钮（与本机端口绑定设置）
         self.btn_device_port_set.clicked.connect(self._set_port_config)
+
+        # 设备名称设置按钮
+        self.btn_device_name_set.clicked.connect(self._set_device_name)
         
-        # 设备名称输入框变化时保存
-        self.line_edit_device_name.textChanged.connect(self._on_device_name_changed)
+        # 连接双击label事件
+        self._connect_label_double_click()
+
+    def _connect_label_double_click(self):
+        """连接label双击事件"""
+        # 双击label同步值到对应的输入控件
+        self.label_pc_ip.mouseDoubleClickEvent = lambda _: self._sync_label_to_input('pc_ip')
+        self.label_pc_port.mouseDoubleClickEvent = lambda _: self._sync_label_to_input('pc_port')
+        self.label_device_ip.mouseDoubleClickEvent = lambda _: self._sync_label_to_input('device_ip')
+        self.label_device_port.mouseDoubleClickEvent = lambda _: self._sync_label_to_input('device_port')
+        self.label_device_name.mouseDoubleClickEvent = lambda _: self._sync_label_to_input('device_name')
+        self.label_device_ip_mask.mouseDoubleClickEvent = lambda _: self._sync_label_to_input('device_ip_mask')
+
+    def _sync_label_to_input(self, field_type: str):
+        """将label的值同步到对应的输入控件"""
+        try:
+            if field_type == 'pc_ip':
+                self.line_edit_pc_ip.setText(self.label_pc_ip.text())
+            elif field_type == 'pc_port':
+                try:
+                    port_value = int(self.label_pc_port.text())
+                    self.spinbox_pc_port.setValue(port_value)
+                except ValueError:
+                    pass
+            elif field_type == 'device_ip':
+                self.line_edit_device_ip.setText(self.label_device_ip.text())
+            elif field_type == 'device_port':
+                try:
+                    port_value = int(self.label_device_port.text())
+                    self.spinbox_device_port.setValue(port_value)
+                except ValueError:
+                    pass
+            elif field_type == 'device_name':
+                self.line_edit_device_name.setText(self.label_device_name.text())
+            elif field_type == 'device_ip_mask':
+                self.line_edit_device_ip_mask.setText(self.label_device_ip_mask.text())
+
+            logger.info(f"已同步{field_type}的值到输入控件")
+        except Exception as e:
+            logger.error(f"同步{field_type}值到输入控件失败: {e}")
 
     @asyncSlot()
     async def _set_pc_ip(self):
@@ -98,7 +139,7 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
             
             # 确认对话框
             title = "确认设置本机IP地址"
-            content = f"本机IP地址将从 {current_ip} 设置为 {new_ip}\n设备IP地址将从 {self.label_device_ip.text()} 设置为 {new_ip}\n\n确认后将立即发送设置命令！"
+            content = f"本机IP地址将从 {current_ip} 设置为 {new_ip}\n\n确认后将立即发送设置命令！"
             
             box = MessageBox(title, content, self)
             if box.exec():
@@ -106,35 +147,36 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
                 ip_uint32 = ipv4_to_uint32(new_ip)
                 target_addr = (self.cfg.target_host, self.cfg.target_port)
                 
-                # 设置本机IP (寄存器地址1) 和目标IP (寄存器地址5)
-                success1 = await self.device_reg_set_func(1, [ip_uint32], target_addr=target_addr)
+                # 设置PC IP 和 网关IP
+                success1 = await self.device_reg_set_func(2, [ip_uint32], target_addr=target_addr)
                 success2 = await self.device_reg_set_func(5, [ip_uint32], target_addr=target_addr)
                 
                 if success1 and success2:
+                    # self.cfg.set_pc_ip(new_ip)
                     InfoBar.success(
                         title='设置成功',
-                        content=f'本机IP和设备IP已设置为 {new_ip}',
+                        content=f'PC IP和网关IP已设置为 {new_ip}，保存参数重启设备后生效。',
                         orient=Qt.Horizontal,
                         isClosable=True,
                         position=InfoBarPosition.TOP,
                         duration=2000,
                         parent=self
                     )
-                    logger.info(f"IP地址设置成功: {new_ip}")
+                    logger.info(f"PC IP和网关IP设置成功: {new_ip}")
                 else:
                     InfoBar.error(
                         title='设置失败',
-                        content='IP地址设置失败，请检查通信',
+                        content='PC IP和网关IP设置失败，请检查通信',
                         orient=Qt.Horizontal,
                         isClosable=True,
                         position=InfoBarPosition.TOP,
                         duration=2000,
                         parent=self
                     )
-                    logger.warning("IP地址设置失败")
+                    logger.warning("PC IP和网关IP设置失败")
         
         except Exception as e:
-            logger.error(f"设置IP地址错误: {e}")
+            logger.error(f"设置PC IP和网关IP地址错误: {e}")
 
     @asyncSlot()
     async def _set_device_ip(self):
@@ -155,11 +197,10 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
             
             # 获取当前IP用于确认对话框
             current_device_ip = self.label_device_ip.text()
-            current_pc_ip = self.label_pc_ip.text()
             
             # 确认对话框
             title = "确认设置设备IP地址"
-            content = f"本机IP地址将从 {current_pc_ip} 设置为 {new_ip}\n设备IP地址将从 {current_device_ip} 设置为 {new_ip}\n\n确认后将立即发送设置命令！"
+            content = f"设备IP地址将从 {current_device_ip} 设置为 {new_ip}\n\n确认后将立即发送设置命令！"
             
             box = MessageBox(title, content, self)
             if box.exec():
@@ -167,35 +208,34 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
                 ip_uint32 = ipv4_to_uint32(new_ip)
                 target_addr = (self.cfg.target_host, self.cfg.target_port)
                 
-                # 设置本机IP (寄存器地址1) 和目标IP (寄存器地址5)
-                success1 = await self.device_reg_set_func(1, [ip_uint32], target_addr=target_addr)
-                success2 = await self.device_reg_set_func(5, [ip_uint32], target_addr=target_addr)
+                # 设置设备IP
+                success = await self.device_reg_set_func(1, [ip_uint32], target_addr=target_addr)
                 
-                if success1 and success2:
+                if success:
                     InfoBar.success(
                         title='设置成功',
-                        content=f'本机IP和设备IP已设置为 {new_ip}',
+                        content=f'设备IP已设置为 {new_ip}',
                         orient=Qt.Horizontal,
                         isClosable=True,
                         position=InfoBarPosition.TOP,
                         duration=2000,
                         parent=self
                     )
-                    logger.info(f"IP地址设置成功: {new_ip}")
+                    logger.info(f"设备IP地址设置成功: {new_ip}")
                 else:
                     InfoBar.error(
                         title='设置失败',
-                        content='IP地址设置失败，请检查通信',
+                        content='设备IP地址设置失败，请检查通信',
                         orient=Qt.Horizontal,
                         isClosable=True,
                         position=InfoBarPosition.TOP,
                         duration=2000,
                         parent=self
                     )
-                    logger.warning("IP地址设置失败")
+                    logger.warning("设备IP地址设置失败")
         
         except Exception as e:
-            logger.error(f"设置IP地址错误: {e}")
+            logger.error(f"设置设备IP地址错误: {e}")
 
     def _validate_ip(self, ip_str: str) -> bool:
         """验证IP地址格式"""
@@ -207,8 +247,60 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
                 if not (0 <= int(part) <= 255):
                     return False
             return True
-        except:
+        except (ValueError, AttributeError):
             return False
+
+    def _set_device_name(self):
+        """设置设备名称"""
+        try:
+            # 获取当前UID
+            uid_text = self.label_device_uid.text()
+            if uid_text.startswith("0x"):
+                uid = int(uid_text, 16)
+                device_name = self.line_edit_device_name.text().strip()
+                current_name = self.label_device_name.text()
+
+                if device_name and device_name != current_name:
+                    # 确认对话框
+                    title = "确认设置设备名称"
+                    content = f"设备名称将从 '{current_name}' 设置为 '{device_name}'\n\n确认后将立即保存到配置文件！"
+
+                    box = MessageBox(title, content, self)
+                    if box.exec():
+                        self.cfg.set_device_name(uid, device_name)
+                        self.label_device_name.setText(device_name)
+
+                        InfoBar.success(
+                            title='设置成功',
+                            content=f'设备名称已设置为 {device_name}',
+                            orient=Qt.Horizontal,
+                            isClosable=True,
+                            position=InfoBarPosition.TOP,
+                            duration=2000,
+                            parent=self
+                        )
+                        logger.info(f"设备名称已更新: UID {uid_text} -> {device_name}")
+                else:
+                    InfoBar.warning(
+                        title='无需设置',
+                        content='设备名称未发生变化',
+                        orient=Qt.Horizontal,
+                        isClosable=True,
+                        position=InfoBarPosition.TOP,
+                        duration=2000,
+                        parent=self
+                    )
+        except Exception as e:
+            logger.error(f"设置设备名称错误: {e}")
+            InfoBar.error(
+                title='设置失败',
+                content='设备名称设置失败',
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=2000,
+                parent=self
+            )
 
     @asyncSlot()
     async def _set_port_config(self):
@@ -259,20 +351,6 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
 
         except Exception as e:
             logger.error(f"设置端口配置错误: {e}")
-
-    def _on_device_name_changed(self):
-        """设备名称变化时保存到配置"""
-        try:
-            # 获取当前UID
-            uid_text = self.label_device_uid.text()
-            if uid_text.startswith("0x"):
-                uid = int(uid_text, 16)
-                device_name = self.line_edit_device_name.text().strip()
-                if device_name:
-                    self.cfg.set_device_name(uid, device_name)
-                    logger.info(f"设备名称已更新: UID {uid_text} -> {device_name}")
-        except Exception as e:
-            logger.error(f"保存设备名称错误: {e}")
 
     @asyncSlot()
     async def save_param_cmd(self):
@@ -335,31 +413,26 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
                 # 获取设备名称
                 device_name = self.cfg.get_device_name(uid)
                 self.label_device_name.setText(device_name)
-                self.line_edit_device_name.setText(device_name)
 
-                # 本机IP (寄存器1)
-                pc_ip = uint32_to_ipv4(sys_regs_up_data.reg[1])
+                # 本机IP (寄存器5)
+                pc_ip = uint32_to_ipv4(sys_regs_up_data.reg[5])
                 self.label_pc_ip.setText(pc_ip)
-                self.line_edit_pc_ip.setText(pc_ip)
 
                 # 网关IP (寄存器2)
                 # gateway_ip = uint32_to_ipv4(sys_regs_up_data.reg[2])
 
                 # 子网掩码 (寄存器3)
                 netmask = uint32_to_ipv4(sys_regs_up_data.reg[3])
-                self.label_pc_ip_2.setText(netmask)
-                self.line_edit_device_ip_mask.setText(netmask)
+                self.label_device_ip_mask.setText(netmask)
 
                 # MAC地址低4字节 (寄存器4)
                 mac_low = sys_regs_up_data.reg[4]
                 mac_str = uint32_to_mac(mac_low)
-                # 假设有MAC地址显示的label
-                # self.label_device_mac.setText(mac_str)
+                self.label_device_mac_addr.setText(mac_str)
 
                 # 设备IP (寄存器5)
                 device_ip = uint32_to_ipv4(sys_regs_up_data.reg[5])
                 self.label_device_ip.setText(device_ip)
-                self.line_edit_device_ip.setText(device_ip)
 
                 # 端口配置 (寄存器6)
                 port_config = sys_regs_up_data.reg[6]
@@ -367,11 +440,9 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
                 pc_port = port_config & 0xFFFF
 
                 self.label_pc_port.setText(str(pc_port))
-                self.spinbox_pc_port.setValue(pc_port)
                 self.label_device_port.setText(str(device_port))
-                self.spinbox_device_port.setValue(device_port)
 
-                logger.info(f"网络参数已更新: UID={uid_str}, PC_IP={pc_ip}, Device_IP={device_ip}, PC_Port={pc_port}, Device_Port={device_port}")
+                # logger.info(f"网络参数已更新: UID={uid_str}, PC_IP={pc_ip}, Device_IP={device_ip}, PC_Port={pc_port}, Device_Port={device_port}")
 
         except Exception as e:
             logger.error(f"处理网络参数数据错误: {e}")
