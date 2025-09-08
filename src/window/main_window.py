@@ -22,6 +22,7 @@ from qfluentwidgets import (
 import time
 from .ctrl_panel_frame import CtrlPanelForm
 from .device_setting import DeviceSettingFrom
+from .network_setting_frame import NetworkSettingFrom
 from .oscilloscope_frame import OscilloscopeFrame
 from ..communication.udp_master import UDPMaster
 from ..communication.scope_ipc import create_scope_ipc
@@ -112,6 +113,9 @@ class MainWindow(FluentWindow):
         self.interface2 = DeviceSettingFrom(cfg, None, self.receiver.reg_set, self)
         self.receiver.on_sys_regs_upload.connect(self.interface2.on_on_sys_regs_uploaded)
 
+        self.interface3 = NetworkSettingFrom(cfg, None, self.receiver.reg_set, self)
+        self.receiver.on_sys_regs_upload.connect(self.interface3.on_on_sys_regs_uploaded)
+
         # 初始化界面
         self.initNavigation()
         self.initWindow()
@@ -126,6 +130,7 @@ class MainWindow(FluentWindow):
     def initNavigation(self):
         self.addSubInterface(self.interface1, FIF.GAME, "监控界面")
         self.addSubInterface(self.interface2, FIF.SAVE, "设备设置")
+        self.addSubInterface(self.interface3, FIF.WIFI, "网络设置")
         
         self.switchTo(self.interface1)
         # Theme切换按钮

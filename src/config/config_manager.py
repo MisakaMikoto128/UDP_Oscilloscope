@@ -197,3 +197,31 @@ class ConfigManager:
     def opengl_enabled(self) -> bool:
         """是否启用OpenGL"""
         return self.get('display.opengl_enabled', True)
+
+    def get_device_name(self, uid: int) -> str:
+        """
+        根据UID获取设备名称
+
+        Args:
+            uid: 设备UID
+
+        Returns:
+            设备名称
+        """
+        device_names = self.get('device_names', {})
+        uid_str = f"0x{uid:08X}"
+        return device_names.get(uid_str, f"设备_{uid_str}")
+
+    def set_device_name(self, uid: int, name: str):
+        """
+        设置设备名称
+
+        Args:
+            uid: 设备UID
+            name: 设备名称
+        """
+        uid_str = f"0x{uid:08X}"
+        device_names = self.get('device_names', {})
+        device_names[uid_str] = name
+        self.set('device_names', device_names)
+        self.save()
