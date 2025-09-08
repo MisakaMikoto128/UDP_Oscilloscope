@@ -58,6 +58,19 @@
        </widget>
       </item>
       <item>
+       <widget class="LineEdit" name="line_edit_save_file_name">
+        <property name="inputMask">
+         <string/>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="placeholderText">
+         <string>录波文件前缀，可选填</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="RadioButton" name="radiobtn_recording_wave_enable">
         <property name="text">
          <string>录波使能</string>
@@ -110,66 +123,28 @@
        </widget>
       </item>
       <item>
-       <widget class="QTabWidget" name="ch_ctrl_widget">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
+       <widget class="ScrollArea" name="ch_scroll_area_contents">
+        <property name="frameShape">
+         <enum>QFrame::NoFrame</enum>
         </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
         </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>16777215</height>
-         </size>
+        <property name="widgetResizable">
+         <bool>true</bool>
         </property>
-        <property name="font">
-         <font>
-          <family>Times New Roman</family>
-          <pointsize>12</pointsize>
-         </font>
-        </property>
-        <property name="currentIndex">
-         <number>0</number>
-        </property>
-        <widget class="QWidget" name="tab_ch">
-         <attribute name="title">
-          <string>CH1</string>
-         </attribute>
-         <layout class="QGridLayout" name="gridLayout_5">
+        <widget class="QWidget" name="scrollAreaWidgetContents">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>280</width>
+           <height>241</height>
+          </rect>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_4">
           <item row="0" column="0">
-           <widget class="ScrollArea" name="ch_scroll_area_contents">
-            <property name="frameShape">
-             <enum>QFrame::NoFrame</enum>
-            </property>
-            <property name="frameShadow">
-             <enum>QFrame::Raised</enum>
-            </property>
-            <property name="widgetResizable">
-             <bool>true</bool>
-            </property>
-            <widget class="QWidget" name="scrollAreaWidgetContents">
-             <property name="geometry">
-              <rect>
-               <x>0</x>
-               <y>0</y>
-               <width>212</width>
-               <height>232</height>
-              </rect>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_4">
-              <item row="0" column="0">
-               <layout class="QVBoxLayout" name="ch_scroll_area_contents_layout"/>
-              </item>
-             </layout>
-            </widget>
-           </widget>
+           <layout class="QVBoxLayout" name="ch_scroll_area_contents_layout"/>
           </item>
          </layout>
         </widget>
@@ -237,6 +212,11 @@
   <customwidget>
    <class>CaptionLabel</class>
    <extends>QLabel</extends>
+   <header>qfluentwidgets</header>
+  </customwidget>
+  <customwidget>
+   <class>LineEdit</class>
+   <extends>QLineEdit</extends>
    <header>qfluentwidgets</header>
   </customwidget>
   <customwidget>
