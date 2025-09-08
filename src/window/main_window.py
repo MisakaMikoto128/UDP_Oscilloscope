@@ -23,6 +23,7 @@ import time
 from .ctrl_panel_frame import CtrlPanelForm
 from .device_setting import DeviceSettingFrom
 from .network_setting_frame import NetworkSettingFrom
+from .setting_frame import SettingForm
 from .oscilloscope_frame import OscilloscopeFrame
 from ..communication.udp_master import UDPMaster
 from ..communication.scope_ipc import create_scope_ipc
@@ -132,6 +133,13 @@ class MainWindow(FluentWindow):
         # 连接设备信息更新信号
         self.interface3.device_info_updated.connect(self.update_window_title)
 
+        self.settingInterface = SettingForm(cfg, None, self.receiver.reg_set, self)
+        self.settingInterface.sw_scope.checkedChanged.connect(
+            lambda checked: self.show_scope_window()
+            if checked
+            else self.hide_scope_window()
+        )
+
         # 初始化界面
         self.initNavigation()
         self.initWindow()
@@ -158,7 +166,9 @@ class MainWindow(FluentWindow):
             widget=NavigationAvatarWidget("Yuanlin-Liu", "resource/shoko.png"),
             position=NavigationItemPosition.BOTTOM,
         )
+        self.addSubInterface(self.settingInterface, FIF.SETTING, 'Settings', NavigationItemPosition.BOTTOM)
         self.navigationInterface.setAcrylicEnabled(True)
+
 
     def initWindow(self):
         # 设置窗口的初始大小 (宽 x 高)
