@@ -266,7 +266,6 @@ class CursorControlWidget(QtWidgets.QWidget):
         self.x1_spinbox.setRange(-1e6, 1e6)
         self.x1_spinbox.setDecimals(6)
         self.x1_spinbox.setSuffix(" s")
-        self.x1_spinbox.setPrefix("X1:")
         self.x1_spinbox.setMinimumWidth(220)
         self.x1_spinbox.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         cursor_layout.addRow("X1:", self.x1_spinbox)
@@ -277,7 +276,6 @@ class CursorControlWidget(QtWidgets.QWidget):
         self.x2_spinbox.setSuffix(" s")
         self.x2_spinbox.setMinimumWidth(220)
         self.x2_spinbox.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.x2_spinbox.setPrefix("X2:")
         cursor_layout.addRow("X2:", self.x2_spinbox)
 
         # Y轴光标
@@ -285,14 +283,12 @@ class CursorControlWidget(QtWidgets.QWidget):
         self.y1_spinbox.setRange(-1e6, 1e6)
         self.y1_spinbox.setDecimals(3)
         self.y1_spinbox.setMinimumWidth(220)
-        self.y1_spinbox.setPrefix("Y1:")
         cursor_layout.addRow("Y1:", self.y1_spinbox)
 
         self.y2_spinbox = QtWidgets.QDoubleSpinBox()
         self.y2_spinbox.setRange(-1e6, 1e6)
         self.y2_spinbox.setDecimals(3)
         self.y2_spinbox.setMinimumWidth(220)
-        self.y2_spinbox.setPrefix("Y2:")
         cursor_layout.addRow("Y2:", self.y2_spinbox)
 
         content_layout.addWidget(self.cursor_group)
