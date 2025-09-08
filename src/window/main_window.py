@@ -162,7 +162,7 @@ class MainWindow(FluentWindow):
             full_title = f"{base_title} - {device_info}"
 
             self.setWindowTitle(full_title)
-            logger.info(f"窗口标题已更新: {device_info}")
+            # logger.info(f"窗口标题已更新: {device_info}")
 
         except Exception as e:
             logger.error(f"更新窗口标题失败: {e}")

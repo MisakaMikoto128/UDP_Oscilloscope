@@ -1,39 +1,19 @@
 # -*- coding: utf-8 -*-
 import logging
 from typing import Callable, List, Awaitable
-import socket
-import struct
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt, pyqtSignal
 from qasync import asyncSlot
 from src.ui.async_message_box import async_confirm
-from qfluentwidgets import (
-    InfoBar,
-    InfoBarPosition,
-)
+from qfluentwidgets import InfoBar, InfoBarPosition
 
 from src.communication.protocol import SysREGsUpData
 from src.config.config_manager import ConfigManager
 from src.ui import Network_Setting_From
+from src.utils.network_utils import uint32_to_ipv4, ipv4_to_uint32, uint32_to_mac, validate_ip, validate_port
 
-# 设置日志
 logger = logging.getLogger(__name__)
-
-
-def uint32_to_ipv4(value: int) -> str:
-    """将32位无符号整数转换为IPv4地址字符串"""
-    return socket.inet_ntoa(struct.pack('!I', value))
-
-
-def ipv4_to_uint32(ip_str: str) -> int:
-    """将IPv4地址字符串转换为32位无符号整数"""
-    return struct.unpack('!I', socket.inet_aton(ip_str))[0]
-
-
-def uint32_to_mac(value: int) -> str:
-    """将32位无符号整数转换为MAC地址字符串（低4字节）"""
-    return f"00:08:{(value >> 24) & 0xFF:02X}:{(value >> 16) & 0xFF:02X}:{(value >> 8) & 0xFF:02X}:{value & 0xFF:02X}"
 
 
 class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
@@ -85,6 +65,22 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
         # 连接双击label事件
         self._connect_label_double_click()
 
+    def _show_error(self, title: str, content: str):
+        """显示错误信息条"""
+        InfoBar.error(
+            title=title, content=content, orient=Qt.Horizontal,
+            isClosable=True, position=InfoBarPosition.TOP,
+            duration=2000, parent=self
+        )
+
+    def _show_success(self, title: str, content: str):
+        """显示成功信息条"""
+        InfoBar.success(
+            title=title, content=content, orient=Qt.Horizontal,
+            isClosable=True, position=InfoBarPosition.TOP,
+            duration=2000, parent=self
+        )
+
     def _connect_label_double_click(self):
         """连接label双击事件"""
         # 双击label同步值到对应的输入控件
@@ -128,16 +124,8 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
         """设置本机IP地址"""
         try:
             new_ip = self.line_edit_pc_ip.text().strip()
-            if not self._validate_ip(new_ip):
-                InfoBar.error(
-                    title='IP地址格式错误',
-                    content='请输入正确的IP地址格式',
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=2000,
-                    parent=self
-                )
+            if not validate_ip(new_ip):
+                self._show_error('IP地址格式错误', '请输入正确的IP地址格式')
                 return
             
             # 获取当前IP用于确认对话框
@@ -158,15 +146,7 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
                 success2 = await self.device_reg_set_func(5, [ip_uint32], target_addr=target_addr)
                 
                 if success1 and success2:
-                    InfoBar.success(
-                        title='设置成功',
-                        content=f'PC IP和网关IP已设置为 {new_ip}，保存参数重启设备后生效。',
-                        orient=Qt.Horizontal,
-                        isClosable=True,
-                        position=InfoBarPosition.TOP,
-                        duration=2000,
-                        parent=self
-                    )
+                    self._show_success('设置成功', f'PC IP和网关IP已设置为 {new_ip}，保存参数重启设备后生效。')
                     logger.info(f"PC IP和网关IP设置成功: {new_ip}")
                     # 注意：ConfigManager更新将在保存参数成功后进行
                 else:
@@ -189,7 +169,7 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
         """设置设备IP地址"""
         try:
             new_ip = self.line_edit_device_ip.text().strip()
-            if not self._validate_ip(new_ip):
+            if not validate_ip(new_ip):
                 InfoBar.error(
                     title='IP地址格式错误',
                     content='请输入正确的IP地址格式',
@@ -248,7 +228,7 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
         """设置子网掩码"""
         try:
             new_netmask = self.line_edit_device_ip_mask.text().strip()
-            if not self._validate_ip(new_netmask):
+            if not validate_ip(new_netmask):
                 InfoBar.error(
                     title='子网掩码格式错误',
                     content='请输入正确的子网掩码格式',
@@ -302,19 +282,6 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
 
         except Exception as e:
             logger.error(f"设置子网掩码错误: {e}")
-
-    def _validate_ip(self, ip_str: str) -> bool:
-        """验证IP地址格式"""
-        try:
-            parts = ip_str.split('.')
-            if len(parts) != 4:
-                return False
-            for part in parts:
-                if not (0 <= int(part) <= 255):
-                    return False
-            return True
-        except (ValueError, AttributeError):
-            return False
 
     @asyncSlot()
     async def _set_device_name(self):
@@ -471,21 +438,21 @@ class NetworkSettingFrom(QtWidgets.QFrame, Network_Setting_From):
             pc_port = self.label_pc_port.text()
             device_port = self.label_device_port.text()
 
-            # 更新ConfigManager
-            if pc_ip and self._validate_ip(pc_ip):
-                self.cfg.set('network.pc_ip', pc_ip)
+            # 更新ConfigManager - 映射到原有的udp配置结构
+            if pc_ip and validate_ip(pc_ip):
+                self.cfg.set('udp.host', pc_ip)  # pc_ip -> host
 
-            if device_ip and self._validate_ip(device_ip):
-                self.cfg.set('network.device_ip', device_ip)
+            if device_ip and validate_ip(device_ip):
+                self.cfg.set('udp.target_host', device_ip)  # device_ip -> target_host
 
-            if netmask and self._validate_ip(netmask):
-                self.cfg.set('network.netmask', netmask)
+            if netmask and validate_ip(netmask):
+                self.cfg.set('udp.netmask', netmask)  # 新增netmask到udp下
 
             if pc_port.isdigit():
-                self.cfg.set('network.pc_port', int(pc_port))
+                self.cfg.set('udp.port', int(pc_port))  # pc_port -> port
 
             if device_port.isdigit():
-                self.cfg.set('network.device_port', int(device_port))
+                self.cfg.set('udp.target_port', int(device_port))  # device_port -> target_port
 
             # 保存配置文件
             self.cfg.save()
