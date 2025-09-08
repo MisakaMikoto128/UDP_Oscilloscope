@@ -2,7 +2,7 @@
 import logging
 from pathlib import Path
 from typing import List
-
+import re
 import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QTimer
@@ -535,7 +535,9 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         try:
             if checked:
                 # 开始录制
-                file_path = self.buffer.start_recording(self.cfg.channel_defs, self.cfg.sample_rate)
+                filename_prefix = self.line_edit_save_file_name.text().strip()
+                filename_prefix = re.sub(r'[\\/:*?"<>|]', '_', filename_prefix)
+                file_path = self.buffer.start_recording(self.cfg.channel_defs, self.cfg.sample_rate, filename_prefix)
                 logger.info(f"开始录制波形数据到: {file_path}")
             else:
                 # 停止录制
