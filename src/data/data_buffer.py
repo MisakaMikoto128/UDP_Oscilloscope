@@ -387,17 +387,17 @@ class RingBuffer:
 
     # ==================== 持久化功能接口 ====================
 
-    def start_recording(self, channel_config: List[Dict], sample_rate: int = 0, filename: Optional[str] = None) -> Path:
+    def start_recording(self, channel_config: List[Dict], sample_rate: int = 0, filename_prefix: Optional[str] = "") -> Path:
         """
         开始录制数据到文件
 
         Args:
-            filename: 自定义文件名，None则自动生成
+            filename_prefix: 自定义文件名前缀
 
         Returns:
             录制文件路径
         """
-        return self._persistence_manager.start_recording(channel_config, sample_rate, filename, self.n_channels)
+        return self._persistence_manager.start_recording(channel_config, sample_rate, filename_prefix, self.n_channels)
 
     def stop_recording(self):
         """停止录制数据"""

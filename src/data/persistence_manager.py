@@ -44,12 +44,12 @@ class WaveformPersistence:
         self._cache_size = 0
         self._max_cache_size = 1000  # 缓存1000个样本后写入
 
-    def start_recording(self, channel_config: List[Dict], sample_rate: int = 0, filename: Optional[str] = None, n_channels: int = 4) -> Path:
+    def start_recording(self, channel_config: List[Dict], sample_rate: int = 0, filename_prefix: Optional[str] = "", n_channels: int = 4) -> Path:
         """
         开始录制数据
 
         Args:
-            filename: 自定义文件名，None则自动生成
+            filename_prefix: 自定义文件名前缀
             n_channels: 通道数量
 
         Returns:
@@ -60,15 +60,12 @@ class WaveformPersistence:
             return self._current_file
 
         # 生成文件名
-        if filename:
-            if not filename.endswith('.h5'):
-                filename += '.h5'
-            self._current_file = self.base_dir / filename
-        else:
-            now = datetime.now()
-            microseconds = now.strftime('%f')[:3]  # 取前3位微秒
-            auto_name = f"waveform_{now.strftime('%Y%m%d_%H%M%S')}{microseconds}.h5"
-            self._current_file = self.base_dir / auto_name
+        if filename_prefix == "":
+            filename_prefix = "waveform"
+        now = datetime.now()
+        microseconds = now.strftime('%f')[:3]  # 取前3位微秒
+        auto_name = f"{filename_prefix}_{now.strftime('%Y%m%d_%H%M%S')}{microseconds}.h5"
+        self._current_file = self.base_dir / auto_name
 
         # 处理文件名冲突
         if self._current_file.exists():
