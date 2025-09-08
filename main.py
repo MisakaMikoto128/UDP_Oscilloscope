@@ -70,9 +70,6 @@ def main():
     event_loop = QEventLoop(app)
     asyncio.set_event_loop(event_loop)
 
-    app_close_event = asyncio.Event()
-    app.aboutToQuit.connect(app_close_event.set)
-
     print(type(asyncio.get_event_loop()))
 
     with event_loop:
