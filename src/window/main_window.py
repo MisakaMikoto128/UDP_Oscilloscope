@@ -127,6 +127,7 @@ class MainWindow(FluentWindow):
 
         self.interface2 = DeviceSettingFrom(cfg, None, self.receiver.reg_set, self)
         self.receiver.on_sys_regs_upload.connect(self.interface2.on_on_sys_regs_uploaded)
+        self.interface1.set_sw_btn_ctrl_mode_select(self.interface2.sw_btn_ctrl_mode_select)
 
         self.interface3 = NetworkSettingFrom(cfg, None, self.receiver.reg_set, self)
         self.receiver.on_sys_regs_upload.connect(self.interface3.on_on_sys_regs_uploaded)

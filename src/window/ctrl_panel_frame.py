@@ -6,7 +6,7 @@ import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore, QtGui
 from qasync import asyncClose, asyncSlot
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
-from qfluentwidgets import InfoLevel, TeachingTip, InfoBarIcon, TeachingTipTailPosition
+from qfluentwidgets import InfoLevel, SwitchButton, InfoBarIcon, TeachingTipTailPosition
 from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5.QtCore import QPoint, Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout
@@ -71,6 +71,12 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.speed_set_step = 10
         self.speed_max = 3000
         self.speed_min = -3000
+        self.current_set = 0
+        self.current_set_step = 0.5
+        self.current_max = 100
+        self.current_min = -100
+        self.current_mode = "speed"
+        self.sw_btn_ctrl_mode_select = None
 
         self.spinbox_speed.setValue(0)  # 设置默认速度为0
 
@@ -180,6 +186,7 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
                 duration=2000,
                 parent=self,
             )
+        return ret
 
     @asyncSlot()
     async def launch_device(self):
@@ -389,3 +396,33 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.period_send_sw = False
         self.sw_btn_host_computer.setChecked(False)
 
+    def set_sw_btn_ctrl_mode_select(self, sw_btn_ctrl_mode_select: SwitchButton): 
+        sw_btn_ctrl_mode_select.checkedChanged.connect(self.set_device_mode)
+        self.sw_btn_ctrl_mode_select = sw_btn_ctrl_mode_select
+
+    @asyncSlot(bool)
+    async def set_device_mode(self, mode: bool):
+
+        if not self.sw_btn_ctrl_mode_select:
+            return
+        
+        set_mode = "current" if mode else "speed" 
+        if set_mode == self.current_mode:
+            InfoBar.success(
+                title="模式修改结果",
+                content="模式未修改，未执行任何操作！",
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=1000,
+                parent=self,
+            )
+            return
+
+        self.speed_set = 0
+        ret = await self.stop_device()
+        if set_mode == "speed":
+            pass
+        
+        self.sw_btn_ctrl_mode_select.setChecked(False)
+        
