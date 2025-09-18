@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5.QtCore import QPoint, Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout
 from PyQt5.QtGui import QCloseEvent
+from src.ui.async_message_box import async_confirm
 
 from qfluentwidgets import (
     InfoBarIcon,
@@ -86,6 +87,7 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.send_timer.start()
 
         self.btn_stop_dev.clicked.connect(self.stop_device)
+        self.btn_calibrate_dev.clicked.connect(self._confirm_launch_zero_calibration)
         self.btn_launch_dev.clicked.connect(self.launch_device)
         self.badge_online_status.setLevel(InfoLevel.ERROR)
 
@@ -217,6 +219,52 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
                 duration=2000,
                 parent=self,
             )
+    
+    @asyncSlot()
+    async def _confirm_launch_zero_calibration(self):
+        title = "确认启动旋变零点校准"
+        content = "即将启动旋变零点校准，请确认是否继续？"
+
+        confirmed = await async_confirm(title, content, self)
+        if confirmed:
+            await self.launch_zero_calibration_cmd()
+
+    @asyncSlot()
+    async def launch_zero_calibration_cmd(self):
+        try:
+            target_addr = (self.cfg.target_host, self.cfg.target_port)
+            reg_addr = 105
+            value = 0x1C
+            # 发送设置指令
+            success = await self.device_reg_set_func(
+                reg_addr, [value], target_addr=target_addr
+            )
+
+            if success:
+                InfoBar.success(
+                    title='校准启动结果',
+                    content='控制板收到校准命令！',
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP,
+                    duration=2000,
+                    parent=self
+                )
+                logger.info("校准启动成功！")
+            else:
+                InfoBar.error(
+                    title='校准启动结果',
+                    content='校准启动失败，请检查通信',
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP,
+                    duration=2000,
+                    parent=self
+                )
+                logger.warning("校准启动失败！")
+    
+        except Exception as e:
+            logger.error(f"校准启动错误: {e}")
 
     def update_dev_error_list(self, error_list: List[str]):
         """更新设备错误列表"""

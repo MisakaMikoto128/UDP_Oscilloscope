@@ -14,22 +14,20 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_3">
-   <item row="2" column="0" colspan="2">
-    <widget class="CardWidget" name="CardWidget">
-     <layout class="QGridLayout" name="gridLayout">
-      <item row="1" column="1">
-       <widget class="TableWidget" name="table_pid_param">
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-         </font>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
+   <item row="0" column="0">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
    </item>
-   <item row="0" column="1" colspan="2">
+   <item row="0" column="1">
     <widget class="LargeTitleLabel" name="LargeTitleLabel">
      <property name="font">
       <font>
@@ -44,7 +42,7 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="3">
+   <item row="0" column="2">
     <spacer name="horizontalSpacer_2">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -57,49 +55,109 @@
      </property>
     </spacer>
    </item>
-   <item row="0" column="0">
-    <spacer name="horizontalSpacer">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
+   <item row="1" column="0">
+    <widget class="SubtitleLabel" name="SubtitleLabel">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
      </property>
-     <property name="sizeHint" stdset="0">
+     <property name="minimumSize">
       <size>
-       <width>40</width>
-       <height>20</height>
+       <width>0</width>
+       <height>50</height>
       </size>
      </property>
-    </spacer>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>PID参数监控</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
    </item>
-   <item row="2" column="2" colspan="2">
-    <widget class="CardWidget" name="CardWidget_2">
-     <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="1">
-       <widget class="SubtitleLabel" name="label_speed_2">
+   <item row="1" column="1">
+    <widget class="SubtitleLabel" name="SubtitleLabel_2">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="baseSize">
+      <size>
+       <width>0</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>PID参数设置</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="CardWidget" name="CardWidget">
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="1" column="1">
+       <widget class="TableWidget" name="table_pid_param">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
         </property>
-        <property name="text">
-         <string>P</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
+        <property name="selectRightClickedRow">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
-      <item row="0" column="3">
-       <widget class="SubtitleLabel" name="label_speed_3">
+      <item row="2" column="1">
+       <widget class="TableWidget" name="table_other_param">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="selectRightClickedRow">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="1" colspan="2">
+    <widget class="CardWidget" name="CardWidget_2">
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="4" column="0">
+       <widget class="SubtitleLabel" name="label_speed_7">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -113,13 +171,179 @@
          </size>
         </property>
         <property name="text">
-         <string>I</string>
+         <string>母线电压参考：</string>
         </property>
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
         </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
+       </widget>
+      </item>
+      <item row="4" column="3">
+       <widget class="DoubleSpinBox" name="spinbox_vbus_ref1">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>44</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="maximum">
+         <double>50.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="0">
+       <widget class="SubtitleLabel" name="label_speed_9">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>在线升级模式：</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="1" colspan="2">
+       <widget class="SubtitleLabel" name="label_speed_13">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>当前未启动旋变校准</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="0">
+       <widget class="SubtitleLabel" name="label_speed_8">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>控制模式选择：</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="SubtitleLabel" name="label_speed_5">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>电流环D：</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="3">
+       <widget class="PillPushButton" name="btn_start_resolver_calibration">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>44</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>启动旋变校准</string>
+        </property>
+        <property name="checkable">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="2">
+       <widget class="ToolButton" name="btn_vbus_ref">
+        <property name="minimumSize">
+         <size>
+          <width>44</width>
+          <height>44</height>
+         </size>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="ToolButton" name="btn_iq_pid_p">
+        <property name="minimumSize">
+         <size>
+          <width>44</width>
+          <height>44</height>
+         </size>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
         </property>
        </widget>
       </item>
@@ -145,33 +369,8 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="DoubleSpinBox" name="spinbox_speed_pid_p">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>44</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="decimals">
-         <number>6</number>
-        </property>
-        <property name="maximum">
-         <double>50.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.000100000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="ToolButton" name="btn_speed_pid_p">
+      <item row="2" column="2">
+       <widget class="ToolButton" name="btn_id_pid_p">
         <property name="minimumSize">
          <size>
           <width>44</width>
@@ -215,50 +414,8 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="4">
-       <widget class="ToolButton" name="btn_speed_pid_i">
-        <property name="minimumSize">
-         <size>
-          <width>44</width>
-          <height>44</height>
-         </size>
-        </property>
-        <property name="icon">
-         <iconset>
-          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>22</width>
-          <height>22</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="SubtitleLabel" name="label_speed_5">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>电流环D：</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="DoubleSpinBox" name="spinbox_id_pid_p">
+      <item row="1" column="1">
+       <widget class="DoubleSpinBox" name="spinbox_speed_pid_p">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -279,26 +436,6 @@
         </property>
         <property name="singleStep">
          <double>0.000100000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="ToolButton" name="btn_id_pid_p">
-        <property name="minimumSize">
-         <size>
-          <width>44</width>
-          <height>44</height>
-         </size>
-        </property>
-        <property name="icon">
-         <iconset>
-          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>22</width>
-          <height>22</height>
-         </size>
         </property>
        </widget>
       </item>
@@ -327,8 +464,30 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="4">
-       <widget class="ToolButton" name="btn_id_pid_i">
+      <item row="6" column="0">
+       <widget class="SubtitleLabel" name="label_speed_17">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Motor_Resolver_Zero：</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="4">
+       <widget class="ToolButton" name="btn_vbus_ref1">
         <property name="minimumSize">
          <size>
           <width>44</width>
@@ -344,6 +503,53 @@
           <width>22</width>
           <height>22</height>
          </size>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="1" colspan="2">
+       <widget class="SubtitleLabel" name="label_speed_11">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>当前未启动升级模式</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="DoubleSpinBox" name="spinbox_Motor_Resolver_Zero">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>44</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="maximum">
+         <double>50.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100000000000</double>
         </property>
        </widget>
       </item>
@@ -394,8 +600,77 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="2">
-       <widget class="ToolButton" name="btn_iq_pid_p">
+      <item row="11" column="1" colspan="2">
+       <widget class="SubtitleLabel" name="label_speed_15">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="SubtitleLabel" name="label_speed_3">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>I</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="1" colspan="2">
+       <widget class="SubtitleLabel" name="label_speed_10">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>当前为速度环模式</string>
+        </property>
+        <property name="textFormat">
+         <enum>Qt::MarkdownText</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="2">
+       <widget class="ToolButton" name="btn_Motor_Resolver_Zero">
         <property name="minimumSize">
          <size>
           <width>44</width>
@@ -414,28 +689,23 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="3">
-       <widget class="DoubleSpinBox" name="spinbox_iq_pid_i">
+      <item row="1" column="4">
+       <widget class="ToolButton" name="btn_speed_pid_i">
         <property name="minimumSize">
          <size>
-          <width>0</width>
+          <width>44</width>
           <height>44</height>
          </size>
         </property>
-        <property name="maximumSize">
+        <property name="icon">
+         <iconset>
+          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
+        </property>
+        <property name="iconSize">
          <size>
-          <width>16777215</width>
-          <height>16777215</height>
+          <width>22</width>
+          <height>22</height>
          </size>
-        </property>
-        <property name="decimals">
-         <number>6</number>
-        </property>
-        <property name="maximum">
-         <double>50.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.000100000000000</double>
         </property>
        </widget>
       </item>
@@ -459,8 +729,27 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
-       <widget class="SubtitleLabel" name="label_speed_7">
+      <item row="9" column="3">
+       <widget class="SwitchButton" name="sw_btn_upgrade_mode_select">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>44</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>正常模式</string>
+        </property>
+        <property name="onText">
+         <string>升级模式</string>
+        </property>
+        <property name="offText">
+         <string>正常模式</string>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="0">
+       <widget class="SubtitleLabel" name="label_speed_14">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -474,7 +763,7 @@
          </size>
         </property>
         <property name="text">
-         <string>母线电压参考：</string>
+         <string>永久保存参数：</string>
         </property>
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
@@ -506,8 +795,8 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="2">
-       <widget class="ToolButton" name="btn_vbus_ref">
+      <item row="2" column="4">
+       <widget class="ToolButton" name="btn_id_pid_i">
         <property name="minimumSize">
          <size>
           <width>44</width>
@@ -526,8 +815,28 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="3">
-       <widget class="DoubleSpinBox" name="spinbox_vbus_ref1">
+      <item row="5" column="2">
+       <widget class="ToolButton" name="btn_Rottx_Zero_Current">
+        <property name="minimumSize">
+         <size>
+          <width>44</width>
+          <height>44</height>
+         </size>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="DoubleSpinBox" name="spinbox_id_pid_p">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -551,8 +860,8 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="4">
-       <widget class="ToolButton" name="btn_vbus_ref1">
+      <item row="1" column="2">
+       <widget class="ToolButton" name="btn_speed_pid_p">
         <property name="minimumSize">
          <size>
           <width>44</width>
@@ -572,7 +881,7 @@
        </widget>
       </item>
       <item row="5" column="0">
-       <widget class="SubtitleLabel" name="label_speed_8">
+       <widget class="SubtitleLabel" name="label_speed_16">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -586,37 +895,62 @@
          </size>
         </property>
         <property name="text">
-         <string>控制模式选择：</string>
+         <string>Rottx_Zero_Current：</string>
         </property>
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
         </property>
        </widget>
       </item>
-      <item row="5" column="1" colspan="2">
-       <widget class="SubtitleLabel" name="label_speed_10">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
+      <item row="11" column="3">
+       <widget class="PillPushButton" name="btn_save_param">
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>0</height>
+          <height>44</height>
          </size>
         </property>
         <property name="text">
-         <string>当前为速度环模式</string>
+         <string>保存参数命令</string>
         </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
+        <property name="checkable">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
-      <item row="5" column="3">
+      <item row="5" column="1">
+       <widget class="DoubleSpinBox" name="spinbox_Rottx_Zero_Current">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>44</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="maximum">
+         <double>50.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="3">
        <widget class="SwitchButton" name="sw_btn_ctrl_mode_select">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>44</height>
+         </size>
+        </property>
         <property name="text">
          <string>速度环模式</string>
         </property>
@@ -628,64 +962,7 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="0">
-       <widget class="SubtitleLabel" name="label_speed_9">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>在线升级模式：</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="1" colspan="2">
-       <widget class="SubtitleLabel" name="label_speed_11">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>当前未启动升级模式</string>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="3">
-       <widget class="SwitchButton" name="sw_btn_upgrade_mode_select">
-        <property name="text">
-         <string>正常模式</string>
-        </property>
-        <property name="onText">
-         <string>升级模式</string>
-        </property>
-        <property name="offText">
-         <string>正常模式</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0">
+      <item row="10" column="0">
        <widget class="SubtitleLabel" name="label_speed_12">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -707,8 +984,8 @@
         </property>
        </widget>
       </item>
-      <item row="7" column="1" colspan="2">
-       <widget class="SubtitleLabel" name="label_speed_13">
+      <item row="0" column="1">
+       <widget class="SubtitleLabel" name="label_speed_2">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -722,31 +999,43 @@
          </size>
         </property>
         <property name="text">
-         <string>当前未启动旋变校准</string>
+         <string>P</string>
         </property>
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
        </widget>
       </item>
-      <item row="7" column="3">
-       <widget class="PillPushButton" name="btn_start_resolver_calibration">
+      <item row="3" column="3">
+       <widget class="DoubleSpinBox" name="spinbox_iq_pid_i">
         <property name="minimumSize">
          <size>
           <width>0</width>
           <height>44</height>
          </size>
         </property>
-        <property name="text">
-         <string>启动旋变校准</string>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
         </property>
-        <property name="checkable">
-         <bool>false</bool>
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="maximum">
+         <double>50.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100000000000</double>
         </property>
        </widget>
       </item>
-      <item row="8" column="0">
-       <widget class="SubtitleLabel" name="label_speed_14">
+      <item row="7" column="0">
+       <widget class="SubtitleLabel" name="label_speed_18">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -760,114 +1049,59 @@
          </size>
         </property>
         <property name="text">
-         <string>永久保存参数：</string>
+         <string>Motor_Pn：</string>
         </property>
         <property name="textFormat">
          <enum>Qt::MarkdownText</enum>
         </property>
        </widget>
       </item>
-      <item row="8" column="1" colspan="2">
-       <widget class="SubtitleLabel" name="label_speed_15">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="textFormat">
-         <enum>Qt::MarkdownText</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="3">
-       <widget class="PillPushButton" name="btn_save_param">
+      <item row="7" column="1">
+       <widget class="DoubleSpinBox" name="spinbox_Motor_Pn">
         <property name="minimumSize">
          <size>
           <width>0</width>
           <height>44</height>
          </size>
         </property>
-        <property name="text">
-         <string>保存参数命令</string>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
         </property>
-        <property name="checkable">
-         <bool>false</bool>
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="maximum">
+         <double>50.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.000100000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="2">
+       <widget class="ToolButton" name="btn_Motor_Pn">
+        <property name="minimumSize">
+         <size>
+          <width>44</width>
+          <height>44</height>
+         </size>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../../img/save2.svg</normaloff>../../img/save2.svg</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
         </property>
        </widget>
       </item>
      </layout>
-    </widget>
-   </item>
-   <item row="1" column="2" colspan="2">
-    <widget class="SubtitleLabel" name="SubtitleLabel_2">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>50</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>50</height>
-      </size>
-     </property>
-     <property name="baseSize">
-      <size>
-       <width>0</width>
-       <height>50</height>
-      </size>
-     </property>
-     <property name="text">
-      <string>PID参数设置</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="0" colspan="2">
-    <widget class="SubtitleLabel" name="SubtitleLabel">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>50</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>50</height>
-      </size>
-     </property>
-     <property name="text">
-      <string>PID参数监控</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
     </widget>
    </item>
   </layout>

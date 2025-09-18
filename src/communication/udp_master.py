@@ -94,7 +94,7 @@ class UDPMaster(QObject):
 
             # Windows下的socket优化
             self.socket.setsockopt(
-                socket.SOL_SOCKET, socket.SO_RCVBUF, 100 * 1024 * 1024
+                socket.SOL_SOCKET, socket.SO_RCVBUF, 50 * 1024 * 1024
             )  # 100MB
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 

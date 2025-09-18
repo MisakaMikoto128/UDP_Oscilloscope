@@ -6,9 +6,9 @@
   },
   "udp": {
     "host": "192.168.137.2",
-    "port": 16012,
+    "port": 16011,
     "target_host": "192.168.137.99",
-    "target_port": 16012,
+    "target_port": 16011,
     "netmask": "255.255.255.0"
   },
   "storage": {

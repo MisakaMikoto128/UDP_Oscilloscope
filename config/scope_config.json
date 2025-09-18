@@ -76,7 +76,7 @@
     },
     {
       "name": "CH6",
-      "alias": "test_zero",
+      "alias": "mEtheta1",
       "enabled": false,
       "color": "#F7DC6F",
       "vertical_scale": 1.0,
