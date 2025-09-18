@@ -431,6 +431,28 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             ]
             self._update_other_table(other_params)
 
+            # 系统模式
+            '''
+            union _SYS_MODE_REG {
+                Uint32 all;
+                struct  _SYS_MODE_REG_BITS bit;
+            };
+            union _SYS_MODE_REG sys_mode_reg;
+            sys_mode_reg.bit.Reserved = 0;
+            sys_mode_reg.bit.RotTX_ZeroEN_FLG = RotTX_ZeroEN_FLG;
+            sys_mode_reg.bit.SYS_OpertionMode = SYS_OpertionMode;
+            APP_Net_WriteReg(addr++, sys_mode_reg.all);    
+            Uint16 RotTX_ZeroEN_FLG = 0; // 0:当前未启动旋变校准,1:当前已启动旋变校准
+            Uint16 SYS_OpertionMode = 2; // 模式---1----电流环模式，2---速度环模式, 0---其他                                                    // 85
+            '''
+            SYS_OpertionMode = sys_regs_up_data.reg[85] & 0x07
+            RotTX_ZeroEN_FLG = (sys_regs_up_data.reg[85] >> 3) & 0x01
+            SYS_OpertionMode_dict = {1: "电流环模式", 2: "速度环模式", 0: "其他模式"}
+            RotTX_ZeroEN_FLG_dict = {0: "未启动", 1: "已启动"}
+            self.label_speed_ctrl_mode_select.setText(f"当前为{SYS_OpertionMode_dict.get(SYS_OpertionMode, '其他模式')}")
+            self.label_start_resolver_calibration.setText(f"当前{RotTX_ZeroEN_FLG_dict.get(RotTX_ZeroEN_FLG, '未知状态')}旋变校准")
+            self.btn_ctrl_mode_select.setChecked(SYS_OpertionMode == 1)
+
         except Exception as e:
             logger.error(f"解析数据错误: {e}")
 

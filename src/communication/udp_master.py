@@ -64,7 +64,7 @@ class UDPMaster(QObject):
         # 在线状态检测
         self.online_status = False
         self.online_check_timer = QTimer(self)
-        self.online_timeout_ms = 500  # 1秒超时
+        self.online_timeout_ms = 800  # 1秒超时
         self.last_data_time = 0  # 最后收到数据的时间戳
         self.online_check_timer.setInterval(100)
         self.online_check_timer.timeout.connect(self.check_online_status)

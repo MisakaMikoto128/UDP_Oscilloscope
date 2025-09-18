@@ -29,6 +29,14 @@ from ..communication.udp_master import UDPMaster
 from ..communication.scope_ipc import create_scope_ipc
 from PyQt5.QtGui import QCloseEvent
 from qasync import asyncClose, asyncSlot
+from qfluentwidgets import InfoLevel, setThemeColor
+from qfluentwidgets import (NavigationItemPosition, MessageBox, FluentWindow,
+                            NavigationAvatarWidget, SubtitleLabel, setFont)
+from qfluentwidgets.components.material import AcrylicMenu
+from qfluentwidgets import FluentIcon as FIF, TableWidget, Theme, setTheme, SwitchButton, AvatarWidget, BodyLabel, \
+    CaptionLabel, HyperlinkButton, isDarkTheme, FluentIcon, Action
+from PyQt5.QtGui import QFont, QStandardItemModel, QColor
+from PyQt5.QtWidgets import QAction, QMenu, QSystemTrayIcon, QTableWidgetItem, QHeaderView, QWidget
 
 logger = logging.getLogger(__name__)
 
@@ -85,8 +93,7 @@ def _run_scope_process(scope_ipc):
     except Exception as e:
         logger.error(f"示波器进程运行失败: {e}")
         raise
-
-
+        
 class MainWindow(FluentWindow):
     def __init__(self, cfg):
         super().__init__()
@@ -127,7 +134,7 @@ class MainWindow(FluentWindow):
 
         self.interface2 = DeviceSettingFrom(cfg, None, self.receiver.reg_set, self)
         self.receiver.on_sys_regs_upload.connect(self.interface2.on_on_sys_regs_uploaded)
-        self.interface1.set_sw_btn_ctrl_mode_select(self.interface2.sw_btn_ctrl_mode_select)
+        self.interface1.set_sw_btn_ctrl_mode_select(self.interface2.btn_ctrl_mode_select)
 
         self.interface3 = NetworkSettingFrom(cfg, None, self.receiver.reg_set, self)
         self.receiver.on_sys_regs_upload.connect(self.interface3.on_on_sys_regs_uploaded)
@@ -164,7 +171,7 @@ class MainWindow(FluentWindow):
         # add custom widget to bottom
         self.navigationInterface.addWidget(
             routeKey="avatar",
-            widget=NavigationAvatarWidget("Yuanlin-Liu", "resource/shoko.png"),
+            widget=NavigationAvatarWidget("Yuanlin-Liu", "resource/h.png"),
             position=NavigationItemPosition.BOTTOM,
         )
         self.addSubInterface(self.settingInterface, FIF.SETTING, 'Settings', NavigationItemPosition.BOTTOM)
@@ -388,3 +395,6 @@ class MainWindow(FluentWindow):
         finally:
             # 接受关闭事件
             event.accept()
+
+    
+
