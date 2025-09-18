@@ -1071,13 +1071,16 @@
          </size>
         </property>
         <property name="decimals">
-         <number>6</number>
+         <number>0</number>
+        </property>
+        <property name="minimum">
+         <double>1.000000000000000</double>
         </property>
         <property name="maximum">
-         <double>50.000000000000000</double>
+         <double>24.000000000000000</double>
         </property>
         <property name="singleStep">
-         <double>0.000100000000000</double>
+         <double>1.000000000000000</double>
         </property>
        </widget>
       </item>
