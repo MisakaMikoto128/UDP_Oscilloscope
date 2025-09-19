@@ -325,7 +325,7 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             Vbus = uint32_to_int32(sys_regs_up_data.reg[76]) / fixed_point_scale
             Vbus_in = uint32_to_int32(sys_regs_up_data.reg[77]) / fixed_point_scale
             Id = uint32_to_int32(sys_regs_up_data.reg[56]) / fixed_point_scale
-            Iq = uint32_to_int32(sys_regs_up_data.reg[59]) / fixed_point_scale
+            Iq = uint32_to_int32(sys_regs_up_data.reg[32]) / fixed_point_scale
             Ud = uint32_to_int32(sys_regs_up_data.reg[60]) / fixed_point_scale
             Uq = uint32_to_int32(sys_regs_up_data.reg[61]) / fixed_point_scale
             temperature_u32 = sys_regs_up_data.reg[55]
