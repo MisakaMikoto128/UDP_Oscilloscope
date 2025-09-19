@@ -120,7 +120,7 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         self.table_pid_param.resizeColumnsToContents()
 
     def _init_other_table(self):
-        """初始化PID参数显示表格"""
+        """初始化其他参数显示表格"""
         # 设置右键选中
         self.table_other_param.setSelectRightClickedRow(True)
 
@@ -130,7 +130,7 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         self.table_other_param.setWordWrap(False)
 
         # 设置表格尺寸
-        self.table_other_param.setRowCount(8)
+        self.table_other_param.setRowCount(15)
         self.table_other_param.setColumnCount(3)
 
         # 设置表头
@@ -142,12 +142,19 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         other_params = [
                 ['Motor_Rs', '-', '0.00000'],
                 ['Motor_Pn', '机对数', '0.00000'],
+                ['Vdcset_ref', '母线电压', '0.00000'],
+                ['Iset_d_ref', 'd轴电流', '0.00000'],
                 ['Motor_Resolver_Zero', '校准值', '0.00000'],
                 ['Motor_RpstoRpm_COEF', '-', '0.00000'],
                 ['Rottx_Zero_Current', '旋变零点电流', '0.00000'],
                 ['mEtheta', '角度', '0.00000'],
-                ['mEtheta1', '-', '0.00000'],
-                ['mEthetaZero', '-', '0.00000'],
+                ['mEtheta1', '角度', '0.00000'],
+                ['mEthetaAVG', '平均角度', '0.00000'],
+                ['mEthetaRad', '角度弧度', '0.00000'],
+                ['mEthetaZero', '零点角度', '0.00000'],
+                ['Motor_Id_Max', 'Id上限', '0.00000'],
+                ['Motor_Id_Min', 'Id下限', '0.00000'],
+                ['ResovlerFault', '旋变故障', '0'],
         ]
         self._update_other_table(other_params)
 
@@ -198,12 +205,49 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             lambda: self._confirm_and_set_param(46, self.spinbox_Motor_Pn.value(), "电机极对数")
         )
 
+        # 新增的参数按钮连接
+        # Motor_Id_Max - 电机Id上限
+        self.btn_Motor_Id_Max.clicked.connect(
+            lambda: self._confirm_and_set_param(33, self.spinbox_Motor_Id_Max.value(), "电机Id上限")
+        )
+
+        # Motor_Id_Min - 电机Id下限
+        self.btn_Motor_Id_Min.clicked.connect(
+            lambda: self._confirm_and_set_param(34, self.spinbox_Motor_Id_Min.value(), "电机Id下限")
+        )
+
+        # Idref - d轴电流参考值
+        self.btn_Idref.clicked.connect(
+            lambda: self._confirm_and_set_param(31, self.spinbox_Idref.value(), "d轴电流参考值")
+        )
+
+        # Iqref - q轴电流参考值
+        self.btn_Iqref.clicked.connect(
+            lambda: self._confirm_and_set_param(32, self.spinbox_Iqref.value(), "q轴电流参考值")
+        )
+
+        # Vdcset_ref - 母线电压设置参考值
+        self.btn_Vdcset_ref.clicked.connect(
+            lambda: self._confirm_and_set_param(8, self.spinbox_Vdcset_ref.value(), "母线电压设置参考值", "uint16")
+        )
+
+        # Iset_d_ref - d轴电流参考值
+        self.btn_Iset_d_ref.clicked.connect(
+            lambda: self._confirm_and_set_param(9, self.spinbox_Iset_d_ref.value(), "d轴电流参考值", "uint16")
+        )
+
     @asyncSlot()
-    async def _set_param(self, reg_addr: int, value: float, param_name: str):
+    async def _set_param(self, reg_addr: int, value: float, param_name: str, value_type: str = "float32"):
         """设置参数的通用函数"""
         try:
-            # 转换为定点数
-            param_set_int = int(value * 100000)
+            # 根据寄存器地址确定数据类型和转换方式
+            # 地址8和9是Uint16类型，直接发送整数值
+            # 其他地址是float类型，需要转换为定点数
+            if value_type == "uint16":
+                param_set_int = int(value)
+            elif value_type == "float32":
+                param_set_int = int(value * 100000)
+
             target_addr = (self.cfg.target_host, self.cfg.target_port)
 
             # 发送设置指令
@@ -402,32 +446,66 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
 
             # 其他参数解析
             '''
+            根据下位机代码的寄存器映射：
             [27] = &mVar_RAM.Motor_Parameters.Motor_Rs,
             [28] = &mVar_RAM.Motor_Parameters.Motor_Pn,
             [29] = &mVar_RAM.Motor_Parameters.Motor_Resolver_Zero,
             [30] = &mVar_RAM.Motor_Parameters.Motor_RpstoRpm_COEF,
+            [31] = &Idref,
+            [32] = &Iqref,
+            [33] = &mVar_RAM.Motor_Limits.Motor_Id_Max,
+            [34] = &mVar_RAM.Motor_Limits.Motor_Id_Min,
+            APP_Net_WriteReg(addr++, Vdcset_ref);//8
+            APP_Net_WriteReg(addr++, Iset_d_ref);//9
             APP_Net_WriteReg(addr++, FLOAT_TO_U32_FIXED_POINT(MCV.mEtheta1));                                  // 62
-            APP_Net_WriteReg(addr++, FLOAT_TO_U32_FIXED_POINT(MCV.mEtheta1));                                  // 80
+            APP_Net_WriteReg(addr++, FLOAT_TO_U32_FIXED_POINT(MCV.mEtheta));                                   // 80
             APP_Net_WriteReg(addr++, FLOAT_TO_U32_FIXED_POINT(MCV.mEthetaZero));                               // 81
+            APP_Net_WriteReg(addr++, FLOAT_TO_U32_FIXED_POINT(MCV.mEthetaAVG));                                // 82
+            APP_Net_WriteReg(addr++, MCV.ResovlerFault);                                                        // 91
+            APP_Net_WriteReg(addr++, MCV.mEthetaRad);                                                           // 92
             '''
             Motor_Rs = uint32_to_int32(sys_regs_up_data.reg[27]) / fixed_point_scale
             Motor_Pn = uint32_to_int32(sys_regs_up_data.reg[28]) / fixed_point_scale
             Motor_Resolver_Zero = uint32_to_int32(sys_regs_up_data.reg[29]) / fixed_point_scale
             Motor_RpstoRpm_COEF = uint32_to_int32(sys_regs_up_data.reg[30]) / fixed_point_scale
             Rottx_Zero_Current = uint32_to_int32(sys_regs_up_data.reg[14]) / fixed_point_scale
-            mEtheta = uint32_to_int32(sys_regs_up_data.reg[62]) / fixed_point_scale
-            mEtheta1 = uint32_to_int32(sys_regs_up_data.reg[80]) / fixed_point_scale
+
+            # 新增的参数解析
+            # 地址8和9是Uint16类型，直接使用
+            Vdcset_ref = sys_regs_up_data.reg[8]  # Uint16类型
+            Iset_d_ref = sys_regs_up_data.reg[9]  # Uint16类型
+
+            # 地址31-34是float类型，需要定点数转换
+            Idref = uint32_to_int32(sys_regs_up_data.reg[31]) / fixed_point_scale
+            Iqref = uint32_to_int32(sys_regs_up_data.reg[32]) / fixed_point_scale
+            Motor_Id_Max = uint32_to_int32(sys_regs_up_data.reg[33]) / fixed_point_scale
+            Motor_Id_Min = uint32_to_int32(sys_regs_up_data.reg[34]) / fixed_point_scale
+
+            # 旋变相关参数
+            mEtheta1 = uint32_to_int32(sys_regs_up_data.reg[62]) / fixed_point_scale
+            mEtheta = uint32_to_int32(sys_regs_up_data.reg[80]) / fixed_point_scale
             mEthetaZero = uint32_to_int32(sys_regs_up_data.reg[81]) / fixed_point_scale
+            mEthetaAVG = uint32_to_int32(sys_regs_up_data.reg[82]) / fixed_point_scale
+            ResovlerFault = sys_regs_up_data.reg[91]  # 这个是整数，不需要除以fixed_point_scale
+            mEthetaRad = uint32_to_int32(sys_regs_up_data.reg[92]) / fixed_point_scale
+
             # 添加表格数据
             other_params = [
                 ['Motor_Rs', '-', f'{Motor_Rs:.5f}'],
                 ['Motor_Pn', '机对数', f'{Motor_Pn:.5f}'],
+                ['Vdcset_ref', '母线电压', f'{Vdcset_ref}'],
+                ['Iset_d_ref', 'd轴电流', f'{Iset_d_ref}'],
                 ['Motor_Resolver_Zero', '校准值', f'{Motor_Resolver_Zero:.5f}'],
                 ['Motor_RpstoRpm_COEF', '-', f'{Motor_RpstoRpm_COEF:.5f}'],
                 ['Rottx_Zero_Current', '旋变零点电流', f'{Rottx_Zero_Current:.5f}'],
                 ['mEtheta', '角度', f'{mEtheta:.5f}'],
-                ['mEtheta1', '-', f'{mEtheta1:.5f}'],
-                ['mEthetaZero', '-', f'{mEthetaZero:.5f}'],
+                ['mEtheta1', '角度', f'{mEtheta1:.5f}'],
+                ['mEthetaAVG', '平均角度', f'{mEthetaAVG:.5f}'],
+                ['mEthetaRad', '角度弧度', f'{mEthetaRad:.5f}'],
+                ['mEthetaZero', '零点角度', f'{mEthetaZero:.5f}'],
+                ['Motor_Id_Max', 'Id上限', f'{Motor_Id_Max:.5f}'],
+                ['Motor_Id_Min', 'Id下限', f'{Motor_Id_Min:.5f}'],
+                ['ResovlerFault', '旋变故障', f'{ResovlerFault}'],
             ]
             self._update_other_table(other_params)
 
@@ -488,24 +566,43 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             if not item or not item.text():
                 return
 
-            value = float(item.text())
-
             # 根据行号确定对应的spinbox
-            # 表格行顺序：Motor_Rs(0), Motor_Pn(1), Motor_Resolver_Zero(2), Motor_RpstoRpm_COEF(3),
-            #           Rottx_Zero_Current(4), mEtheta(5), mEtheta1(6), mEthetaZero(7)
+            # 表格行顺序：
+            # 0: Motor_Rs, 1: Motor_Pn, 2: Vdcset_ref, 3: Iset_d_ref, 5: Motor_Resolver_Zero, 6: Motor_RpstoRpm_COEF,
+            # 7: Rottx_Zero_Current, 8: mEtheta, 9: mEtheta1, 10: mEthetaAVG, 8: mEthetaRad,
+            # 11: mEthetaZero, 12: Motor_Id_Max, 13: Motor_Id_Min, 14: ResovlerFault
+
+            # 对于ResovlerFault（整数类型），特殊处理
+            if row == 12:  # ResovlerFault
+                value = int(item.text())
+                # ResovlerFault没有对应的spinbox，只显示不可编辑
+                return
+            else:
+                value = float(item.text())
+
+            # 同步到对应的spinbox（只有可编辑的参数才有spinbox）
             if row == 1:  # Motor_Pn
                 self.spinbox_Motor_Pn.setValue(value)
-            elif row == 2:  # Motor_Resolver_Zero
+            elif row == 2:  # Vdcset_ref
+                self.spinbox_Vdcset_ref.setValue(value)
+            elif row == 3:  # Iset_d_ref
+                self.spinbox_Iset_d_ref.setValue(value)
+            elif row == 4:  # Motor_Resolver_Zero
                 self.spinbox_Motor_Resolver_Zero.setValue(value)
-            elif row == 4:  # Rottx_Zero_Current
+            elif row == 5:  # Rottx_Zero_Current
                 self.spinbox_Rottx_Zero_Current.setValue(value)
+            elif row == 12:  # Motor_Id_Max
+                self.spinbox_Motor_Id_Max.setValue(value)
+            elif row == 13:  # Motor_Id_Min
+                self.spinbox_Motor_Id_Min.setValue(value)
+            # 注意：mEtheta相关参数是只读的，不需要同步到spinbox
 
         except Exception as e:
             logger.error(f"同步其他参数到spinbox失败: {e}")
 
 
     @asyncSlot()
-    async def _confirm_and_set_param(self, reg_addr: int, new_value: float, param_name: str):
+    async def _confirm_and_set_param(self, reg_addr: int, new_value: float, param_name: str, value_type: str = "float32"):
         """
         弹出确认框，确认后真正发送参数设置指令
         :param reg_addr: 寄存器地址
@@ -518,7 +615,7 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         confirmed = await async_confirm(title, content, self)
         if confirmed:
             # 用户点击“确认”
-            await self._set_param(reg_addr, new_value, param_name)
+            await self._set_param(reg_addr, new_value, param_name, value_type)
 
     @asyncSlot()
     async def _confirm_and_set_pid(self, reg_addr: int, new_value: float, param_name: str):
