@@ -256,25 +256,15 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             )
 
             if success:
-                InfoBar.success(
+                self.info_success(
                     title='设置成功',
-                    content=f'{param_name} 已成功设置为 {value:.5f}',
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=2000,
-                    parent=self
+                    content=f'{param_name} 已成功设置为 {value:.5f}'
                 )
                 logger.info(f"参数设置成功: 地址{reg_addr}, 值{value}")
             else:
-                InfoBar.error(
+                self.info_error(
                     title='设置失败',
-                    content=f'{param_name} 设置失败，请检查通信',
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=2000,
-                    parent=self
+                    content=f'{param_name} 设置失败，请检查通信'
                 )
                 logger.warning(f"参数设置失败: 地址{reg_addr}, 值{value}")
 
@@ -298,25 +288,15 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             )
 
             if success:
-                InfoBar.success(
+                self.info_success(
                     title='保存成功',
-                    content='所有参数已成功写入设备 Flash',
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=2000,
-                    parent=self
+                    content='所有参数已成功写入设备 Flash'
                 )
                 logger.info("参数保存成功")
             else:
-                InfoBar.error(
+                self.info_error(
                     title='保存失败',
-                    content='参数保存失败，请检查通信',
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=2000,
-                    parent=self
+                    content='参数保存失败，请检查通信'
                 )
                 logger.warning("参数保存失败")
     
@@ -335,25 +315,15 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             )
 
             if success:
-                InfoBar.success(
+                self.info_success(
                     title='校准启动结果',
-                    content='控制板收到校准命令！',
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=2000,
-                    parent=self
+                    content='控制板收到校准命令！'
                 )
                 logger.info("校准启动成功！")
             else:
-                InfoBar.error(
+                self.info_error(
                     title='校准启动结果',
-                    content='校准启动失败，请检查通信',
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=2000,
-                    parent=self
+                    content='校准启动失败，请检查通信'
                 )
                 logger.warning("校准启动失败！")
     
@@ -659,3 +629,41 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         except Exception as e:
             logger.error(f"关闭DeviceSettingFrom时出错: {e}")
             event.accept()
+    
+    def info_success(
+        self,
+        title: str,
+        content: str,
+        orient: Qt.Orientation =Qt.Horizontal,
+        isClosable: bool=True,
+        position: InfoBarPosition =InfoBarPosition.TOP,
+        duration: int=2000,
+    ):
+        InfoBar.success(
+                    title=title,
+                    content=content,
+                    orient=orient,
+                    isClosable=isClosable,
+                    position=position,
+                    duration=duration,
+                    parent=self
+                )
+    
+    def info_error(
+        self,
+        title: str,
+        content: str,
+        orient: Qt.Orientation =Qt.Horizontal,
+        isClosable: bool=True,
+        position: InfoBarPosition =InfoBarPosition.TOP,
+        duration: int=2000,
+    ):
+        InfoBar.error(
+                    title=title,
+                    content=content,
+                    orient=orient,
+                    isClosable=isClosable,
+                    position=position,
+                    duration=duration,
+                    parent=self
+                )
