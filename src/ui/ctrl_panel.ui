@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1008</width>
+    <width>1094</width>
     <height>731</height>
    </rect>
   </property>
@@ -885,6 +885,9 @@
           <property name="prefix">
            <string/>
           </property>
+          <property name="suffix">
+           <string extracomment="转速单位">  rpm</string>
+          </property>
           <property name="minimum">
            <double>-3000.000000000000000</double>
           </property>
@@ -949,6 +952,9 @@
             <kerning>true</kerning>
            </font>
           </property>
+          <property name="inputMethodHints">
+           <set>Qt::ImhFormattedNumbersOnly</set>
+          </property>
           <property name="frame">
            <bool>true</bool>
           </property>
@@ -961,20 +967,26 @@
           <property name="buttonSymbols">
            <enum>QAbstractSpinBox::NoButtons</enum>
           </property>
+          <property name="specialValueText">
+           <string/>
+          </property>
           <property name="showGroupSeparator" stdset="0">
            <bool>false</bool>
           </property>
           <property name="prefix">
            <string/>
           </property>
+          <property name="suffix">
+           <string extracomment="电流单位"> A</string>
+          </property>
           <property name="minimum">
-           <double>-3000.000000000000000</double>
+           <double>-500.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>3000.000000000000000</double>
+           <double>500.000000000000000</double>
           </property>
           <property name="singleStep">
-           <double>10.000000000000000</double>
+           <double>1.000000000000000</double>
           </property>
           <property name="stepType">
            <enum>QAbstractSpinBox::DefaultStepType</enum>
