@@ -63,7 +63,6 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         self.device_reg_set_func = device_reg_set_func
         self.setObjectName("DeviceSettingFrom")
 
-
         # 设置按钮图标
         # self.btn_id_pid_i.setIcon(QIcon("./img/save2.svg"))
 
@@ -75,9 +74,13 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         self._connect_pid_buttons()
         self._connect_other_param_buttons()
         self.btn_save_param.clicked.connect(self._confirm_save_param)
-        self.btn_start_resolver_calibration.clicked.connect(self._confirm_launch_zero_calibration)
+        self.btn_start_resolver_calibration.clicked.connect(
+            self._confirm_launch_zero_calibration
+        )
         self.table_pid_param.cellDoubleClicked.connect(self._sync_pid_params_to_spinbox)
-        self.table_other_param.cellDoubleClicked.connect(self._sync_other_params_to_spinbox)
+        self.table_other_param.cellDoubleClicked.connect(
+            self._sync_other_params_to_spinbox
+        )
 
     def _init_pid_table(self):
         """初始化PID参数显示表格"""
@@ -121,6 +124,29 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
 
     def _init_other_table(self):
         """初始化其他参数显示表格"""
+        # 初始化空数据
+        headers = ["变量名称", "变量别名", "值"]
+        other_params = [
+            ["Motor_Rs", "-", "0.00000"],
+            ["Motor_Pn", "机对数", "0.00000"],
+            ["Vdcset_ref", "母线电压", "0.00000"],
+            ["Iset_d_ref", "d轴电流", "0.00000"],
+            ["Motor_Resolver_Zero", "校准值", "0.00000"],
+            ["Motor_RpstoRpm_COEF", "-", "0.00000"],
+            ["Rottx_Zero_Current", "旋变零点电流", "0.00000"],
+            ["mEtheta", "角度", "0.00000"],
+            ["mEtheta1", "角度", "0.00000"],
+            ["mEthetaAVG", "平均角度", "0.00000"],
+            ["mEthetaRad", "角度弧度", "0.00000"],
+            ["mEthetaZero", "零点角度", "0.00000"],
+            ["Motor_Id_Max", "Id上限", "0.00000"],
+            ["Motor_Id_Min", "Id下限", "0.00000"],
+            ["ResovlerFault", "旋变故障", "0"],
+            ["Iset_q_ref", "q轴电流", "0.00000"],
+            ["Idref", "d轴电流参考值", "0.00000"],
+            ["Iqref", "q轴电流参考值", "0.00000"],
+        ]
+
         # 设置右键选中
         self.table_other_param.setSelectRightClickedRow(True)
 
@@ -130,32 +156,13 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         self.table_other_param.setWordWrap(False)
 
         # 设置表格尺寸
-        self.table_other_param.setRowCount(15)
+        self.table_other_param.setRowCount(len(other_params))
         self.table_other_param.setColumnCount(3)
 
         # 设置表头
-        headers = ["变量名称", "变量别名", "值"]
         self.table_other_param.setHorizontalHeaderLabels(headers)
         self.table_other_param.verticalHeader().hide()
 
-        # 初始化空数据
-        other_params = [
-                ['Motor_Rs', '-', '0.00000'],
-                ['Motor_Pn', '机对数', '0.00000'],
-                ['Vdcset_ref', '母线电压', '0.00000'],
-                ['Iset_d_ref', 'd轴电流', '0.00000'],
-                ['Motor_Resolver_Zero', '校准值', '0.00000'],
-                ['Motor_RpstoRpm_COEF', '-', '0.00000'],
-                ['Rottx_Zero_Current', '旋变零点电流', '0.00000'],
-                ['mEtheta', '角度', '0.00000'],
-                ['mEtheta1', '角度', '0.00000'],
-                ['mEthetaAVG', '平均角度', '0.00000'],
-                ['mEthetaRad', '角度弧度', '0.00000'],
-                ['mEthetaZero', '零点角度', '0.00000'],
-                ['Motor_Id_Max', 'Id上限', '0.00000'],
-                ['Motor_Id_Min', 'Id下限', '0.00000'],
-                ['ResovlerFault', '旋变故障', '0'],
-        ]
         self._update_other_table(other_params)
 
         # 自适应列宽
@@ -166,78 +173,110 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         """连接所有 PID 设置按钮，并增加确认提示"""
         # 速度环
         self.btn_speed_pid_p.clicked.connect(
-            lambda: self._confirm_and_set_pid(15, self.spinbox_speed_pid_p.value(), "速度环 Kp")
+            lambda: self._confirm_and_set_pid(
+                15, self.spinbox_speed_pid_p.value(), "速度环 Kp"
+            )
         )
         self.btn_speed_pid_i.clicked.connect(
-            lambda: self._confirm_and_set_pid(16, self.spinbox_speed_pid_i.value(), "速度环 Ki")
+            lambda: self._confirm_and_set_pid(
+                16, self.spinbox_speed_pid_i.value(), "速度环 Ki"
+            )
         )
 
         # Id 环
         self.btn_id_pid_p.clicked.connect(
-            lambda: self._confirm_and_set_pid(19, self.spinbox_id_pid_p.value(), "Id 环 Kp")
+            lambda: self._confirm_and_set_pid(
+                19, self.spinbox_id_pid_p.value(), "Id 环 Kp"
+            )
         )
         self.btn_id_pid_i.clicked.connect(
-            lambda: self._confirm_and_set_pid(20, self.spinbox_id_pid_i.value(), "Id 环 Ki")
+            lambda: self._confirm_and_set_pid(
+                20, self.spinbox_id_pid_i.value(), "Id 环 Ki"
+            )
         )
 
         # Iq 环
         self.btn_iq_pid_p.clicked.connect(
-            lambda: self._confirm_and_set_pid(23, self.spinbox_iq_pid_p.value(), "Iq 环 Kp")
+            lambda: self._confirm_and_set_pid(
+                23, self.spinbox_iq_pid_p.value(), "Iq 环 Kp"
+            )
         )
         self.btn_iq_pid_i.clicked.connect(
-            lambda: self._confirm_and_set_pid(24, self.spinbox_iq_pid_i.value(), "Iq 环 Ki")
+            lambda: self._confirm_and_set_pid(
+                24, self.spinbox_iq_pid_i.value(), "Iq 环 Ki"
+            )
         )
 
     def _connect_other_param_buttons(self):
         """连接其他参数设置按钮，并增加确认提示"""
         # Rottx_Zero_Current - 旋变零点电流
         self.btn_Rottx_Zero_Current.clicked.connect(
-            lambda: self._confirm_and_set_param(14, self.spinbox_Rottx_Zero_Current.value(), "旋变零点电流")
+            lambda: self._confirm_and_set_param(
+                14, self.spinbox_Rottx_Zero_Current.value(), "旋变零点电流"
+            )
         )
 
         # Motor_Resolver_Zero - 旋变零点
         self.btn_Motor_Resolver_Zero.clicked.connect(
-            lambda: self._confirm_and_set_param(48, self.spinbox_Motor_Resolver_Zero.value(), "旋变零点")
+            lambda: self._confirm_and_set_param(
+                48, self.spinbox_Motor_Resolver_Zero.value(), "旋变零点"
+            )
         )
 
         # Motor_Pn - 电机极对数
         self.btn_Motor_Pn.clicked.connect(
-            lambda: self._confirm_and_set_param(46, self.spinbox_Motor_Pn.value(), "电机极对数")
+            lambda: self._confirm_and_set_param(
+                46, self.spinbox_Motor_Pn.value(), "电机极对数"
+            )
         )
 
         # 新增的参数按钮连接
         # Motor_Id_Max - 电机Id上限
         self.btn_Motor_Id_Max.clicked.connect(
-            lambda: self._confirm_and_set_param(33, self.spinbox_Motor_Id_Max.value(), "电机Id上限")
+            lambda: self._confirm_and_set_param(
+                33, self.spinbox_Motor_Id_Max.value(), "电机Id上限"
+            )
         )
 
         # Motor_Id_Min - 电机Id下限
         self.btn_Motor_Id_Min.clicked.connect(
-            lambda: self._confirm_and_set_param(34, self.spinbox_Motor_Id_Min.value(), "电机Id下限")
+            lambda: self._confirm_and_set_param(
+                34, self.spinbox_Motor_Id_Min.value(), "电机Id下限"
+            )
         )
 
         # Idref - d轴电流参考值
         self.btn_Idref.clicked.connect(
-            lambda: self._confirm_and_set_param(31, self.spinbox_Idref.value(), "d轴电流参考值")
+            lambda: self._confirm_and_set_param(
+                31, self.spinbox_Idref.value(), "d轴电流参考值"
+            )
         )
 
         # Iqref - q轴电流参考值
         self.btn_Iqref.clicked.connect(
-            lambda: self._confirm_and_set_param(32, self.spinbox_Iqref.value(), "q轴电流参考值")
+            lambda: self._confirm_and_set_param(
+                32, self.spinbox_Iqref.value(), "q轴电流参考值"
+            )
         )
 
         # Vdcset_ref - 母线电压设置参考值
         self.btn_Vdcset_ref.clicked.connect(
-            lambda: self._confirm_and_set_param(8, self.spinbox_Vdcset_ref.value(), "母线电压设置参考值", "uint16")
+            lambda: self._confirm_and_set_param(
+                8, self.spinbox_Vdcset_ref.value(), "母线电压设置参考值", "uint16"
+            )
         )
 
         # Iset_d_ref - d轴电流参考值
         self.btn_Iset_d_ref.clicked.connect(
-            lambda: self._confirm_and_set_param(9, self.spinbox_Iset_d_ref.value(), "d轴电流参考值", "uint16")
+            lambda: self._confirm_and_set_param(
+                9, self.spinbox_Iset_d_ref.value(), "d轴电流参考值", "uint16"
+            )
         )
 
     @asyncSlot()
-    async def _set_param(self, reg_addr: int, value: float, param_name: str, value_type: str = "float32"):
+    async def _set_param(
+        self, reg_addr: int, value: float, param_name: str, value_type: str = "float32"
+    ):
         """设置参数的通用函数"""
         try:
             # 根据寄存器地址确定数据类型和转换方式
@@ -254,19 +293,12 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             success = await self.device_reg_set_func(
                 reg_addr, [param_set_int], target_addr=target_addr
             )
-
-            if success:
-                self.info_success(
-                    title='设置成功',
-                    content=f'{param_name} 已成功设置为 {value:.5f}'
-                )
-                logger.info(f"参数设置成功: 地址{reg_addr}, 值{value}")
-            else:
-                self.info_error(
-                    title='设置失败',
-                    content=f'{param_name} 设置失败，请检查通信'
-                )
-                logger.warning(f"参数设置失败: 地址{reg_addr}, 值{value}")
+            self.infobar(
+                success,
+                "设置参数结果",
+                f"{param_name} 已成功设置为 {value:.5f}",
+                f"{param_name} 设置失败，请检查通信",
+            )
 
         except Exception as e:
             logger.error(f"设置参数错误: {e}")
@@ -286,20 +318,12 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             success = await self.device_reg_set_func(
                 reg_addr, [value], target_addr=target_addr
             )
-
-            if success:
-                self.info_success(
-                    title='保存成功',
-                    content='所有参数已成功写入设备 Flash'
-                )
-                logger.info("参数保存成功")
-            else:
-                self.info_error(
-                    title='保存失败',
-                    content='参数保存失败，请检查通信'
-                )
-                logger.warning("参数保存失败")
-    
+            self.infobar(
+                success,
+                title="保存参数结果",
+                success_content="所有参数已成功写入设备 Flash",
+                error_content="参数保存命令发送超时，请检查通信！",
+            )
         except Exception as e:
             logger.error(f"设置PID参数错误: {e}")
 
@@ -313,20 +337,13 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             success = await self.device_reg_set_func(
                 reg_addr, [value], target_addr=target_addr
             )
+            self.infobar(
+                success,
+                title="校准启动结果",
+                success_content="控制板收到校准命令！",
+                error_content="校准启动命令发送超时！",
+            )
 
-            if success:
-                self.info_success(
-                    title='校准启动结果',
-                    content='控制板收到校准命令！'
-                )
-                logger.info("校准启动成功！")
-            else:
-                self.info_error(
-                    title='校准启动结果',
-                    content='校准启动失败，请检查通信'
-                )
-                logger.warning("校准启动失败！")
-    
         except Exception as e:
             logger.error(f"校准启动错误: {e}")
 
@@ -365,10 +382,12 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             for i, songInfo in enumerate(other_params):
                 for j in range(3):
                     item = QTableWidgetItem(songInfo[j])
-                    item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)  # 设置为不可编辑
+                    item.setFlags(
+                        item.flags() & ~QtCore.Qt.ItemIsEditable
+                    )  # 设置为不可编辑
                     item.setTextAlignment(QtCore.Qt.AlignCenter)  # 居中对齐
                     self.table_other_param.setItem(i, j, item)
-                    
+
         except Exception as e:
             logger.error(f"更新其他表格错误: {e}")
 
@@ -415,7 +434,7 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             self._update_pid_table(speed_params, id_params, iq_params)
 
             # 其他参数解析
-            '''
+            """
             根据下位机代码的寄存器映射：
             [27] = &mVar_RAM.Motor_Parameters.Motor_Rs,
             [28] = &mVar_RAM.Motor_Parameters.Motor_Pn,
@@ -433,12 +452,18 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             APP_Net_WriteReg(addr++, FLOAT_TO_U32_FIXED_POINT(MCV.mEthetaAVG));                                // 82
             APP_Net_WriteReg(addr++, MCV.ResovlerFault);                                                        // 91
             APP_Net_WriteReg(addr++, MCV.mEthetaRad);                                                           // 92
-            '''
+            """
             Motor_Rs = uint32_to_int32(sys_regs_up_data.reg[27]) / fixed_point_scale
             Motor_Pn = uint32_to_int32(sys_regs_up_data.reg[28]) / fixed_point_scale
-            Motor_Resolver_Zero = uint32_to_int32(sys_regs_up_data.reg[29]) / fixed_point_scale
-            Motor_RpstoRpm_COEF = uint32_to_int32(sys_regs_up_data.reg[30]) / fixed_point_scale
-            Rottx_Zero_Current = uint32_to_int32(sys_regs_up_data.reg[14]) / fixed_point_scale
+            Motor_Resolver_Zero = (
+                uint32_to_int32(sys_regs_up_data.reg[29]) / fixed_point_scale
+            )
+            Motor_RpstoRpm_COEF = (
+                uint32_to_int32(sys_regs_up_data.reg[30]) / fixed_point_scale
+            )
+            Rottx_Zero_Current = (
+                uint32_to_int32(sys_regs_up_data.reg[14]) / fixed_point_scale
+            )
 
             # 新增的参数解析
             # 地址8和9是Uint16类型，直接使用
@@ -456,31 +481,37 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             mEtheta = uint32_to_int32(sys_regs_up_data.reg[80]) / fixed_point_scale
             mEthetaZero = uint32_to_int32(sys_regs_up_data.reg[81]) / fixed_point_scale
             mEthetaAVG = uint32_to_int32(sys_regs_up_data.reg[82]) / fixed_point_scale
-            ResovlerFault = sys_regs_up_data.reg[91]  # 这个是整数，不需要除以fixed_point_scale
+            ResovlerFault = sys_regs_up_data.reg[
+                91
+            ]  # 这个是整数，不需要除以fixed_point_scale
             mEthetaRad = uint32_to_int32(sys_regs_up_data.reg[92]) / fixed_point_scale
+            Iset_q_ref = uint32_to_int32(sys_regs_up_data.reg[38]) / fixed_point_scale
 
             # 添加表格数据
             other_params = [
-                ['Motor_Rs', '-', f'{Motor_Rs:.5f}'],
-                ['Motor_Pn', '机对数', f'{Motor_Pn:.5f}'],
-                ['Vdcset_ref', '母线电压', f'{Vdcset_ref}'],
-                ['Iset_d_ref', 'd轴电流', f'{Iset_d_ref}'],
-                ['Motor_Resolver_Zero', '校准值', f'{Motor_Resolver_Zero:.5f}'],
-                ['Motor_RpstoRpm_COEF', '-', f'{Motor_RpstoRpm_COEF:.5f}'],
-                ['Rottx_Zero_Current', '旋变零点电流', f'{Rottx_Zero_Current:.5f}'],
-                ['mEtheta', '角度', f'{mEtheta:.5f}'],
-                ['mEtheta1', '角度', f'{mEtheta1:.5f}'],
-                ['mEthetaAVG', '平均角度', f'{mEthetaAVG:.5f}'],
-                ['mEthetaRad', '角度弧度', f'{mEthetaRad:.5f}'],
-                ['mEthetaZero', '零点角度', f'{mEthetaZero:.5f}'],
-                ['Motor_Id_Max', 'Id上限', f'{Motor_Id_Max:.5f}'],
-                ['Motor_Id_Min', 'Id下限', f'{Motor_Id_Min:.5f}'],
-                ['ResovlerFault', '旋变故障', f'{ResovlerFault}'],
+                ["Motor_Rs", "-", f"{Motor_Rs:.5f}"],
+                ["Motor_Pn", "机对数", f"{Motor_Pn:.5f}"],
+                ["Vdcset_ref", "母线电压", f"{Vdcset_ref}"],
+                ["Iset_d_ref", "d轴电流", f"{Iset_d_ref}"],
+                ["Motor_Resolver_Zero", "校准值", f"{Motor_Resolver_Zero:.5f}"],
+                ["Motor_RpstoRpm_COEF", "-", f"{Motor_RpstoRpm_COEF:.5f}"],
+                ["Rottx_Zero_Current", "旋变零点电流", f"{Rottx_Zero_Current:.5f}"],
+                ["mEtheta", "角度", f"{mEtheta:.5f}"],
+                ["mEtheta1", "角度", f"{mEtheta1:.5f}"],
+                ["mEthetaAVG", "平均角度", f"{mEthetaAVG:.5f}"],
+                ["mEthetaRad", "角度弧度", f"{mEthetaRad:.5f}"],
+                ["mEthetaZero", "零点角度", f"{mEthetaZero:.5f}"],
+                ["Motor_Id_Max", "Id上限", f"{Motor_Id_Max:.5f}"],
+                ["Motor_Id_Min", "Id下限", f"{Motor_Id_Min:.5f}"],
+                ["ResovlerFault", "旋变故障", f"{ResovlerFault}"],
+                ["Iset_q_ref", "q轴电流", f"{Iset_q_ref:.5f}"],
+                ["Idref", "d轴电流参考值", f"{Idref:.5f}"],
+                ["Iqref", "q轴电流参考值", f"{Iqref:.5f}"],
             ]
             self._update_other_table(other_params)
 
             # 系统模式
-            '''
+            """
             union _SYS_MODE_REG {
                 Uint32 all;
                 struct  _SYS_MODE_REG_BITS bit;
@@ -492,13 +523,17 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             APP_Net_WriteReg(addr++, sys_mode_reg.all);    
             Uint16 RotTX_ZeroEN_FLG = 0; // 0:当前未启动旋变校准,1:当前已启动旋变校准
             Uint16 SYS_OpertionMode = 2; // 模式---1----电流环模式，2---速度环模式, 0---其他                                                    // 85
-            '''
+            """
             SYS_OpertionMode = sys_regs_up_data.reg[85] & 0x07
             RotTX_ZeroEN_FLG = (sys_regs_up_data.reg[85] >> 3) & 0x01
             SYS_OpertionMode_dict = {1: "电流环模式", 2: "速度环模式", 0: "其他模式"}
             RotTX_ZeroEN_FLG_dict = {0: "未启动", 1: "已启动"}
-            self.label_speed_ctrl_mode_select.setText(f"当前为{SYS_OpertionMode_dict.get(SYS_OpertionMode, '其他模式')}")
-            self.label_start_resolver_calibration.setText(f"当前{RotTX_ZeroEN_FLG_dict.get(RotTX_ZeroEN_FLG, '未知状态')}旋变校准")
+            self.label_speed_ctrl_mode_select.setText(
+                f"当前为{SYS_OpertionMode_dict.get(SYS_OpertionMode, '其他模式')}"
+            )
+            self.label_start_resolver_calibration.setText(
+                f"当前{RotTX_ZeroEN_FLG_dict.get(RotTX_ZeroEN_FLG, '未知状态')}旋变校准"
+            )
             self.btn_ctrl_mode_select.setChecked(SYS_OpertionMode == 1)
 
         except Exception as e:
@@ -570,9 +605,14 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
         except Exception as e:
             logger.error(f"同步其他参数到spinbox失败: {e}")
 
-
     @asyncSlot()
-    async def _confirm_and_set_param(self, reg_addr: int, new_value: float, param_name: str, value_type: str = "float32"):
+    async def _confirm_and_set_param(
+        self,
+        reg_addr: int,
+        new_value: float,
+        param_name: str,
+        value_type: str = "float32",
+    ):
         """
         弹出确认框，确认后真正发送参数设置指令
         :param reg_addr: 寄存器地址
@@ -588,7 +628,9 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             await self._set_param(reg_addr, new_value, param_name, value_type)
 
     @asyncSlot()
-    async def _confirm_and_set_pid(self, reg_addr: int, new_value: float, param_name: str):
+    async def _confirm_and_set_pid(
+        self, reg_addr: int, new_value: float, param_name: str
+    ):
         """
         弹出确认框，确认后真正发送 PID 设置指令（保持向后兼容）
         :param reg_addr: 寄存器地址
@@ -618,52 +660,43 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
     def closeEvent(self, event):
         """窗口关闭事件"""
         try:
-            logger.info("DeviceSettingFrom开始关闭")
-
-            # 取消所有正在运行的异步任务
-            # DeviceSettingFrom主要是按钮触发的异步操作，通常在关闭时已完成
-
             logger.info("DeviceSettingFrom正常退出")
             event.accept()
-
         except Exception as e:
             logger.error(f"关闭DeviceSettingFrom时出错: {e}")
             event.accept()
-    
-    def info_success(
+
+    def infobar(
         self,
+        ret,
         title: str,
-        content: str,
-        orient: Qt.Orientation =Qt.Horizontal,
-        isClosable: bool=True,
-        position: InfoBarPosition =InfoBarPosition.TOP,
-        duration: int=2000,
+        success_content: str,
+        error_content: str,
+        orient: Qt.Orientation = Qt.Horizontal,
+        isClosable: bool = True,
+        position: InfoBarPosition = InfoBarPosition.TOP,
+        success_duration: int = 2000,
+        error_duration: int = 2000,
     ):
-        InfoBar.success(
-                    title=title,
-                    content=content,
-                    orient=orient,
-                    isClosable=isClosable,
-                    position=position,
-                    duration=duration,
-                    parent=self
-                )
-    
-    def info_error(
-        self,
-        title: str,
-        content: str,
-        orient: Qt.Orientation =Qt.Horizontal,
-        isClosable: bool=True,
-        position: InfoBarPosition =InfoBarPosition.TOP,
-        duration: int=2000,
-    ):
-        InfoBar.error(
-                    title=title,
-                    content=content,
-                    orient=orient,
-                    isClosable=isClosable,
-                    position=position,
-                    duration=duration,
-                    parent=self
-                )
+        if ret:
+            InfoBar.success(
+                title=title,
+                content=success_content,
+                orient=orient,
+                isClosable=isClosable,
+                position=position,
+                duration=success_duration,
+                parent=self,
+            )
+            logger.info(success_content)
+        else:
+            InfoBar.error(
+                title=title,
+                content=error_content,
+                orient=orient,
+                isClosable=isClosable,
+                position=position,
+                duration=error_duration,
+                parent=self,
+            )
+            logger.error(error_content)
