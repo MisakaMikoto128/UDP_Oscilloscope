@@ -87,7 +87,7 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.spinbox_speed.setValue(0)  # 设置默认速度为0
 
         self.send_timer = QTimer(self)
-        self.send_timer.setInterval(600)
+        self.send_timer.setInterval(800)
         self.send_timer.timeout.connect(self.send_data)
         self.send_timer.start()
 
@@ -103,9 +103,9 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.radio_btn_speed_10.clicked.connect(lambda: self.set_speed_step(10))
         self.radio_btn_speed_100.clicked.connect(lambda: self.set_speed_step(100))
         self.btn_current_set.clicked.connect(self.set_current)
-        self.radio_btn_current_0.clicked.connect(lambda: self.set_current_step(0))
-        self.radio_btn_current_05.clicked.connect(lambda: self.set_current_step(0.5))
-        self.radio_btn_current_1.clicked.connect(lambda: self.set_current_step(1))
+        self.radio_btn_speed_1.clicked.connect(lambda: self.set_current_step(0.5))
+        self.radio_btn_speed_10.clicked.connect(lambda: self.set_current_step(1.0))
+        self.radio_btn_speed_100.clicked.connect(lambda: self.set_current_step(4.0))
 
         self.period_send_sw = True
         self.sw_btn_host_computer.setChecked(True)
@@ -132,9 +132,9 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             self.btn_current_set.show()
             self.spinbox_speed.hide()
             self.btn_speed_set.hide()
-            self.radio_btn_current_0.setText("x0.1 A")
-            self.radio_btn_current_05.setText("x0.5 A")
-            self.radio_btn_current_1.setText("x1 A")
+            self.radio_btn_current_0.setText("x0.5 A")
+            self.radio_btn_current_05.setText("x2 A")
+            self.radio_btn_current_1.setText("x4 A")
 
     def init_list_widgets(self):
         """初始化列表控件"""
