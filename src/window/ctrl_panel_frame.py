@@ -6,7 +6,12 @@ import pyqtgraph as pg
 from PyQt5 import QtWidgets, QtCore, QtGui
 from qasync import asyncClose, asyncSlot
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
-from qfluentwidgets import InfoLevel, PillPushButton, InfoBarIcon, TeachingTipTailPosition
+from qfluentwidgets import (
+    InfoLevel,
+    PillPushButton,
+    InfoBarIcon,
+    TeachingTipTailPosition,
+)
 from PyQt5.QtWidgets import QListWidgetItem
 from PyQt5.QtCore import QPoint, Qt
 from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout
@@ -74,8 +79,8 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.speed_min = -3000
         self.current_set = 0
         self.current_set_step = 0.5
-        self.current_max = 100
-        self.current_min = -100
+        self.current_max = 800
+        self.current_min = -800
         self.current_mode = "speed"
         self.btn_ctrl_mode_select = None
 
@@ -97,6 +102,10 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.radio_btn_speed_1.clicked.connect(lambda: self.set_speed_step(1))
         self.radio_btn_speed_10.clicked.connect(lambda: self.set_speed_step(10))
         self.radio_btn_speed_100.clicked.connect(lambda: self.set_speed_step(100))
+        self.btn_current_set.clicked.connect(self.set_current)
+        self.radio_btn_current_0.clicked.connect(lambda: self.set_current_step(0))
+        self.radio_btn_current_05.clicked.connect(lambda: self.set_current_step(0.5))
+        self.radio_btn_current_1.clicked.connect(lambda: self.set_current_step(1))
 
         self.period_send_sw = True
         self.sw_btn_host_computer.setChecked(True)
@@ -106,7 +115,6 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
 
         # 初始化 ListWidget
         self.init_list_widgets()
-        # self.test_show()
         QApplication.instance().installEventFilter(self)
         self.set_ui_mode()
 
@@ -116,11 +124,17 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             self.btn_current_set.hide()
             self.spinbox_speed.show()
             self.btn_speed_set.show()
+            self.radio_btn_speed_1.setText("x1")
+            self.radio_btn_speed_10.setText("x10")
+            self.radio_btn_speed_100.setText("x100")
         else:
             self.spinbox_current.show()
             self.btn_current_set.show()
             self.spinbox_speed.hide()
             self.btn_speed_set.hide()
+            self.radio_btn_current_0.setText("x0.1 A")
+            self.radio_btn_current_05.setText("x0.5 A")
+            self.radio_btn_current_1.setText("x1 A")
 
     def init_list_widgets(self):
         """初始化列表控件"""
@@ -132,14 +146,6 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.update_dev_error_list([])
         self.update_fault_status_list([])
 
-    def test_show(self):
-        sys_regs_up_data = SysREGsUpData(
-            packet_type=1,
-            reg_num=120,
-            reg=[1023450 for _ in range(120)],
-        )
-        self.on_on_sys_regs_uploaded(sys_regs_up_data)
-
     def set_speed(self):
         self.speed_set = self.spinbox_speed.value()
 
@@ -147,6 +153,14 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         """设置速度步进值并更新 spinbox 的步进值"""
         self.speed_set_step = step
         self.spinbox_speed.setSingleStep(step)
+
+    def set_current(self):
+        self.current_set = self.spinbox_current.value()
+
+    def set_current_step(self, step: float):
+        """设置电流步进值并更新 spinbox 的步进值"""
+        self.current_set_step = step
+        self.spinbox_current.setSingleStep(step)
 
     def on_sw_btn_host_computer_checked_changed(self, checked: bool):
         self.period_send_sw = checked
@@ -157,6 +171,17 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         target_addr = (self.cfg.target_host, self.cfg.target_port)
         ret = await self.device_reg_set_func(
             49, [speed_set_int], target_addr=target_addr
+        )
+        return ret
+
+    async def send_iq_set_cmd(self):
+        self.current_set = min(
+            max(self.current_set, self.current_min), self.current_max
+        )
+        current_set_int = int(self.current_set * 100000)
+        target_addr = (self.cfg.target_host, self.cfg.target_port)
+        ret = await self.device_reg_set_func(
+            38, [current_set_int], target_addr=target_addr
         )
         return ret
 
@@ -172,35 +197,24 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             ret = await self.send_speed_set_cmd()
             if not ret:
                 logger.info("设置速度失败")
-                pass
+            ret = await self.send_iq_set_cmd()
+            if not ret:
+                logger.info("设置Iq失败")
 
     @asyncSlot()
     async def stop_device(self):
         self.speed_set = 0
+        self.current_set = 0
         self.update_btn_check_state()
         self.spinbox_speed.setValue(self.speed_set)
         ret = await self.send_speed_set_cmd()
-        if ret:
-            InfoBar.success(
-                title="电机停止结果",
-                content="停止成功，收到回复！",
-                orient=Qt.Horizontal,
-                isClosable=True,
-                position=InfoBarPosition.TOP,
-                duration=1000,
-                parent=self.parent(),
-            )
-        else:
-            logger.info("停止失败")
-            InfoBar.error(
-                title="电机停止结果",
-                content="停止命令发送超时！",
-                orient=Qt.Horizontal,
-                isClosable=True,
-                position=InfoBarPosition.TOP,
-                duration=2000,
-                parent=self.parent(),
-            )
+        self.infobar(
+            ret, "电机停止结果", "速度停止成功，收到回复！", "速度停止命令发送超时！"
+        )
+        ret = await self.send_iq_set_cmd()
+        self.infobar(
+            ret, "电机停止结果", "Iq停止成功，收到回复！", "Iq停止命令发送超时！"
+        )
         return ret
 
     @asyncSlot()
@@ -211,28 +225,10 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             self.spinbox_speed.setValue(self.speed_set)
 
         ret = await self.send_speed_set_cmd()
-        if ret:
-            InfoBar.success(
-                title="电机启动结果",
-                content="启动成功，收到回复！",
-                orient=Qt.Horizontal,
-                isClosable=True,
-                position=InfoBarPosition.TOP,
-                duration=1000,
-                parent=self.parent(),
-            )
-        else:
-            logger.info("启动失败")
-            InfoBar.error(
-                title="电机启动结果",
-                content="启动命令发送超时！",
-                orient=Qt.Horizontal,
-                isClosable=True,
-                position=InfoBarPosition.TOP,
-                duration=2000,
-                parent=self.parent(),
-            )
-    
+        self.infobar(
+            ret, "电机启动结果", "速度启动成功，收到回复！", "速度启动命令发送超时！"
+        )
+
     @asyncSlot()
     async def _confirm_launch_zero_calibration(self):
         title = "确认启动旋变零点校准"
@@ -252,30 +248,12 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             success = await self.device_reg_set_func(
                 reg_addr, [value], target_addr=target_addr
             )
-
-            if success:
-                InfoBar.success(
-                    title='校准启动结果',
-                    content='控制板收到校准命令！',
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=2000,
-                    parent=self.parent()
-                )
-                logger.info("校准启动成功！")
-            else:
-                InfoBar.error(
-                    title='校准启动结果',
-                    content='校准启动失败，请检查通信',
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=2000,
-                    parent=self.parent()
-                )
-                logger.warning("校准启动失败！")
-    
+            self.infobar(
+                success,
+                "校准启动结果",
+                "控制板收到校准命令！",
+                "校准启动命令发送超时！",
+            )
         except Exception as e:
             logger.error(f"校准启动错误: {e}")
 
@@ -363,15 +341,11 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             self.label_motor_temp.setText(
                 f"{MCV_mPT1:<7.2f} {MCV_mPT2:<7.2f} {MCV_mPT3:<7.2f} {MCV_mPT4:<7.2f} {MCV_mPT5:<7.2f}℃"
             )
-            self.label_sys_status.setText(
-                f"{info['state_en']}:{info['state_cn']}"
-            )
+            self.label_sys_status.setText(f"{info['state_en']}:{info['state_cn']}")
             error_d = (error_code_u32 >> 24) & 0xFF
             error_c = (error_code_u32 >> 16) & 0xFF
             error_b = (error_code_u32 >> 8) & 0xFF
-            self.label_fault_status.setText(
-                f"故障状态：0x{flag1_uint32:08X}"
-            )
+            self.label_fault_status.setText(f"故障状态：0x{flag1_uint32:08X}")
             self.label_dev_error.setText(
                 f"报错：A:0x{error_d:02X} B:0x{error_c:02X} C:0x{error_b:02X}"
             )
@@ -384,8 +358,8 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             RotTX_ZeroEN_FLG = (sys_regs_up_data.reg[85] >> 3) & 0x01
             SYS_OpertionMode_dict = {1: "current", 2: "speed", 0: "unknown"}
             RotTX_ZeroEN_FLG_dict = {0: "未启动", 1: "已启动"}
-            self.current_mode = SYS_OpertionMode_dict.get(SYS_OpertionMode, 'unknown')
-            # self.set_ui_mode()
+            self.current_mode = SYS_OpertionMode_dict.get(SYS_OpertionMode, "unknown")
+            self.set_ui_mode()
 
         except Exception as e:
             logger.info(f"解析数据错误{e}")
@@ -415,25 +389,50 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             self.update_btn_check_state()
             self.spinbox_speed.setValue(0)
 
-
     def increase_speed(self):
         self.speed_set = min(self.speed_set + self.speed_set_step, self.speed_max)
         self.spinbox_speed.setValue(self.speed_set)
-        logger.info("Key_Up (global)")
+        logger.info(f"Key_Up (global) {self.speed_set}")
 
     def decrease_speed(self):
         self.speed_set = max(self.speed_set - self.speed_set_step, self.speed_min)
         self.spinbox_speed.setValue(self.speed_set)
-        logger.info("Key_Down (global)")
+        logger.info(f"Key_Down (global) {self.speed_set}")
+
+    def increase_current(self):
+        self.current_set = min(
+            self.current_set + self.current_set_step, self.current_max
+        )
+        self.spinbox_current.setValue(self.current_set)
+        logger.info(f"Key_Up (global) {self.current_set}")
+
+    def decrease_current(self):
+        self.current_set = max(
+            self.current_set - self.current_set_step, self.current_min
+        )
+        self.spinbox_current.setValue(self.current_set)
+        logger.info(f"Key_Down (global) {self.current_set}")
+
+    def increase_target(self):
+        if self.current_mode == "speed":
+            self.increase_speed()
+        else:
+            self.increase_current()
+
+    def decrease_target(self):
+        if self.current_mode == "speed":
+            self.decrease_speed()
+        else:
+            self.decrease_current()
 
     def eventFilter(self, source, event):
         if event.type() == QtCore.QEvent.KeyPress:
             key = event.key()
             if key == QtCore.Qt.Key_Up:
-                self.increase_speed()
+                self.increase_target()
                 return True  # 拦截事件，防止继续传递
             elif key == QtCore.Qt.Key_Down:
-                self.decrease_speed()
+                self.decrease_target()
                 return True
             elif key == QtCore.Qt.Key_Return or key == QtCore.Qt.Key_Enter:
                 asyncio.ensure_future(self.launch_device())
@@ -448,41 +447,44 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         """窗口关闭事件"""
         try:
             # 停止定时器
-            if hasattr(self, 'send_timer') and self.send_timer:
+            if hasattr(self, "send_timer") and self.send_timer:
                 self.send_timer.stop()
                 logger.info("发送定时器已停止")
-            
+
             logger.info("CtrlPanelForm正常退出")
             event.accept()
 
         except Exception as e:
             logger.error(f"关闭CtrlPanelForm时出错: {e}")
             event.accept()
-    
+
     async def close_user(self):
         self.send_timer.timeout.disconnect()
         self.send_timer.stop()
         self.period_send_sw = False
         self.sw_btn_host_computer.setChecked(False)
 
-    def set_sw_btn_ctrl_mode_select(self, btn_ctrl_mode_select: PillPushButton): 
+    def set_sw_btn_ctrl_mode_select(self, btn_ctrl_mode_select: PillPushButton):
         btn_ctrl_mode_select.clicked.connect(self.set_device_mode)
         self.btn_ctrl_mode_select = btn_ctrl_mode_select
 
     @asyncSlot()
     async def set_device_mode(self):
-
         if not self.btn_ctrl_mode_select:
             return
-        
+
         set_mode = "current" if self.current_mode == "speed" else "speed"
-        confirmed = await async_confirm("确认修改模式", f"即将把模式从 {self.current_mode} 修改为 {set_mode}，请确认是否继续？", self.parent())
+        confirmed = await async_confirm(
+            "确认修改模式",
+            f"即将把模式从 {self.current_mode} 修改为 {set_mode}，请确认是否继续？",
+            self.parent(),
+        )
         if confirmed:
             self.speed_set = 0
             ret = await self.stop_device()
             if ret:
                 await self.switch_sys_operation_mode_cmd(set_mode)
-    
+
     @asyncSlot()
     async def switch_sys_operation_mode_cmd(self, set_mode):
         try:
@@ -499,29 +501,43 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
             success = await self.device_reg_set_func(
                 reg_addr, [value], target_addr=target_addr
             )
-
-            if success:
-                InfoBar.success(
-                    title='校准启动结果',
-                    content='控制板收到校准命令！',
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=2000,
-                    parent=self.parent()
-                )
-                logger.info("校准启动成功！")
-            else:
-                InfoBar.error(
-                    title='校准启动结果',
-                    content='校准启动失败，请检查通信',
-                    orient=Qt.Horizontal,
-                    isClosable=True,
-                    position=InfoBarPosition.TOP,
-                    duration=2000,
-                    parent=self.parent()
-                )
-                logger.warning("校准启动失败！")
-    
+            self.infobar(
+                success,
+                "模式切换结果",
+                "模式切换成功，收到回复！",
+                "模式切换命令发送超时！",
+            )
         except Exception as e:
             logger.error(f"校准启动错误: {e}")
+
+    def infobar(
+        self,
+        ret: bool,
+        title,
+        success_content,
+        error_content,
+        success_duration=1000,
+        error_duration=2000,
+    ):
+        if ret:
+            InfoBar.success(
+                title=title,
+                content=success_content,
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=success_duration,
+                parent=self.parent(),
+            )
+            logger.info(success_content)
+        else:
+            InfoBar.error(
+                title=title,
+                content=error_content,
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP,
+                duration=error_duration,
+                parent=self.parent(),
+            )
+            logger.info(success_content)

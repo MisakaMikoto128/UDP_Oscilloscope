@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1094</width>
+    <width>1097</width>
     <height>731</height>
    </rect>
   </property>
@@ -980,10 +980,10 @@
            <string extracomment="电流单位"> A</string>
           </property>
           <property name="minimum">
-           <double>-500.000000000000000</double>
+           <double>-800.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>500.000000000000000</double>
+           <double>800.000000000000000</double>
           </property>
           <property name="singleStep">
            <double>1.000000000000000</double>

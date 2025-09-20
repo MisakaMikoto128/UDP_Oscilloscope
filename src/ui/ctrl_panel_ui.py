@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(1094, 731)
+        Form.resize(1097, 731)
         self.gridLayout_3 = QtWidgets.QGridLayout(Form)
         self.gridLayout_3.setObjectName("gridLayout_3")
         self.CardWidget = CardWidget(Form)
@@ -444,8 +444,8 @@ class Ui_Form(object):
         self.spinbox_current.setSpecialValueText("")
         self.spinbox_current.setProperty("showGroupSeparator", False)
         self.spinbox_current.setPrefix("")
-        self.spinbox_current.setMinimum(-500.0)
-        self.spinbox_current.setMaximum(500.0)
+        self.spinbox_current.setMinimum(-800.0)
+        self.spinbox_current.setMaximum(800.0)
         self.spinbox_current.setSingleStep(1.0)
         self.spinbox_current.setStepType(QtWidgets.QAbstractSpinBox.DefaultStepType)
         self.spinbox_current.setObjectName("spinbox_current")
