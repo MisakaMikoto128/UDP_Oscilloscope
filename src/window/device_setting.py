@@ -145,6 +145,9 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             ["Iset_q_ref", "q轴电流", "0.00000"],
             ["Idref", "d轴电流参考值", "0.00000"],
             ["Iqref", "q轴电流参考值", "0.00000"],
+            ["Te_set_ref", "电磁转矩设定", "0.00000"],
+            ["Motor_Flux", "电机磁链", "0.00000"],
+            ["inv_Kt", "转矩常数倒数", "0.00000"],
         ]
 
         # 设置右键选中
@@ -486,6 +489,9 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
             ]  # 这个是整数，不需要除以fixed_point_scale
             mEthetaRad = uint32_to_int32(sys_regs_up_data.reg[92]) / fixed_point_scale
             Iset_q_ref = uint32_to_int32(sys_regs_up_data.reg[38]) / fixed_point_scale
+            Te_set_ref = uint32_to_int32(sys_regs_up_data.reg[39]) / fixed_point_scale
+            Motor_Flux = uint32_to_int32(sys_regs_up_data.reg[44]) / fixed_point_scale
+            inv_Kt = uint32_to_int32(sys_regs_up_data.reg[45]) / fixed_point_scale
 
             # 添加表格数据
             other_params = [
@@ -507,6 +513,9 @@ class DeviceSettingFrom(QtWidgets.QFrame, Device_Setting_From):
                 ["Iset_q_ref", "q轴电流", f"{Iset_q_ref:.5f}"],
                 ["Idref", "d轴电流参考值", f"{Idref:.5f}"],
                 ["Iqref", "q轴电流参考值", f"{Iqref:.5f}"],
+                ["Te_set_ref", "电磁转矩设定", f"{Te_set_ref:.5f}"],
+                ["Motor_Flux", "电机磁链", f"{Motor_Flux:.5f}"],
+                ["inv_Kt", "转矩常数倒数", f"{inv_Kt:.5f}"],
             ]
             self._update_other_table(other_params)
 
