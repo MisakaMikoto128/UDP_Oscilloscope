@@ -75,8 +75,8 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.setObjectName("CtrlPanelForm")
         self.speed_set = 0
         self.speed_set_step = 10
-        self.speed_max = 3000
-        self.speed_min = -3000
+        self.speed_max = 4000
+        self.speed_min = -4000
         self.current_set = 0
         self.current_set_step = 0.5
         self.current_max = 800
