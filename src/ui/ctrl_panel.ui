@@ -889,10 +889,10 @@
            <string extracomment="转速单位">  rpm</string>
           </property>
           <property name="minimum">
-           <double>-3000.000000000000000</double>
+           <double>-4000.000000000000000</double>
           </property>
           <property name="maximum">
-           <double>3000.000000000000000</double>
+           <double>4000.000000000000000</double>
           </property>
           <property name="singleStep">
            <double>10.000000000000000</double>
