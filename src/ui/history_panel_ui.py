@@ -17,7 +17,7 @@ class Ui_Form(object):
         Form.resize(1025, 755)
         self.gridLayout_2 = QtWidgets.QGridLayout(Form)
         self.gridLayout_2.setObjectName("gridLayout_2")
-        self.calendar_picker_fault_history = CalendarPicker(Form)
+        self.calendar_picker_fault_history = FastCalendarPicker(Form)
         self.calendar_picker_fault_history.setObjectName("calendar_picker_fault_history")
         self.gridLayout_2.addWidget(self.calendar_picker_fault_history, 0, 0, 1, 1)
         self.combo_box_devices = ComboBox(Form)
@@ -40,4 +40,4 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
-from qfluentwidgets import CalendarPicker, CardWidget, ComboBox
+from qfluentwidgets import FastCalendarPicker, CardWidget, ComboBox
