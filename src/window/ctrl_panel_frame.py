@@ -35,6 +35,7 @@ from src.communication.protocol import (
 from src.config.config_manager import ConfigManager
 from src.ui import Ctrl_Panel_Form
 from .motor_controller_parser import MotorControllerParser
+from src.utils.register_parser import RegisterParser
 
 # 设置日志
 logging.basicConfig(
@@ -97,6 +98,7 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
         self.badge_online_status.setLevel(InfoLevel.ERROR)
 
         self.parser = MotorControllerParser()
+        self.register_parser = RegisterParser()
 
         self.btn_speed_set.clicked.connect(self.set_speed)
         self.radio_btn_speed_1.clicked.connect(lambda: self.set_speed_step(1))
@@ -296,69 +298,54 @@ class CtrlPanelForm(QtWidgets.QFrame, Ctrl_Panel_Form):
     @asyncSlot(SysREGsUpData)
     async def on_on_sys_regs_uploaded(self, sys_regs_up_data: SysREGsUpData):
         try:
-            fixed_point_scale = 100000
+            # 使用统一的寄存器解析器
+            parsed_data = self.register_parser.parse_sys_regs_data(sys_regs_up_data)
 
-            MCV_mSpeed = -uint32_to_int32(sys_regs_up_data.reg[83]) / fixed_point_scale
-            MCV_angle = sys_regs_up_data.reg[62] / fixed_point_scale
-            Vbus = uint32_to_int32(sys_regs_up_data.reg[76]) / fixed_point_scale
-            Vbus_in = uint32_to_int32(sys_regs_up_data.reg[77]) / fixed_point_scale
-            Id = uint32_to_int32(sys_regs_up_data.reg[56]) / fixed_point_scale
-            Iq = uint32_to_int32(sys_regs_up_data.reg[32]) / fixed_point_scale
-            Ud = uint32_to_int32(sys_regs_up_data.reg[60]) / fixed_point_scale
-            Uq = uint32_to_int32(sys_regs_up_data.reg[61]) / fixed_point_scale
-            temperature_u32 = sys_regs_up_data.reg[55]
-            error_code_u32 = sys_regs_up_data.reg[63]
-            MCV_mDuty = uint32_to_int32(sys_regs_up_data.reg[64]) / fixed_point_scale
-            MCV_mPT1 = uint32_to_int32(sys_regs_up_data.reg[65]) / fixed_point_scale
-            MCV_mPT2 = uint32_to_int32(sys_regs_up_data.reg[66]) / fixed_point_scale
-            MCV_mPT3 = uint32_to_int32(sys_regs_up_data.reg[67]) / fixed_point_scale
-            MCV_mPT4 = uint32_to_int32(sys_regs_up_data.reg[68]) / fixed_point_scale
-            MCV_mPT5 = uint32_to_int32(sys_regs_up_data.reg[69]) / fixed_point_scale
-            MCV_Ia = uint32_to_int32(sys_regs_up_data.reg[73]) / fixed_point_scale
-            MCV_Ib = uint32_to_int32(sys_regs_up_data.reg[74]) / fixed_point_scale
-            MCV_Ic = uint32_to_int32(sys_regs_up_data.reg[75]) / fixed_point_scale
-            MCV_Ibus = uint32_to_int32(sys_regs_up_data.reg[79]) / fixed_point_scale
-            flag1_uint32 = sys_regs_up_data.reg[90]
+            # 更新电压显示
+            self.label_vdc.setText(f"{parsed_data.Vbus:<7.2f}")
+            self.label_vbus_in.setText(f"{parsed_data.Vbus_in:<7.2f}")
+            self.label_uq.setText(f"{parsed_data.Uq:<7.2f}")
+            self.label_ud.setText(f"{parsed_data.Ud:<7.2f}")
 
-            self.label_vdc.setText(f"{Vbus:<7.2f}")
-            self.label_vbus_in.setText(f"{Vbus_in:<7.2f}")
-            self.label_uq.setText(f"{Uq:<7.2f}")
-            self.label_id.setText(f"{Id:<7.2f}")
-            self.label_iq.setText(f"{Iq:<7.2f}")
-            self.label_ud.setText(f"{Ud:<7.2f}")
-            self.label_ia.setText(f"{MCV_Ia:<7.2f}")
-            self.label_ib.setText(f"{MCV_Ib:<7.2f}")
-            self.label_ic.setText(f"{MCV_Ic:<7.2f}")
-            self.label_ibus.setText(f"{MCV_Ibus:<7.2f}")
+            # 更新电流显示
+            self.label_id.setText(f"{parsed_data.Id:<7.2f}")
+            self.label_iq.setText(f"{parsed_data.Iq:<7.2f}")
+            self.label_ia.setText(f"{parsed_data.Ia:<7.2f}")
+            self.label_ib.setText(f"{parsed_data.Ib:<7.2f}")
+            self.label_ic.setText(f"{parsed_data.Ic:<7.2f}")
+            self.label_ibus.setText(f"{parsed_data.Ibus:<7.2f}")
 
-            info = self.parser.get_display_info(temperature_u32, error_code_u32)
-            self.label_speed.setText(f"转速：    {MCV_mSpeed:<7.2f}")
-            self.label_angle.setText(f"{MCV_angle:<7.2f}°")
-            self.label_duty_cycle.setText(f"{MCV_mDuty:<7.2f}")
+            # 更新速度和角度
+            self.label_speed.setText(f"转速：    {parsed_data.mSpeed:<7.2f}")
+            self.label_angle.setText(f"{parsed_data.angle:<7.2f}°")
+            self.label_duty_cycle.setText(f"{parsed_data.mDuty:<7.2f}")
+
+            # 更新温度显示
+            info = parsed_data.info
             self.label_temperature.setText(
                 f"A:{info['temp_d']} B:{info['temp_c']} C:{info['temp_b']}℃"
             )
             self.label_motor_temp.setText(
-                f"{MCV_mPT1:<7.2f} {MCV_mPT2:<7.2f} {MCV_mPT3:<7.2f} {MCV_mPT4:<7.2f} {MCV_mPT5:<7.2f}℃"
+                f"{parsed_data.mPT1:<7.2f} {parsed_data.mPT2:<7.2f} {parsed_data.mPT3:<7.2f} {parsed_data.mPT4:<7.2f} {parsed_data.mPT5:<7.2f}℃"
             )
+
+            # 更新系统状态
             self.label_sys_status.setText(f"{info['state_en']}:{info['state_cn']}")
-            error_d = (error_code_u32 >> 24) & 0xFF
-            error_c = (error_code_u32 >> 16) & 0xFF
-            error_b = (error_code_u32 >> 8) & 0xFF
-            self.label_fault_status.setText(f"故障状态：0x{flag1_uint32:08X}")
+
+            # 更新故障状态
+            error_breakdown = self.register_parser.get_error_codes_breakdown(parsed_data.error_code_u32)
+            self.label_fault_status.setText(f"故障状态：0x{parsed_data.flag1_uint32:08X}")
             self.label_dev_error.setText(
-                f"报错：A:0x{error_d:02X} B:0x{error_c:02X} C:0x{error_b:02X}"
+                f"报错：A:0x{error_breakdown['error_d']:02X} B:0x{error_breakdown['error_c']:02X} C:0x{error_breakdown['error_b']:02X}"
             )
+
+            # 更新错误列表
             all_errors = info.get("all_errors", [])
             self.update_dev_error_list(all_errors)
-            self.update_fault_status(flag1_uint32)
+            self.update_fault_status(parsed_data.flag1_uint32)
 
             # 系统模式
-            SYS_OpertionMode = sys_regs_up_data.reg[85] & 0x07
-            RotTX_ZeroEN_FLG = (sys_regs_up_data.reg[85] >> 3) & 0x01
-            SYS_OpertionMode_dict = {1: "current", 2: "speed", 0: "unknown"}
-            RotTX_ZeroEN_FLG_dict = {0: "未启动", 1: "已启动"}
-            self.current_mode = SYS_OpertionMode_dict.get(SYS_OpertionMode, "unknown")
+            self.current_mode = parsed_data.sys_mode_name
             self.set_ui_mode()
 
         except Exception as e:

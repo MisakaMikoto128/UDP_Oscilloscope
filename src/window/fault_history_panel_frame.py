@@ -16,6 +16,7 @@ from src.ui import History_Panel_Form
 from src.database.fault_database_manager import FaultDatabaseManager
 from src.window.motor_controller_parser import MotorControllerParser
 from src.communication.protocol import PACKET_TYPE_SYS_REGS_UP
+from src.utils.register_parser import RegisterParser
 # 设置日志
 logging.basicConfig(
     level=logging.INFO,
@@ -60,6 +61,7 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
 
         # 初始化解析器
         self.parser = MotorControllerParser()
+        self.register_parser = RegisterParser()
 
         # 存储上一次的故障状态，用于检测变化
         self.last_error_code = {}  # device_uid -> error_code_u32
@@ -326,73 +328,52 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
                 # 获取设备名称
                 device_name = self.cfg.get_device_name(record['device_uid'])
 
-                # 创建SysREGsUpData对象来复用解析代码
+                # 创建SysREGsUpData对象并使用统一的寄存器解析器
                 sys_regs_data = SysREGsUpData(
-                    packet_type=PACKET_TYPE_SYS_REGS_UP, reg_num=len(record['registers']), reg=record['registers']
+                    packet_type=PACKET_TYPE_SYS_REGS_UP,
+                    reg_num=len(record['registers']),
+                    reg=record['registers'],
                 )
 
-                registers = record['registers']
-                fixed_point_scale = 100000
+                # 使用统一的寄存器解析器
+                parsed_data = self.register_parser.parse_sys_regs_data(sys_regs_data)
 
-                # 解析错误代码
-                error_code_u32 = record['error_code_u32']
-                error_d = (error_code_u32 >> 24) & 0xFF
-                error_c = (error_code_u32 >> 16) & 0xFF
-                error_b = (error_code_u32 >> 8) & 0xFF
-
-                # 解析故障状态（显示16进制值+解析值）
-                flag1_uint32 = record['flag1_uint32']
-                fault_info = self.parser.parse_fault_flags(flag1_uint32)
+                # 获取故障状态文本
+                fault_status = self.register_parser.get_fault_status_text(parsed_data.flag1_uint32)
                 fault_list = []
-                for category, status in fault_info.items():
+                for category, status in parsed_data.fault_info.items():
                     if status:
                         fault_list.extend(status)
 
-                if fault_list:
-                    fault_status = f"0x{flag1_uint32:08X}: {', '.join(fault_list)}"
-                else:
-                    fault_status = "正常"
+                # 获取温度和状态信息
+                info = parsed_data.info
+                temp_info = f"A:{info['temp_d']}°C B:{info['temp_c']}°C C:{info['temp_b']}°C"
+                sys_status = f"{info['state_en']}:{info['state_cn']}"
+                sys_mode = parsed_data.sys_mode_name
+                if parsed_data.zero_enabled:
+                    sys_mode += " (Zero)"
 
-                # 解析温度和状态信息
-                temp_info = ""
-                sys_status = ""
-                sys_mode = ""
-                if len(registers) > 85:
-                    # 温度信息
-                    if len(registers) > 55:
-                        temp_data = self.parser.parse_temperature(registers[55])
-                        temp_info = f"A:{temp_data['temperatures']['temp_d']}°C B:{temp_data['temperatures']['temp_c']}°C C:{temp_data['temperatures']['temp_b']}°C"
-                        sys_status = f"{temp_data['state']['name_en']}:{temp_data['state']['name_cn']}"
-
-                    # 系统模式
-                    SYS_OpertionMode = registers[85] & 0x07
-                    RotTX_ZeroEN_FLG = (registers[85] >> 3) & 0x01
-                    SYS_OpertionMode_dict = {1: "current", 2: "speed", 0: "unknown"}
-                    sys_mode = f"{SYS_OpertionMode_dict.get(SYS_OpertionMode, 'unknown')}"
-                    if RotTX_ZeroEN_FLG:
-                        sys_mode += " (Zero)"
-
-                # 解析其他数值
-                values = {}
-                if len(registers) > 83:
-                    values['mSpeed'] = f"{-uint32_to_int32(registers[83]) / fixed_point_scale:.2f}"
-                    values['angle'] = f"{registers[62] / fixed_point_scale:.2f}" if len(registers) > 62 else "0.00"
-                    values['Vbus'] = f"{uint32_to_int32(registers[76]) / fixed_point_scale:.2f}" if len(registers) > 76 else "0.00"
-                    values['Vbus_in'] = f"{uint32_to_int32(registers[77]) / fixed_point_scale:.2f}" if len(registers) > 77 else "0.00"
-                    values['Id'] = f"{uint32_to_int32(registers[56]) / fixed_point_scale:.2f}" if len(registers) > 56 else "0.00"
-                    values['Iq'] = f"{uint32_to_int32(registers[32]) / fixed_point_scale:.2f}" if len(registers) > 32 else "0.00"
-                    values['Ud'] = f"{uint32_to_int32(registers[60]) / fixed_point_scale:.2f}" if len(registers) > 60 else "0.00"
-                    values['Uq'] = f"{uint32_to_int32(registers[61]) / fixed_point_scale:.2f}" if len(registers) > 61 else "0.00"
-                    values['Ia'] = f"{uint32_to_int32(registers[73]) / fixed_point_scale:.2f}" if len(registers) > 73 else "0.00"
-                    values['Ib'] = f"{uint32_to_int32(registers[74]) / fixed_point_scale:.2f}" if len(registers) > 74 else "0.00"
-                    values['Ic'] = f"{uint32_to_int32(registers[75]) / fixed_point_scale:.2f}" if len(registers) > 75 else "0.00"
-                    values['Ibus'] = f"{uint32_to_int32(registers[79]) / fixed_point_scale:.2f}" if len(registers) > 79 else "0.00"
-                    values['mDuty'] = f"{uint32_to_int32(registers[64]) / fixed_point_scale:.2f}" if len(registers) > 64 else "0.00"
-                    values['mPT1'] = f"{uint32_to_int32(registers[65]) / fixed_point_scale:.2f}" if len(registers) > 65 else "0.00"
-                    values['mPT2'] = f"{uint32_to_int32(registers[66]) / fixed_point_scale:.2f}" if len(registers) > 66 else "0.00"
-                    values['mPT3'] = f"{uint32_to_int32(registers[67]) / fixed_point_scale:.2f}" if len(registers) > 67 else "0.00"
-                    values['mPT4'] = f"{uint32_to_int32(registers[68]) / fixed_point_scale:.2f}" if len(registers) > 68 else "0.00"
-                    values['mPT5'] = f"{uint32_to_int32(registers[69]) / fixed_point_scale:.2f}" if len(registers) > 69 else "0.00"
+                # 使用解析后的数值（已经格式化为字符串）
+                values = {
+                    'mSpeed': f"{parsed_data.mSpeed:.2f}",
+                    'angle': f"{parsed_data.angle:.2f}",
+                    'Vbus': f"{parsed_data.Vbus:.2f}",
+                    'Vbus_in': f"{parsed_data.Vbus_in:.2f}",
+                    'Id': f"{parsed_data.Id:.2f}",
+                    'Iq': f"{parsed_data.Iq:.2f}",
+                    'Ud': f"{parsed_data.Ud:.2f}",
+                    'Uq': f"{parsed_data.Uq:.2f}",
+                    'Ia': f"{parsed_data.Ia:.2f}",
+                    'Ib': f"{parsed_data.Ib:.2f}",
+                    'Ic': f"{parsed_data.Ic:.2f}",
+                    'Ibus': f"{parsed_data.Ibus:.2f}",
+                    'mDuty': f"{parsed_data.mDuty:.2f}",
+                    'mPT1': f"{parsed_data.mPT1:.2f}",
+                    'mPT2': f"{parsed_data.mPT2:.2f}",
+                    'mPT3': f"{parsed_data.mPT3:.2f}",
+                    'mPT4': f"{parsed_data.mPT4:.2f}",
+                    'mPT5': f"{parsed_data.mPT5:.2f}",
+                }
 
                 # 填充表格数据
                 col = 0
@@ -400,33 +381,19 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
                 self._set_table_item(i, col, device_name); col += 1
 
                 # 报错A/B/C（显示16进制值+解析值）
-                error_info = self.parser.parse_error_code(record['error_code_u32'])
-
                 # 报错A (module_d)
-                error_d_info = error_info['error_codes']['module_d']
-                if error_d_info['has_error']:
-                    error_names = [err['name_cn'] for err in error_d_info['active_errors']]
-                    error_d_text = f"0x{error_d:02X}: {', '.join(error_names)}"
-                else:
-                    error_d_text = "正常"
+                error_d_text = self.register_parser.get_error_text(parsed_data.error_code_u32, 'd')
+                error_d = (parsed_data.error_code_u32 >> 24) & 0xFF
                 self._set_table_item(i, col, error_d_text, is_fault=bool(error_d)); col += 1
 
                 # 报错B (module_c)
-                error_c_info = error_info['error_codes']['module_c']
-                if error_c_info['has_error']:
-                    error_names = [err['name_cn'] for err in error_c_info['active_errors']]
-                    error_c_text = f"0x{error_c:02X}: {', '.join(error_names)}"
-                else:
-                    error_c_text = "正常"
+                error_c_text = self.register_parser.get_error_text(parsed_data.error_code_u32, 'c')
+                error_c = (parsed_data.error_code_u32 >> 16) & 0xFF
                 self._set_table_item(i, col, error_c_text, is_fault=bool(error_c)); col += 1
 
                 # 报错C (module_b)
-                error_b_info = error_info['error_codes']['module_b']
-                if error_b_info['has_error']:
-                    error_names = [err['name_cn'] for err in error_b_info['active_errors']]
-                    error_b_text = f"0x{error_b:02X}: {', '.join(error_names)}"
-                else:
-                    error_b_text = "正常"
+                error_b_text = self.register_parser.get_error_text(parsed_data.error_code_u32, 'b')
+                error_b = (parsed_data.error_code_u32 >> 8) & 0xFF
                 self._set_table_item(i, col, error_b_text, is_fault=bool(error_b)); col += 1
 
                 # 故障状态、系统状态、系统模式
