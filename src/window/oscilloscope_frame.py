@@ -59,6 +59,10 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         # 信号就绪
         self.scope_ipc.signal_scope_ready()
 
+        # 初始化波形信息显示（默认隐藏）
+        if hasattr(self, 'label_wave_info'):
+            self.label_wave_info.setVisible(False)
+
 
     def _init_scope_view_ui(self):
         """初始化示波器视图"""
@@ -193,6 +197,106 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
         return self.channel_toggle_frame
 
+    def _create_wave_info_label(self):
+        """创建波形信息显示标签"""
+        self.label_wave_info = QtWidgets.QLabel()
+        self.label_wave_info.setFrameStyle(QtWidgets.QFrame.StyledPanel)
+        self.label_wave_info.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.label_wave_info.setWordWrap(True)
+        self.label_wave_info.setMinimumHeight(80)
+        self.label_wave_info.setMaximumHeight(120)
+        self.label_wave_info.setStyleSheet("""
+            QLabel {
+                background-color: #f0f0f0;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                padding: 8px;
+                font-family: 'Consolas', 'Monaco', monospace;
+                font-size: 9pt;
+                color: #333333;
+            }
+        """)
+        # 初始时隐藏，只在有文件信息时显示
+        self.label_wave_info.setVisible(False)
+
+    def _format_time_display(self, iso_time_str: str) -> str:
+        """格式化时间显示"""
+        try:
+            from datetime import datetime
+            # 解析ISO格式时间
+            dt = datetime.fromisoformat(iso_time_str.replace('Z', '+00:00'))
+            # 格式化为更友好的显示
+            return dt.strftime('%Y-%m-%d %H:%M:%S')
+        except Exception:
+            return iso_time_str
+
+    def _format_file_size(self, size_bytes: int) -> str:
+        """格式化文件大小显示"""
+        if size_bytes < 1024:
+            return f"{size_bytes} B"
+        elif size_bytes < 1024 * 1024:
+            return f"{size_bytes / 1024:.1f} KB"
+        elif size_bytes < 1024 * 1024 * 1024:
+            return f"{size_bytes / (1024 * 1024):.1f} MB"
+        else:
+            return f"{size_bytes / (1024 * 1024 * 1024):.1f} GB"
+
+    def _show_file_info(self, file_path: Path, status: str):
+        """显示文件信息"""
+        try:
+            import h5py
+
+            with h5py.File(file_path, 'r') as f:
+                metadata = dict(f['metadata'].attrs)
+                created_time = metadata.get('created_time', 'Unknown')
+                sample_rate = metadata.get('sample_rate', 0)
+                n_channels = metadata.get('n_channels', 0)
+                version = metadata.get('version', 'Unknown')
+
+                # 计算数据长度和录制时长
+                data_length = 0
+                for key in f.keys():
+                    if key.startswith('channel_'):
+                        data_length = max(data_length, len(f[key]))
+
+                duration = data_length / sample_rate if sample_rate > 0 else 0
+
+            # 获取文件大小
+            file_size = file_path.stat().st_size if file_path.exists() else 0
+            formatted_file_size = self._format_file_size(file_size)
+            formatted_time = self._format_time_display(created_time)
+
+            # 显示信息
+            info_text = f"""📊 波形文件信息
+📁 文件名: {file_path.name}
+🕒 创建时间: {formatted_time}
+📈 采样率: {sample_rate} Hz
+📊 通道数: {n_channels}
+📏 数据长度: {data_length:,} 点
+⏱️ 录制时长: {duration:.1f} 秒
+💾 文件大小: {formatted_file_size}
+📦 版本: {version}
+{status}"""
+
+            self.label_wave_info.setText(info_text)
+
+        except Exception as e:
+            # 如果无法读取详细信息，显示基本信息
+            info_text = f"""📊 波形文件信息
+📁 文件名: {file_path.name}
+{status}
+⚠️ 无法读取详细信息: {str(e)}"""
+            self.label_wave_info.setText(info_text)
+
+    def _update_wave_info_display_for_preview(self, file_path: Path):
+        """更新预览模式下的波形信息显示"""
+        try:
+            self._show_file_info(file_path, "👁️ 预览模式")
+            self.label_wave_info.setVisible(True)
+        except Exception as e:
+            logger.error(f"更新预览波形信息显示失败: {e}")
+            self.label_wave_info.setVisible(False)
+
     def on_channel_toggle(self, channel: int, enabled: bool):
         """通道显示开关处理"""
         # 更新示波器显示
@@ -229,6 +333,10 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
         channel_toggle_frame = self._create_channel_toggle_buttons()
         # 添加到主布局
         global_ctrl_widget_layout.addWidget(channel_toggle_frame)
+
+        # 创建波形信息显示标签
+        self._create_wave_info_label()
+        global_ctrl_widget_layout.addWidget(self.label_wave_info)
 
         # 设置默认状态
         self.radioButton.setChecked(self.cfg.auto_roll)
@@ -563,6 +671,8 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
                 logger.info("切换到实时波形显示模式")
                 # 清除预览buffer，释放内存
                 self._preview_buffer = None
+                # 隐藏波形信息显示
+                self.label_wave_info.setVisible(False)
         except Exception as e:
             logger.error(f"模式切换失败: {e}")
 
@@ -598,6 +708,9 @@ class OscilloscopeFrame(QtWidgets.QFrame, Ui_Form):
 
                 # 刷新预览显示
                 self._refresh_preview_plot()
+
+                # 更新波形信息显示（预览模式）
+                self._update_wave_info_display_for_preview(file_path)
 
                 logger.info("波形数据加载完成，已切换到预览模式")
 
