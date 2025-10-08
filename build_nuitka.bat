@@ -62,17 +62,20 @@ python -m nuitka ^
     --standalone ^
     --assume-yes-for-downloads ^
     --follow-imports ^
-    --include-package=PyQt5 ^
+    --enable-plugin=pyqt5 ^
     --include-package=pyqtgraph ^
     --include-package=numpy ^
     --include-package=h5py ^
     --include-package=crcmod ^
     --include-package=winloop ^
     --include-package=qasync ^
+    --include-package=qfluentwidgets ^
     --nofollow-import-to=pytest ^
     --nofollow-import-to=matplotlib ^
+    --include-module=pyqtgraph.opengl ^
     --lto=auto ^
     --include-data-dir=src/config=config ^
+    --include-data-dir=src/ui/styles=ui/styles ^
     --windows-company-name="LIU YUANLIN" ^
     --windows-product-name="UDP示波器" ^
     --windows-file-version=1.0.0 ^
@@ -80,7 +83,7 @@ python -m nuitka ^
     --windows-file-description="电机控制板上位机软件" ^
     --output-dir=dist ^
     --windows-console-mode=disable ^
-    src/main.py
+    main.py
 
 REM 检查打包结果
 if errorlevel 1 (
@@ -97,7 +100,12 @@ if exist "main.dist" (
 
 REM 重命名可执行文件
 echo 重命名可执行文件...
-ren "dist\UDP_Oscilloscope\main.exe" "UDP_Oscilloscope.exe"
+if exist "dist\UDP_Oscilloscope\main.exe" (
+    ren "dist\UDP_Oscilloscope\main.exe" "UDP_Oscilloscope.exe"
+    echo 可执行文件重命名成功
+) else (
+    echo 警告：未找到main.exe文件！
+)
 
 REM 创建版本信息文件
 echo 创建版本信息...
@@ -114,7 +122,26 @@ echo GitHub：https://github.com/MisakaMikoto128
 REM 复制配置文件
 echo 复制配置文件...
 if not exist "dist\UDP_Oscilloscope\config" mkdir "dist\UDP_Oscilloscope\config"
-copy "src\config\default_config.json" "dist\UDP_Oscilloscope\config\" > nul
+if exist "src\config\default_config.json" (
+    copy "src\config\default_config.json" "dist\UDP_Oscilloscope\config\" > nul
+    echo 配置文件复制成功
+) else (
+    echo 警告：未找到default_config.json文件！
+)
+
+REM 验证打包结果
+echo 验证打包结果...
+if exist "dist\UDP_Oscilloscope\UDP_Oscilloscope.exe" (
+    echo ✅ 可执行文件存在
+) else (
+    echo ❌ 可执行文件不存在！
+)
+
+if exist "dist\UDP_Oscilloscope\config\default_config.json" (
+    echo ✅ 配置文件存在
+) else (
+    echo ❌ 配置文件不存在！
+)
 
 echo.
 echo ========================================
