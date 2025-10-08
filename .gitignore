@@ -7,3 +7,4 @@ oscilloscope.log
 .idea/*
 *.log
 data/*
+*.db
