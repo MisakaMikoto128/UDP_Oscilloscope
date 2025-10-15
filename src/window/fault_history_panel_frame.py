@@ -444,3 +444,4 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
         except Exception as e:
             logger.error(f"设置表格项错误: {e}")
 
+

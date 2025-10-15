@@ -8,7 +8,10 @@ from PyQt5.QtCore import Qt, QDate
 from PyQt5.QtWidgets import QTableWidgetItem
 from qasync import asyncSlot
 from qfluentwidgets import PipsScrollButtonDisplayMode
-
+from qfluentwidgets import (
+    InfoBar,
+    InfoBarPosition,
+)
 from src.communication.protocol import PACKET_TYPE_SYS_REGS_UP
 from src.communication.protocol import SysREGsUpData
 from src.config.config_manager import ConfigManager
@@ -64,7 +67,7 @@ class FullHistoryPanelForm(QtWidgets.QFrame, Full_History_Panel_Form):
         self.register_parser = RegisterParser()
 
         # 分页相关属性
-        self.records_per_page = 100  # 每页显示的最大记录条数
+        self.records_per_page = 150  # 每页显示的最大记录条数
         self.current_page = 0       # 当前页码（从0开始）
         self.total_records = 0      # 总记录数
         self.total_pages = 0        # 总页数
@@ -81,7 +84,6 @@ class FullHistoryPanelForm(QtWidgets.QFrame, Full_History_Panel_Form):
         self._init_time_picker()
         self._init_fault_table()
         self._init_pager()
-        self.switch_btn_enable_record.setChecked(False)
 
         # # 连接信号
         self._connect_signals()
@@ -219,7 +221,7 @@ class FullHistoryPanelForm(QtWidgets.QFrame, Full_History_Panel_Form):
             self.horizontal_pips_pager.currentIndexChanged.connect(self._on_page_changed)
 
             # 实时记录开关信号
-            self.switch_btn_enable_record.toggled.connect(self.on_enable_record_toggled)
+            self.switch_btn_enable_record.checkedChanged.connect(self.on_enable_record_toggled)
 
             logger.info("信号连接完成")
 
@@ -331,6 +333,12 @@ class FullHistoryPanelForm(QtWidgets.QFrame, Full_History_Panel_Form):
 
     def on_enable_record_toggled(self, checked: bool):
         self.enable_record = checked
+        self.infobar(
+            checked,
+            "实时记录开关",
+            f"实时记录已 {'开启' if checked else '关闭'}",
+            f"实时记录 {'开启' if checked else '关闭'} 失败",
+        )
         logger.info(f"实时记录开关: {checked}")
 
     def _update_device_combo(self):
@@ -576,3 +584,37 @@ class FullHistoryPanelForm(QtWidgets.QFrame, Full_History_Panel_Form):
         except Exception as e:
             logger.error(f"设置表格项错误: {e}")
 
+    def infobar(
+        self,
+        ret,
+        title: str,
+        success_content: str,
+        error_content: str,
+        orient: Qt.Orientation = Qt.Horizontal,
+        isClosable: bool = True,
+        position: InfoBarPosition = InfoBarPosition.TOP,
+        success_duration: int = 2000,
+        error_duration: int = 2000,
+    ):
+        if ret:
+            InfoBar.success(
+                title=title,
+                content=success_content,
+                orient=orient,
+                isClosable=isClosable,
+                position=position,
+                duration=success_duration,
+                parent=self,
+            )
+            logger.info(success_content)
+        else:
+            InfoBar.error(
+                title=title,
+                content=error_content,
+                orient=orient,
+                isClosable=isClosable,
+                position=position,
+                duration=error_duration,
+                parent=self,
+            )
+            logger.error(error_content)
