@@ -27,7 +27,7 @@ class Ui_Form(object):
         self.table_fault_history.setObjectName("table_fault_history")
         self.table_fault_history.setColumnCount(0)
         self.table_fault_history.setRowCount(0)
-        self.gridLayout_2.addWidget(self.table_fault_history, 1, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.table_fault_history, 1, 0, 1, 2)
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
