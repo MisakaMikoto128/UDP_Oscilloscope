@@ -26,6 +26,7 @@ from .network_setting_frame import NetworkSettingFrom
 from .setting_frame import SettingForm
 from .dcdc_panel_frame import DcdcPanelForm
 from .fault_history_panel_frame import FaultHistoryPanelForm
+from .full_history_panel_frame import FullHistoryPanelForm
 from .oscilloscope_frame import OscilloscopeFrame
 from ..communication.udp_master import UDPMaster
 from ..communication.scope_ipc import create_scope_ipc
@@ -156,6 +157,9 @@ class MainWindow(FluentWindow):
         self.interface5 = FaultHistoryPanelForm(cfg, None, self.receiver.reg_set, self)
         self.receiver.on_sys_regs_upload.connect(self.interface5.on_on_sys_regs_uploaded)
 
+        self.interface6 = FullHistoryPanelForm(cfg, None, self.receiver.reg_set, self)
+        self.receiver.on_sys_regs_upload.connect(self.interface6.on_on_sys_regs_uploaded)
+
         # 初始化界面
         self.initNavigation()
         self.initWindow()
@@ -173,6 +177,7 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.interface3, FIF.WIFI, "网络设置")
         self.addSubInterface(self.interface4, FIF.LEAF, "DCDC监控")
         self.addSubInterface(self.interface5, FIF.HISTORY, "故障历史")
+        self.addSubInterface(self.interface6, FIF.HISTORY, "全历史")
         
         self.switchTo(self.interface1)
         # Theme切换按钮

@@ -12,7 +12,7 @@ from .network_setting_ui import Ui_Form as Network_Setting_From
 from .setting_ui import Ui_Form as Setting_Form
 from .dcdc_panel_ui import Ui_Form as Dcdc_Panel_Form
 from .history_panel_ui import Ui_Form as History_Panel_Form
-
+from .full_history_panel_ui import Ui_Form as Full_History_Panel_Form
 __all__ = [
     'ScopeWidget',
     'ChannelConfigWidget', 
@@ -25,4 +25,5 @@ __all__ = [
     'Setting_Form',
     'Dcdc_Panel_Form',
     'History_Panel_Form',
+    'Full_History_Panel_Form',
 ]
