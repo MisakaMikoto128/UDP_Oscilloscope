@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
-        Form.resize(1025, 755)
+        Form.resize(1017, 738)
         self.gridLayout_2 = QtWidgets.QGridLayout(Form)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.calendar_picker_fault_history = FastCalendarPicker(Form)
@@ -23,16 +23,11 @@ class Ui_Form(object):
         self.combo_box_devices = ComboBox(Form)
         self.combo_box_devices.setObjectName("combo_box_devices")
         self.gridLayout_2.addWidget(self.combo_box_devices, 0, 1, 1, 1)
-        self.card_fault_history = CardWidget(Form)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.card_fault_history.sizePolicy().hasHeightForWidth())
-        self.card_fault_history.setSizePolicy(sizePolicy)
-        self.card_fault_history.setObjectName("card_fault_history")
-        self.gridLayout = QtWidgets.QGridLayout(self.card_fault_history)
-        self.gridLayout.setObjectName("gridLayout")
-        self.gridLayout_2.addWidget(self.card_fault_history, 1, 0, 1, 2)
+        self.table_fault_history = TableWidget(Form)
+        self.table_fault_history.setObjectName("table_fault_history")
+        self.table_fault_history.setColumnCount(0)
+        self.table_fault_history.setRowCount(0)
+        self.gridLayout_2.addWidget(self.table_fault_history, 1, 0, 1, 1)
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -40,4 +35,4 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
-from qfluentwidgets import FastCalendarPicker, CardWidget, ComboBox
+from qfluentwidgets import FastCalendarPicker, ComboBox, TableWidget

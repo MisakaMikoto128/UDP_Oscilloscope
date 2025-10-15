@@ -142,9 +142,6 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
     def _init_fault_table(self):
         """初始化故障记录表格"""
         try:
-            # 创建表格控件
-            self.table_fault_history = TableWidget(self.card_fault_history)
-
             # 设置表格样式
             self.table_fault_history.setSelectRightClickedRow(True)
             self.table_fault_history.setBorderVisible(True)
@@ -161,12 +158,6 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
             self.table_fault_history.setColumnCount(len(headers))
             self.table_fault_history.setHorizontalHeaderLabels(headers)
             self.table_fault_history.verticalHeader().hide()
-
-            # 将表格添加到卡片布局中
-            layout = self.card_fault_history.layout()
-            if layout is None:
-                layout = QtWidgets.QVBoxLayout(self.card_fault_history)
-            layout.addWidget(self.table_fault_history)
 
             # 列宽设置（用户可手动调节列宽以展开所有错误信息）
             self.table_fault_history.horizontalHeader().setStretchLastSection(True)
