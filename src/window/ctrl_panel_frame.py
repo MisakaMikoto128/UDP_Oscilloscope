@@ -1,32 +1,22 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import logging
 from typing import Callable, List, Awaitable
-import asyncio
-import pyqtgraph as pg
-from PyQt5 import QtWidgets, QtCore, QtGui
-from qasync import asyncClose, asyncSlot
-from PyQt5.QtCore import QObject, pyqtSignal, QTimer
+
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCloseEvent
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QListWidgetItem
+from qasync import asyncSlot
+from qfluentwidgets import (
+    InfoBar,
+    InfoBarPosition,
+)
 from qfluentwidgets import (
     InfoLevel,
     PillPushButton,
-    InfoBarIcon,
-    TeachingTipTailPosition,
-)
-from PyQt5.QtWidgets import QListWidgetItem
-from PyQt5.QtCore import QPoint, Qt
-from PyQt5.QtWidgets import QApplication, QWidget, QHBoxLayout
-from PyQt5.QtGui import QCloseEvent
-from src.ui.async_message_box import async_confirm
-
-from qfluentwidgets import (
-    InfoBarIcon,
-    InfoBar,
-    PushButton,
-    setTheme,
-    Theme,
-    FluentIcon,
-    InfoBarPosition,
-    InfoBarManager,
 )
 
 from src.communication.protocol import (
@@ -34,8 +24,9 @@ from src.communication.protocol import (
 )
 from src.config.config_manager import ConfigManager
 from src.ui import Ctrl_Panel_Form
-from .motor_controller_parser import MotorControllerParser
+from src.ui.async_message_box import async_confirm
 from src.utils.register_parser import RegisterParser
+from .motor_controller_parser import MotorControllerParser
 
 # 设置日志
 logging.basicConfig(

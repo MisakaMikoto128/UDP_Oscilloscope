@@ -11,7 +11,6 @@ from functools import reduce
 # 多项式: 0x8005, 初始值: 0xFFFF, 反向输入: True, 反向输出: True
 crc16_modbus = crcmod.mkCrcFun(0x18005, initCrc=0xFFFF, rev=True, xorOut=0x0000)
 
-
 def calculate_crc(data: bytes) -> int:
     """
     计算CRC-Modbus校验值

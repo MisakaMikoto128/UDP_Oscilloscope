@@ -1,45 +1,27 @@
+import asyncio
 import logging
 import multiprocessing as mp
-import asyncio
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (
-    QAction,
-    QMenu,
-    QSystemTrayIcon,
-)
-from PyQt5.QtWidgets import QApplication, QFrame, QHBoxLayout
-from qfluentwidgets import (
-    FluentIcon as FIF,
-)
-from qfluentwidgets import (
-    NavigationItemPosition,
-    FluentWindow,
-    NavigationAvatarWidget,
-    SubtitleLabel,
-    setFont,
-)
 import time
+
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QCloseEvent
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QAction, QMenu, QSystemTrayIcon
+from qasync import asyncSlot
+from qfluentwidgets import FluentIcon as FIF
+from qfluentwidgets import (NavigationItemPosition, FluentWindow,
+                            NavigationAvatarWidget)
+
 from .ctrl_panel_frame import CtrlPanelForm
-from .device_setting import DeviceSettingFrom
-from .network_setting_frame import NetworkSettingFrom
-from .setting_frame import SettingForm
 from .dcdc_panel_frame import DcdcPanelForm
+from .device_setting import DeviceSettingFrom
 from .fault_history_panel_frame import FaultHistoryPanelForm
 from .full_history_panel_frame import FullHistoryPanelForm
+from .network_setting_frame import NetworkSettingFrom
 from .oscilloscope_frame import OscilloscopeFrame
-from ..communication.udp_master import UDPMaster
+from .setting_frame import SettingForm
 from ..communication.scope_ipc import create_scope_ipc
-from PyQt5.QtGui import QCloseEvent
-from qasync import asyncClose, asyncSlot
-from qfluentwidgets import InfoLevel, setThemeColor
-from qfluentwidgets import (NavigationItemPosition, MessageBox, FluentWindow,
-                            NavigationAvatarWidget, SubtitleLabel, setFont)
-from qfluentwidgets.components.material import AcrylicMenu
-from qfluentwidgets import FluentIcon as FIF, TableWidget, Theme, setTheme, SwitchButton, AvatarWidget, BodyLabel, \
-    CaptionLabel, HyperlinkButton, isDarkTheme, FluentIcon, Action
-from PyQt5.QtGui import QFont, QStandardItemModel, QColor
-from PyQt5.QtWidgets import QAction, QMenu, QSystemTrayIcon, QTableWidgetItem, QHeaderView, QWidget
+from ..communication.udp_master import UDPMaster
 
 logger = logging.getLogger(__name__)
 

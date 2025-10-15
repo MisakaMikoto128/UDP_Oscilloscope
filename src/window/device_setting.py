@@ -3,26 +3,20 @@ import logging
 from typing import Callable, List, Awaitable
 
 from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidgetItem
 from qasync import asyncSlot
-from src.ui.async_message_box import async_confirm
 from qfluentwidgets import (
-    InfoBarIcon,
     InfoBar,
-    PushButton,
-    setTheme,
-    Theme,
-    FluentIcon,
     InfoBarPosition,
-    InfoBarManager,
 )
-from PyQt5.QtCore import QPoint, Qt
 
 from src.communication.protocol import (
     SysREGsUpData,
 )
 from src.config.config_manager import ConfigManager
 from src.ui import Device_Setting_From
+from src.ui.async_message_box import async_confirm
 
 # 设置日志
 logging.basicConfig(

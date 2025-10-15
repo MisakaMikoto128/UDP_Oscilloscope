@@ -12,7 +12,6 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-
 class ConfigManager:
     """配置管理器"""
     

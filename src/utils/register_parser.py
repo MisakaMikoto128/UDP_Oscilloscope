@@ -14,7 +14,6 @@ from src.utils.data_utils import uint32_to_int32
 
 logger = logging.getLogger(__name__)
 
-
 @dataclass
 class RegisterMapping:
     """寄存器映射定义"""

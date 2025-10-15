@@ -1,22 +1,21 @@
 # -*- coding: utf-8 -*-
 import logging
-from typing import Callable, List, Awaitable
 from datetime import datetime, date
+from typing import Callable, List, Awaitable
 
 from PyQt5 import QtWidgets, QtGui
+from PyQt5.QtCore import Qt, QDate
 from PyQt5.QtWidgets import QTableWidgetItem
 from qasync import asyncSlot
-from qfluentwidgets import InfoBar, InfoBarPosition, TableWidget
-from PyQt5.QtCore import Qt, QDate
+from qfluentwidgets import PipsScrollButtonDisplayMode
 
+from src.communication.protocol import PACKET_TYPE_SYS_REGS_UP
 from src.communication.protocol import SysREGsUpData
 from src.config.config_manager import ConfigManager
-from src.ui import Full_History_Panel_Form
 from src.database.full_history_database_manager import FullHistoryDatabaseManager
-from qfluentwidgets import PipsScrollButtonDisplayMode
-from src.window.motor_controller_parser import MotorControllerParser
-from src.communication.protocol import PACKET_TYPE_SYS_REGS_UP
+from src.ui import Full_History_Panel_Form
 from src.utils.register_parser import RegisterParser
+from src.window.motor_controller_parser import MotorControllerParser
 
 # 设置日志
 logging.basicConfig(
