@@ -190,7 +190,7 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
     async def on_on_sys_regs_uploaded(self, sys_regs_up_data: SysREGsUpData):
         """处理系统寄存器上传数据"""
         try:
-            device_uid = sys_regs_up_data.uid
+            device_uid = sys_regs_up_data.reg[0]
 
             # 检查寄存器数组长度
             if len(sys_regs_up_data.reg) < 91:

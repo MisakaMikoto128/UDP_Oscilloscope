@@ -239,7 +239,7 @@ class FullHistoryPanelForm(QtWidgets.QFrame, Full_History_Panel_Form):
             return
         
         try:
-            device_uid = sys_regs_up_data.uid
+            device_uid = sys_regs_up_data.reg[0]
 
             # 检查寄存器数组长度
             if len(sys_regs_up_data.reg) < 91:
@@ -265,10 +265,10 @@ class FullHistoryPanelForm(QtWidgets.QFrame, Full_History_Panel_Form):
             )
 
             if success:
-                logger.info(f"记录全历史数据: 设备{device_uid:08X}, 错误码{error_code_u32:08X}, 标志{flag1_uint32:08X}")
+                # logger.info(f"记录全历史数据: 设备{device_uid:08X}, 错误码{error_code_u32:08X}, 标志{flag1_uint32:08X}")
 
                 # 更新设备下拉框（如果是新设备）
-                if device_uid not in self.last_error_code:
+                if device_uid not in self.db_manager.get_device_uids():
                     self._update_device_combo()
 
                 # 更新日历故障日期标记
