@@ -206,6 +206,9 @@ class FullHistoryDatabaseManager:
             # 性能优化：设置WAL模式和同步模式
             self._insert_conn.execute('PRAGMA journal_mode=WAL')
             self._insert_conn.execute('PRAGMA synchronous=NORMAL')
+            self._insert_conn.execute('PRAGMA cache_size=-64000')  # 64MB缓存
+            self._insert_conn.execute('PRAGMA temp_store=MEMORY')
+            self._insert_conn.execute('PRAGMA mmap_size=268435456')  # 256MB mmap
         return self._insert_conn
     
     def insert_full_record(self, device_uid: int, timestamp_ms: int,

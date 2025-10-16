@@ -252,7 +252,6 @@ class FullHistoryPanelForm(QtWidgets.QFrame, Full_History_Panel_Form):
 
 
             # 记录到数据库
-        
             timestamp_ms = int(datetime.now().timestamp() * 1000)
 
             # 存储到数据库
