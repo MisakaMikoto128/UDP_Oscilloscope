@@ -13,10 +13,6 @@ import time
 from pathlib import Path
 from typing import Optional, Dict, List, Union
 from datetime import datetime
-import pandas as pd
-import scipy.io
-from openpyxl import Workbook
-from openpyxl.utils.dataframe import dataframe_to_rows
 
 logger = logging.getLogger(__name__)
 
@@ -320,6 +316,7 @@ class WaveformPersistence:
             输出文件路径
         """
         try:
+            import pandas as pd
             # 生成输出文件路径
             if output_filepath is None:
                 output_filepath = hdf5_filepath.with_suffix('.csv')
@@ -381,6 +378,9 @@ class WaveformPersistence:
             输出文件路径
         """
         try:
+            from openpyxl.utils.dataframe import dataframe_to_rows
+            from openpyxl import Workbook
+
             # 生成输出文件路径
             if output_filepath is None:
                 output_filepath = hdf5_filepath.with_suffix('.xlsx')
@@ -449,6 +449,8 @@ class WaveformPersistence:
             输出文件路径
         """
         try:
+            import scipy.io
+
             # 生成输出文件路径
             if output_filepath is None:
                 output_filepath = hdf5_filepath.with_suffix('.mat')
@@ -551,7 +553,7 @@ class WaveformPersistence:
         except Exception as e:
             logger.warning(f"创建元数据文件失败: {e}")
 
-    def _add_metadata_to_excel(self, hdf5_filepath: Path, workbook: Workbook):
+    def _add_metadata_to_excel(self, hdf5_filepath: Path, workbook):
         """在Excel工作簿中添加元数据工作表"""
         try:
             # 创建元数据工作表
