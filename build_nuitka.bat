@@ -35,25 +35,26 @@ if errorlevel 1 (
     )
 )
 
-REM 创建构建目录
-if not exist dist mkdir dist
-
-REM 设置编译优化参数
+REM 设置编译器优化标志
+REM /O2: 最大化速度(推荐,比/Ox更全面)
+REM /Oi: 启用内联函数
+REM /Ot: 偏向速度而非大小
+REM /GL: 全程序优化(配合--lto=yes使用)
+REM /GF: 字符串池化(消除重复字符串)
+REM /Gy: 函数级别链接(配合链接器优化)
 set CFLAGS=/Ox /GL /Ob2 /Oy /GF /Gy
 set CXXFLAGS=/Ox /GL /Ob2 /Oy /GF /Gy
+REM 链接器优化标志
+REM /LTCG: 链接时代码生成(配合/GL)
+REM /OPT:REF: 移除未引用的代码
+REM /OPT:ICF: 合并相同的COMDAT
+set LDFLAGS=/LTCG /OPT:REF /OPT:ICF /INCREMENTAL:NO
 
 echo CFLAGS is set to %CFLAGS%
 echo CXXFLAGS is set to %CXXFLAGS%
 
 REM 设置打包参数
-set PYTHON_OPTIMIZE=2
 set PYTHONUNBUFFERED=1
-
-REM 清理旧的构建文件
-echo 清理旧的构建文件...
-if exist "main.dist" rmdir /s /q "main.dist"
-if exist "main.build" rmdir /s /q "main.build"
-if exist "main.onefile-build" rmdir /s /q "main.onefile-build"
 
 REM 开始打包
 echo 开始打包...
@@ -61,28 +62,58 @@ python -m nuitka ^
     --msvc=latest ^
     --standalone ^
     --assume-yes-for-downloads ^
+    --include-data-dir=img=img ^
+    --include-data-dir=resource=resource ^
+    --include-data-dir=config=config ^
+    --include-data-dir=src/config=src/config ^
+    --include-data-dir=src/ui/styles=ui/styles ^
+    --windows-icon-from-ico=img\star.ico ^
+    --windows-console-mode=force ^
     --follow-imports ^
     --enable-plugin=pyqt5 ^
+    --enable-plugin=anti-bloat ^
+    --python-flag=no_site ^
+    --python-flag=-OO ^
+    --nofollow-import-to=pyqt5-plugins,pyqt5-tools,qt5-tools ^
+    --nofollow-import-to=setuptools,pip,wheel ^
+    --nofollow-import-to=pytest,pydoc,docutils ^
+    --nofollow-import-to=matplotlib ^
+    --nofollow-import-to=numba,llvmlite ^
+    --nofollow-import-to=scipy ^
+    --nofollow-import-to=openpyxl ^
+    --nofollow-import-to=pandas ^
+    --nofollow-import-to=numpy._core.tests ^
+    --nofollow-import-to=numpy.typing.tests ^
+    --nofollow-import-to=numpy.tests.tests ^
+    --nofollow-import-to=numpy.random.tests ^
+    --nofollow-import-to=*.tests ^
+    --nofollow-import-to=*.test ^
+    --nofollow-import-to=*.testing ^
+    --nofollow-import-to=pyqtgraph.examples ^
+    --nofollow-import-to=OpenGL_accelerate ^
     --include-package=pyqtgraph ^
+    --include-package=pyqtgraph.graphicsItems ^
+    --include-package=pyqtgraph.opengl ^
+    --include-package=pyqtgraph.exporters ^
+    --include-package=pyqtgraph.widgets ^
+    --include-package=OpenGL ^
     --include-package=numpy ^
     --include-package=h5py ^
     --include-package=crcmod ^
     --include-package=winloop ^
     --include-package=qasync ^
     --include-package=qfluentwidgets ^
-    --nofollow-import-to=pytest ^
-    --nofollow-import-to=matplotlib ^
-    --include-module=pyqtgraph.opengl ^
-    --lto=auto ^
-    --include-data-dir=src/config=config ^
-    --include-data-dir=src/ui/styles=ui/styles ^
+    --include-package=qframelesswindow ^
+    --include-package=qframelesswindow.titlebar ^
+    --include-package-data=qfluentwidgets ^
+    --include-package-data=qframelesswindow ^
+    --lto=yes ^
     --windows-company-name="LIU YUANLIN" ^
-    --windows-product-name="UDP示波器" ^
+    --windows-product-name="电机控制板上位机软件" ^
     --windows-file-version=1.0.0 ^
     --windows-product-version=1.0.0 ^
     --windows-file-description="电机控制板上位机软件" ^
-    --output-dir=dist ^
-    --windows-console-mode=disable ^
+    --output-dir=release ^
     main.py
 
 REM 检查打包结果
@@ -92,20 +123,6 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM 移动生成的文件夹到dist目录
-if exist "main.dist" (
-    if exist "dist\UDP_Oscilloscope" rmdir /s /q "dist\UDP_Oscilloscope"
-    move "main.dist" "dist\UDP_Oscilloscope"
-)
-
-REM 重命名可执行文件
-echo 重命名可执行文件...
-if exist "dist\UDP_Oscilloscope\main.exe" (
-    ren "dist\UDP_Oscilloscope\main.exe" "UDP_Oscilloscope.exe"
-    echo 可执行文件重命名成功
-) else (
-    echo 警告：未找到main.exe文件！
-)
 
 REM 创建版本信息文件
 echo 创建版本信息...
@@ -118,40 +135,5 @@ echo 作者：刘沅林
 echo 描述：电机控制板上位机软件
 echo GitHub：https://github.com/MisakaMikoto128
 ) > "dist\UDP_Oscilloscope\version.txt"
-
-REM 复制配置文件
-echo 复制配置文件...
-if not exist "dist\UDP_Oscilloscope\config" mkdir "dist\UDP_Oscilloscope\config"
-if exist "src\config\default_config.json" (
-    copy "src\config\default_config.json" "dist\UDP_Oscilloscope\config\" > nul
-    echo 配置文件复制成功
-) else (
-    echo 警告：未找到default_config.json文件！
-)
-
-REM 验证打包结果
-echo 验证打包结果...
-if exist "dist\UDP_Oscilloscope\UDP_Oscilloscope.exe" (
-    echo ✅ 可执行文件存在
-) else (
-    echo ❌ 可执行文件不存在！
-)
-
-if exist "dist\UDP_Oscilloscope\config\default_config.json" (
-    echo ✅ 配置文件存在
-) else (
-    echo ❌ 配置文件不存在！
-)
-
-echo.
-echo ========================================
-echo 打包完成！
-echo ========================================
-echo 可执行文件位于: dist\UDP_Oscilloscope\UDP_Oscilloscope.exe
-echo 请确保将整个 UDP_Oscilloscope 文件夹一起分发
-echo.
-
-REM 打开输出目录
-explorer "dist\UDP_Oscilloscope"
 
 pause
