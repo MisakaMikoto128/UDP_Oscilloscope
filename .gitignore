@@ -10,3 +10,4 @@ data/*
 *.db
 motor_record_viewer.exe
 Start Server.bat
+release/*
