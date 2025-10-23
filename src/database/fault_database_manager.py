@@ -115,55 +115,57 @@ class FaultDatabaseManager:
             logger.error(f"插入故障记录失败: {e}")
             return False
     
-    def query_fault_records(self, device_uid: Optional[int] = None, 
+    def query_fault_records(self, device_uid: Optional[int] = None,
                           start_date: Optional[date] = None,
                           end_date: Optional[date] = None,
-                          limit: int = 1000) -> List[Dict]:
+                          limit: int = 1000,
+                          offset: int = 0) -> List[Dict]:
         """
         查询故障记录
-        
+
         Args:
             device_uid: 设备UID，None表示查询所有设备
             start_date: 开始日期
             end_date: 结束日期
             limit: 最大返回记录数
-            
+            offset: 偏移量（用于分页）
+
         Returns:
             List[Dict]: 故障记录列表
         """
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
-                
+
                 # 构建查询条件
                 conditions = []
                 params = []
-                
+
                 if device_uid is not None:
                     conditions.append("device_uid = ?")
                     params.append(device_uid)
-                
+
                 if start_date is not None:
                     start_timestamp = int(datetime.combine(start_date, datetime.min.time()).timestamp() * 1000)
                     conditions.append("timestamp_ms >= ?")
                     params.append(start_timestamp)
-                
+
                 if end_date is not None:
                     end_timestamp = int(datetime.combine(end_date, datetime.max.time()).timestamp() * 1000)
                     conditions.append("timestamp_ms <= ?")
                     params.append(end_timestamp)
-                
+
                 where_clause = " AND ".join(conditions) if conditions else "1=1"
-                
+
                 query = f'''
                     SELECT id, device_uid, timestamp_ms, error_code_u32, flag1_uint32,
                            registers_blob, created_at
                     FROM fault_records
                     WHERE {where_clause}
                     ORDER BY timestamp_ms DESC
-                    LIMIT ?
+                    LIMIT ? OFFSET ?
                 '''
-                params.append(limit)
+                params.extend([limit, offset])
 
                 cursor.execute(query, params)
                 rows = cursor.fetchall()
@@ -186,10 +188,10 @@ class FaultDatabaseManager:
                         'created_at': row[6]
                     }
                     records.append(record)
-                
+
                 logger.info(f"查询到{len(records)}条故障记录")
                 return records
-                
+
         except Exception as e:
             logger.error(f"查询故障记录失败: {e}")
             return []
@@ -268,38 +270,91 @@ class FaultDatabaseManager:
     def has_fault_on_date(self, target_date: date, device_uid: Optional[int] = None) -> bool:
         """
         检查指定日期是否有故障记录
-        
+
         Args:
             target_date: 目标日期
             device_uid: 设备UID，None表示查询所有设备
-            
+
         Returns:
             bool: 是否有故障记录
         """
         try:
             start_timestamp = int(datetime.combine(target_date, datetime.min.time()).timestamp() * 1000)
             end_timestamp = int(datetime.combine(target_date, datetime.max.time()).timestamp() * 1000)
-            
+
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
-                
+
                 if device_uid is not None:
                     cursor.execute('''
-                        SELECT COUNT(*) FROM fault_records 
+                        SELECT COUNT(*) FROM fault_records
                         WHERE device_uid = ? AND timestamp_ms >= ? AND timestamp_ms <= ?
                     ''', (device_uid, start_timestamp, end_timestamp))
                 else:
                     cursor.execute('''
-                        SELECT COUNT(*) FROM fault_records 
+                        SELECT COUNT(*) FROM fault_records
                         WHERE timestamp_ms >= ? AND timestamp_ms <= ?
                     ''', (start_timestamp, end_timestamp))
-                
+
                 count = cursor.fetchone()[0]
                 return count > 0
-                
+
         except Exception as e:
             logger.error(f"检查故障日期失败: {e}")
             return False
+
+    def count_records(self, device_uid: Optional[int] = None,
+                     start_date: Optional[date] = None,
+                     end_date: Optional[date] = None) -> int:
+        """
+        统计记录数量（用于分页）
+
+        Args:
+            device_uid: 设备UID，None表示查询所有设备
+            start_date: 开始日期
+            end_date: 结束日期
+
+        Returns:
+            int: 记录数量
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+
+                # 构建查询条件
+                conditions = []
+                params = []
+
+                if device_uid is not None:
+                    conditions.append("device_uid = ?")
+                    params.append(device_uid)
+
+                if start_date is not None:
+                    start_timestamp = int(datetime.combine(start_date, datetime.min.time()).timestamp() * 1000)
+                    conditions.append("timestamp_ms >= ?")
+                    params.append(start_timestamp)
+
+                if end_date is not None:
+                    end_timestamp = int(datetime.combine(end_date, datetime.max.time()).timestamp() * 1000)
+                    conditions.append("timestamp_ms <= ?")
+                    params.append(end_timestamp)
+
+                where_clause = " AND ".join(conditions) if conditions else "1=1"
+
+                query = f'''
+                    SELECT COUNT(*) FROM fault_records
+                    WHERE {where_clause}
+                '''
+
+                cursor.execute(query, params)
+                count = cursor.fetchone()[0]
+
+                logger.info(f"统计到{count}条记录")
+                return count
+
+        except Exception as e:
+            logger.error(f"统计记录数量失败: {e}")
+            return 0
     
     def clear_old_records(self, days_to_keep: int = 30) -> int:
         """

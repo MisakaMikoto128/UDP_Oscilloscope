@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QTableWidgetItem
 from qasync import asyncSlot
 from qfluentwidgets import InfoBar, InfoBarPosition, TableWidget
 from PyQt5.QtCore import Qt, QDate
-
+from qfluentwidgets import PipsScrollButtonDisplayMode
 from src.communication.protocol import SysREGsUpData
 from src.config.config_manager import ConfigManager
 from src.ui import History_Panel_Form
@@ -67,10 +67,17 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
         self.last_error_code = {}  # device_uid -> error_code_u32
         self.last_flag1 = {}       # device_uid -> flag1_uint32
 
+        # 分页相关属性
+        self.records_per_page = 150  # 每页显示的最大记录条数
+        self.current_page = 0       # 当前页码（从0开始）
+        self.total_records = 0      # 总记录数
+        self.total_pages = 0        # 总页数
+
         # 初始化UI组件
         self._init_device_combo()
         self._init_calendar()
         self._init_fault_table()
+        self._init_pager()
 
         # 连接信号
         self._connect_signals()
@@ -80,6 +87,7 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
 
         # 初始化显示
         self._refresh_fault_table()
+        self._update_pager()
 
     def _init_device_combo(self):
         """初始化设备选择下拉框"""
@@ -168,6 +176,29 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
         except Exception as e:
             logger.error(f"初始化故障记录表格失败: {e}")
 
+    def _init_pager(self):
+        """初始化分页器"""
+        try:
+            horizontal_pips_pager = self.horizontal_pips_pager
+  
+            # 设置页数（初始为1页）
+            horizontal_pips_pager.setPageNumber(1)
+
+            # 设置可见圆点数量
+            horizontal_pips_pager.setVisibleNumber(8)
+
+            # 始终显示前进和后退按钮
+            horizontal_pips_pager.setNextButtonDisplayMode(PipsScrollButtonDisplayMode.ALWAYS)
+            horizontal_pips_pager.setPreviousButtonDisplayMode(PipsScrollButtonDisplayMode.ALWAYS)
+
+            # 设置当前页码
+            horizontal_pips_pager.setCurrentIndex(0)
+
+            logger.info("分页器初始化完成")
+
+        except Exception as e:
+            logger.error(f"初始化分页器失败: {e}")
+
     def _connect_signals(self):
         """连接信号槽"""
         try:
@@ -176,6 +207,9 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
 
             # 日期选择变化信号
             self.calendar_picker_fault_history.dateChanged.connect(self._on_date_changed)
+
+            # 分页器页码变化信号
+            self.horizontal_pips_pager.currentIndexChanged.connect(self._on_page_changed)
 
             logger.info("信号连接完成")
 
@@ -228,6 +262,7 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
                     current_device_uid = self.combo_box_devices.currentData()
                     if current_device_uid is None or current_device_uid == device_uid:
                         self._refresh_fault_table()
+                        self._update_pager()
 
                     # 更新设备下拉框（如果是新设备）
                     if is_first_time:
@@ -249,8 +284,14 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
             # 更新日历故障日期标记
             self._update_calendar_fault_dates()
 
+            # 重置到第一页
+            self.current_page = 0
+
             # 刷新故障记录表格
             self._refresh_fault_table()
+
+            # 更新分页器
+            self._update_pager()
 
             logger.info(f"设备选择变化: {self.combo_box_devices.currentText()}")
         except Exception as e:
@@ -259,7 +300,15 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
     def _on_date_changed(self, selected_date: QDate):
         """日期选择变化处理"""
         try:
+            # 重置到第一页
+            self.current_page = 0
+
+            # 刷新故障记录表格
             self._refresh_fault_table()
+
+            # 更新分页器
+            self._update_pager()
+
             logger.info(f"日期选择变化: {selected_date.toString('yyyy-MM-dd')}")
         except Exception as e:
             logger.error(f"处理日期选择变化错误: {e}")
@@ -297,12 +346,28 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
             qdate = self.calendar_picker_fault_history.date
             selected_date = date(qdate.year(), qdate.month(), qdate.day())
 
-            # 查询故障记录
+            # 首先统计总记录数
+            self.total_records = self.db_manager.count_records(
+                device_uid=device_uid,
+                start_date=selected_date,
+                end_date=selected_date
+            )
+
+            # 计算总页数
+            self.total_pages = max(1, (self.total_records + self.records_per_page - 1) // self.records_per_page)
+
+            # 确保当前页码在有效范围内
+            if self.current_page >= self.total_pages:
+                self.current_page = max(0, self.total_pages - 1)
+
+            # 查询当前页的记录
+            offset = self.current_page * self.records_per_page
             records = self.db_manager.query_fault_records(
                 device_uid=device_uid,
                 start_date=selected_date,
                 end_date=selected_date,
-                limit=1000
+                limit=self.records_per_page,
+                offset=offset
             )
 
             # 清空表格
@@ -402,7 +467,7 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
             # 自适应列宽
             self.table_fault_history.resizeColumnsToContents()
 
-            logger.info(f"刷新故障记录表格完成，共{len(records)}条记录")
+            logger.info(f"刷新故障记录表格完成，第{self.current_page + 1}/{self.total_pages}页，共{len(records)}条记录，总计{self.total_records}条")
 
         except Exception as e:
             logger.error(f"刷新故障记录表格错误: {e}")
@@ -444,4 +509,31 @@ class FaultHistoryPanelForm(QtWidgets.QFrame, History_Panel_Form):
         except Exception as e:
             logger.error(f"设置表格项错误: {e}")
 
+    def _on_page_changed(self, page_index: int):
+        """分页变化处理"""
+        try:
+            self.current_page = page_index
+            self._refresh_fault_table()
+            logger.info(f"页码变化: {page_index + 1}/{self.total_pages}")
+        except Exception as e:
+            logger.error(f"处理页码变化错误: {e}")
 
+    def _update_pager(self):
+        """更新分页器"""
+        try:
+            # 设置总页数
+            self.horizontal_pips_pager.setPageNumber(self.total_pages)
+
+            # 设置当前页码
+            self.horizontal_pips_pager.setCurrentIndex(self.current_page)
+
+            # 如果只有一页，隐藏分页器
+            if self.total_pages <= 1:
+                self.horizontal_pips_pager.setVisible(False)
+            else:
+                self.horizontal_pips_pager.setVisible(True)
+
+            logger.debug(f"分页器更新: 第{self.current_page + 1}/{self.total_pages}页")
+
+        except Exception as e:
+            logger.error(f"更新分页器错误: {e}")
