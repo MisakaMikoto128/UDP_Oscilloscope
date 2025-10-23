@@ -34,11 +34,6 @@ if errorlevel 1 (
         exit /b 1
     )
 )
-set NUITKA_CACHE_DIR_DOWNLOADS=D:\nuitka_cache_downloads
-set NUITKA_CACHE_DIR_CCACHE=D:\nuitka_cache_ccache
-set NUITKA_CACHE_DIR_CLCACHE=D:\nuitka_cache_clcache
-set NUITKA_CACHE_DIR_BYTECODE=D:\nuitka_cache_bytecode
-set NUITKA_CACHE_DIR_DLL_DEPENDENCIES=D:\nuitka_cache_dll_dependencies
 
 REM 设置编译器优化标志
 REM /O2: 最大化速度(推荐,比/Ox更全面)
@@ -73,17 +68,15 @@ python -m nuitka ^
     --include-data-dir=src/config=src/config ^
     --include-data-dir=src/ui/styles=ui/styles ^
     --windows-icon-from-ico=img\star.ico ^
-    --windows-console-mode=disable ^
+    --windows-console-mode=force ^
     --follow-imports ^
     --enable-plugin=pyqt5 ^
-    --enable-plugin=multiprocessing ^
-    --enable-plugin=anti-bloat ^
+    --disable-plugin=anti-bloat ^
     --python-flag=no_site ^
     --python-flag=-OO ^
     --nofollow-import-to=pyqt5-plugins,pyqt5-tools,qt5-tools ^
     --nofollow-import-to=setuptools,pip,wheel ^
-    --nofollow-import-to=pytest,docutils ^
-    --nofollow-import-to=unittest ^
+    --nofollow-import-to=pytest,docutils,doctest ^
     --nofollow-import-to=matplotlib ^
     --nofollow-import-to=numba,llvmlite ^
     --nofollow-import-to=scipy ^
@@ -98,29 +91,25 @@ python -m nuitka ^
     --nofollow-import-to=*.testing ^
     --nofollow-import-to=pyqtgraph.examples ^
     --nofollow-import-to=OpenGL_accelerate ^
-    --include-package=pyqtgraph ^
-    --include-package=pyqtgraph.graphicsItems ^
-    --include-package=pyqtgraph.opengl ^
-    --include-package=pyqtgraph.exporters ^
-    --include-package=pyqtgraph.widgets ^
-    --include-package=OpenGL ^
-    --include-package=numpy ^
-    --include-package=h5py ^
-    --include-package=crcmod ^
-    --include-package=winloop ^
-    --include-package=qasync ^
+    --nofollow-import-to=pyqtgraph ^
+    --nofollow-import-to=OpenGL ^
+    --nofollow-import-to=numpy ^
+    --nofollow-import-to=h5py ^
+    --nofollow-import-to=crcmod ^
+    --nofollow-import-to=winloop ^
     --include-package=qfluentwidgets ^
     --include-package=qframelesswindow ^
     --include-package=qframelesswindow.titlebar ^
     --include-package-data=qfluentwidgets ^
     --include-package-data=qframelesswindow ^
+    --follow-import-to=qframelesswindow ^
     --lto=yes ^
     --windows-company-name="LIU YUANLIN" ^
     --windows-product-name="电机控制板上位机软件" ^
     --windows-file-version=1.0.0 ^
     --windows-product-version=1.0.0 ^
     --windows-file-description="电机控制板上位机软件" ^
-    --output-dir=release ^
+    --output-dir=release_no_module ^
     main.py
 
 REM 检查打包结果
@@ -141,6 +130,6 @@ echo 构建环境：Windows
 echo 作者：刘沅林
 echo 描述：电机控制板上位机软件
 echo GitHub：https://github.com/MisakaMikoto128
-)
+) > "dist\UDP_Oscilloscope\version.txt"
 
 pause

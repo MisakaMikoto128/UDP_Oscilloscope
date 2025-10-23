@@ -11,3 +11,5 @@ data/*
 motor_record_viewer.exe
 Start Server.bat
 release/*
+release_no_module/*
+release2/*
